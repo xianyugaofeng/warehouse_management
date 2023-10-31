@@ -17,6 +17,9 @@ class Room:
         room = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         roomip = '127.0.0.1'
         port = 8080
+        room.bind((roomip, port))
+        room.listen(128)
+        self.socket = room
         pass
 
     def add_microphone(self, phones: list):
@@ -42,6 +45,7 @@ class Room:
 
     def close(self):
         pass
+
 
 class People:
 
