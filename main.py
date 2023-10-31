@@ -1,3 +1,5 @@
+import socket
+
 
 class Microphone:
     def __init__(self, phone_id) -> None:
@@ -8,6 +10,7 @@ class Microphone:
 
     def get_phone_id(self):
         pass
+
 
 class Room:
     def __init__(self) -> None:
