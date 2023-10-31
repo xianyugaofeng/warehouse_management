@@ -14,6 +14,7 @@ class Microphone:
 
 class Room:
     def __init__(self) -> None:
+        room = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         pass
 
     def add_microphone(self, phones: list):
