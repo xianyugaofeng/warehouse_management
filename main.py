@@ -31,6 +31,12 @@ class Room:
     def broadcast(self):
         pass
 
+    def open(self):
+        pass
+
+    def close(self):
+        pass
+
 class People:
 
     def __init__(self, name) -> None:
