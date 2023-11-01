@@ -1,5 +1,6 @@
 import unittest
 import sys
+from main import Room, People, Microphone
 sys.path.append("..")
 
 from main import Room, People, Microphone

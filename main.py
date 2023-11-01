@@ -1,4 +1,5 @@
 import socket
+import threading
 
 
 class Microphone:
@@ -14,13 +15,12 @@ class Microphone:
 
 class Room:
     def __init__(self) -> None:
-        room = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socketlist = []
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         roomip = '127.0.0.1'
         port = 8080
-        room.bind((roomip, port))
-        room.listen(128)
-        self.socket = room
-        pass
+        self.socket.bind((roomip, port))
+        self.socket.listen(128)
 
     def add_microphone(self, phones: list):
         pass
@@ -32,6 +32,13 @@ class Room:
         pass
 
     def how_many_people(self):
+        for i in range(len(self.socketlist)):
+            try:
+                self.socketlist[i].send(b'send more data')
+            except OSError:
+                del self.socketlist[i]
+            pass
+        return len(self.socketlist)
         pass
 
     def how_many_microphone(self):
@@ -41,6 +48,9 @@ class Room:
         pass
 
     def open(self):
+        while True:
+            roomsocket, address = self.socket.accept()
+            self.socketlist.append(roomsocket)
         pass
 
     def close(self):
@@ -51,9 +61,10 @@ class People:
 
     def __init__(self, name) -> None:
         self.name = name
-        self.room = None
+        self.room = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     def join(self, room):
+
         pass
 
     def leave(self):
