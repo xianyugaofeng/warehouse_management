@@ -1,5 +1,7 @@
 import socket
 import threading
+import unittest
+import time
 
 
 class Microphone:
@@ -15,12 +17,13 @@ class Microphone:
 
 class Room:
     def __init__(self) -> None:
+        self.room_members = []
         self.socketlist = []
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        roomip = '127.0.0.1'
-        port = 8080
-        self.socket.bind((roomip, port))
-        self.socket.listen(128)
+        self.roomip = '127.0.0.1'
+        self.port = 8080
+        self.socket.bind((self.roomip, self.port))
+        self.socket.listen(5)
 
     def add_microphone(self, phones: list):
         pass
@@ -32,13 +35,10 @@ class Room:
         pass
 
     def how_many_people(self):
-        for i in range(len(self.socketlist)):
-            try:
-                self.socketlist[i].send(b'send more data')
-            except OSError:
-                del self.socketlist[i]
-            pass
-        return len(self.socketlist)
+        time.sleep(0.01)
+
+        print(self.room_members)
+        return len(self.room_members)
         pass
 
     def how_many_microphone(self):
@@ -51,9 +51,15 @@ class Room:
         while True:
             roomsocket, address = self.socket.accept()
             self.socketlist.append(roomsocket)
+            name = roomsocket.recv(1024)
+            if name:
+                self.room_members.append(str(name.decode('utf-8')))
         pass
 
     def close(self):
+        for roomsocket in self.socketlist:
+            roomsocket.close()
+        self.socket.close()
         pass
 
 
@@ -64,10 +70,13 @@ class People:
         self.room = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     def join(self, room):
-
+        self.room.connect((room.roomip, room.port))
+        self.room.send(self.name.encode('utf-8'))
         pass
 
     def leave(self):
+        self.room.send(b'ending')
+        self.room.close()
         pass
 
     def talk(self, microphone, content):
