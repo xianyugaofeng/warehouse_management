@@ -1,16 +1,16 @@
+import threading
 import unittest
 import sys
-from main import Room, People, Microphone
+from main import Room, Microphone, People
+import time
 sys.path.append("..")
-
-from main import Room, People, Microphone
 
 
 class TestChatRoom(unittest.TestCase):
 
     def setUp(self):
         self.test_room = Room()
-        self.test_room.open()
+        threading.Thread(target=self.test_room.open).start()
 
     def tearDown(self):
         self.test_room.close()
@@ -105,7 +105,7 @@ class TestChatRoom(unittest.TestCase):
     def test_lots_of_people(self):
         self.test_room.add_microphone([Microphone("A"), Microphone("B")])
         john = People("John")
-        guys = [People("Jimmy"), People("Andy"),  People("Eric"), People("Ken"), People("Bob")]
+        guys = [People("Jimmy"), People("Andy"), People("Eric"), People("Ken"), People("Bob")]
         john.join(self.test_room)
         for guy in guys:
             guy.join(self.test_room)
@@ -158,6 +158,6 @@ class TestChatRoom(unittest.TestCase):
         assert john.hear() == "[John]: Hi, Jimmy?"
         assert jimmy.hear() == None
 
-        
+
 if __name__ == '__main__':
     unittest.main()
