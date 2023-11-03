@@ -36,7 +36,6 @@ class Room:
 
     def how_many_people(self):
         time.sleep(0.01)
-
         print(self.room_members)
         return len(self.room_members)
         pass
@@ -49,16 +48,21 @@ class Room:
 
     def open(self):
         while True:
-            roomsocket, address = self.socket.accept()
-            self.socketlist.append(roomsocket)
+            try:
+                roomsocket, address = self.socket.accept()
+                self.socketlist.append(roomsocket)
+            except OSError:
+                break
             name = roomsocket.recv(1024)
             if name:
                 self.room_members.append(str(name.decode('utf-8')))
         pass
 
     def close(self):
-        for roomsocket in self.socketlist:
-            roomsocket.close()
+        time.sleep(0.01)
+        for i in range(len(self.socketlist)):
+            self.socketlist[i].close()
+            del self.socketlist[i]
         self.socket.close()
         pass
 
