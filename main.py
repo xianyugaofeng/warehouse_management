@@ -47,15 +47,27 @@ class Room:
         pass
 
     def open(self):
+        def getrecvmsg(num):
+            while True:
+                try:
+                    recvmsg = roomsocket.recv(1024).decode('utf-8')
+                except OSError:
+                    break
+                if str(recvmsg) == 'leave':
+                    del self.socketlist[num]
+                    self.room_members.remove(str(name.decode('utf-8')))
+
         while True:
             try:
                 roomsocket, address = self.socket.accept()
                 self.socketlist.append(roomsocket)
+                num = len(self.socketlist) - 1
+                name = roomsocket.recv(1024)
+                if name:
+                    self.room_members.append(str(name.decode('utf-8')))
+                threading.Thread(target=getrecvmsg, args=(num,)).start()
             except OSError:
                 break
-            name = roomsocket.recv(1024)
-            if name:
-                self.room_members.append(str(name.decode('utf-8')))
         pass
 
     def close(self):
@@ -79,7 +91,8 @@ class People:
         pass
 
     def leave(self):
-        self.room.send(b'ending')
+        time.sleep(0.01)
+        self.room.send(b'leave')
         self.room.close()
         pass
 
