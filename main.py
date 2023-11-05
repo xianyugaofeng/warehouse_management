@@ -37,6 +37,7 @@ class Room:
 
     def add_microphone(self, phones: list):
         for phone in phones:
+            assert phone.phoneid is not None
             self.phonelist.append(phone)
         pass
 
@@ -69,6 +70,7 @@ class Room:
                 for roomsocket in self.socketlist:
                     sendmsg = f"[{phone.phoneid}][{phone.people}]: {phone.content}".encode('utf-8')
                     roomsocket.send(sendmsg)
+                phone.speech_judgement = 1
                 return f"[{phone.phoneid}][{phone.people}]: {phone.content}"
         return None
         pass
