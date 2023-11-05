@@ -6,12 +6,14 @@ import time
 
 class Microphone:
     def __init__(self, phone_id) -> None:
+        self.phoneid = phone_id
         pass
 
     def input(self, people, content):
         pass
 
     def get_phone_id(self):
+        return self.phoneid
         pass
 
 
@@ -19,6 +21,8 @@ class Room:
     def __init__(self) -> None:
         self.room_members = []
         self.socketlist = []
+        self.phonelist = []
+        self.phonemember = 0
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.roomip = '127.0.0.1'
         self.port = 8080
@@ -26,9 +30,16 @@ class Room:
         self.socket.listen(5)
 
     def add_microphone(self, phones: list):
+        for phone in phones:
+            self.phonelist.append(phone)
         pass
 
-    def get_microphone(self) -> Microphone:
+    def get_microphone(self):
+        self.phonemember = self.phonemember + 1
+        try:
+            return self.phonelist[self.phonemember - 1]
+        except IndexError:
+            return None
         pass
 
     def return_microphone(self, phone):
@@ -41,6 +52,7 @@ class Room:
         pass
 
     def how_many_microphone(self):
+        return len(self.phonelist)
         pass
 
     def broadcast(self):
