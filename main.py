@@ -7,9 +7,15 @@ import time
 class Microphone:
     def __init__(self, phone_id) -> None:
         self.phoneid = phone_id
+        self.people = None
+        self.content = None
+        self.speech_judgement = None
         pass
 
     def input(self, people, content):
+        self.people = people
+        self.content = content
+        self.speech_judgement = True
         pass
 
     def get_phone_id(self):
@@ -58,6 +64,13 @@ class Room:
         pass
 
     def broadcast(self):
+        for phone in self.phonelist:
+            if phone.speech_judgement is True:
+                for roomsocket in self.socketlist:
+                    sendmsg = f"[{phone.phoneid}][{phone.people}]: {phone.content}".encode('utf-8')
+                    roomsocket.send(sendmsg)
+                return f"[{phone.phoneid}][{phone.people}]: {phone.content}"
+        return None
         pass
 
     def open(self):
@@ -94,15 +107,27 @@ class Room:
 
 
 class People:
-
     def __init__(self, name) -> None:
         self.name = name
         self.room = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.recvmsg = None
 
     def join(self, room):
         self.room.connect((room.roomip, room.port))
         self.room.send(self.name.encode('utf-8'))
-        pass
+
+        def wait_for_message():
+            self.room.send(b'i have joined')
+            while True:
+                try:
+                    self.recvmsg = self.room.recv(1024)
+                except OSError:
+                    break
+                if self.recvmsg == b'':
+                    break
+                self.recvmsg = str(self.recvmsg.decode('utf-8'))
+
+        threading.Thread(target=wait_for_message).start()
 
     def leave(self):
         time.sleep(0.01)
@@ -114,4 +139,5 @@ class People:
         pass
 
     def hear(self):
+        return self.recvmsg
         pass
