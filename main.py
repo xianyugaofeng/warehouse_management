@@ -15,7 +15,7 @@ class Microphone:
     def input(self, people, content):
         self.people = people
         self.content = content
-        self.speech_judgement = True
+        self.speech_judgement = 'microphone'
         pass
 
     def get_phone_id(self):
@@ -25,10 +25,10 @@ class Microphone:
 
 class Room:
     def __init__(self) -> None:
+        self.microphone = None
         self.room_members = []
         self.socketlist = []
         self.phonelist = []
-        self.phonemember = 0
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.roomip = '127.0.0.1'
         self.port = 8080
@@ -44,7 +44,6 @@ class Room:
     def get_microphone(self):
         if not self.phonelist:
             return None
-        self.phonemember = self.phonemember + 1
         phone = self.phonelist[0]
         del self.phonelist[0]
         return phone
@@ -66,13 +65,20 @@ class Room:
 
     def broadcast(self):
         for phone in self.phonelist:
-            if phone.speech_judgement is True:
-                for roomsocket in self.socketlist:
-                    sendmsg = f"[{phone.phoneid}][{phone.people}]: {phone.content}".encode('utf-8')
-                    roomsocket.send(sendmsg)
-                phone.speech_judgement = 1
-                return f"[{phone.phoneid}][{phone.people}]: {phone.content}"
-        return None
+            if phone.speech_judgement == 'microphone':
+                self.microphone = phone
+                phone.speech_judgement = None
+                break
+        if self.microphone is None:
+            return None
+        for roomsocket in self.socketlist:
+            sendmsg = f"[{self.microphone.phoneid}][{self.microphone.people}]: " \
+                      f"{self.microphone.content}".encode('utf-8')
+            roomsocket.send(sendmsg)
+        msg = f"[{self.microphone.phoneid}][{self.microphone.people}]: " \
+              f"{self.microphone.content}"
+        self.microphone = None
+        return msg
         pass
 
     def open(self):
@@ -80,6 +86,7 @@ class Room:
             while True:
                 try:
                     recvmsg = roomsocket.recv(1024).decode('utf-8')
+
                 except OSError:
                     break
                 if str(recvmsg) == 'leave':
@@ -134,10 +141,12 @@ class People:
     def leave(self):
         time.sleep(0.01)
         self.room.send(b'leave')
+        self.recvmsg = None
         self.room.close()
         pass
 
     def talk(self, microphone, content):
+        self.room.send(microphone.phoneid.encode('utf-8') + content.encode('utf-8'))
         pass
 
     def hear(self):
