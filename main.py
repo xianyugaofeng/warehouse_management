@@ -35,14 +35,16 @@ class Room:
         pass
 
     def get_microphone(self):
-        self.phonemember = self.phonemember + 1
-        try:
-            return self.phonelist[self.phonemember - 1]
-        except IndexError:
+        if not self.phonelist:
             return None
+        self.phonemember = self.phonemember + 1
+        phone = self.phonelist[0]
+        del self.phonelist[0]
+        return phone
         pass
 
     def return_microphone(self, phone):
+        self.phonelist.append(phone)
         pass
 
     def how_many_people(self):
