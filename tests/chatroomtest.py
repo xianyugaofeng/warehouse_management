@@ -2,7 +2,6 @@ import threading
 import unittest
 import sys
 from main import Room, Microphone, People
-import time
 sys.path.append("..")
 
 
@@ -33,13 +32,13 @@ class TestChatRoom(unittest.TestCase):
         assert self.test_room.how_many_microphone() == 1
         phone = self.test_room.get_microphone()
         assert phone.get_phone_id() == phone_a.get_phone_id()
-        assert self.test_room.get_microphone() == None
+        assert self.test_room.get_microphone() is None
 
     def test_get_and_return_microphone(self):
         phone = Microphone("A")
         self.test_room.add_microphone([phone])
         assert self.test_room.get_microphone()
-        assert self.test_room.get_microphone() == None
+        assert self.test_room.get_microphone() is None
         self.test_room.return_microphone(phone)
         assert self.test_room.get_microphone()
 
@@ -52,7 +51,7 @@ class TestChatRoom(unittest.TestCase):
     def test_no_microphone(self):
         phone_a = Microphone("A")
         phone_a.input("TEST", "Hi")
-        assert self.test_room.broadcast() == None
+        assert self.test_room.broadcast() is None
 
     def test_test_microphones(self):
         phone_a = Microphone("A")
@@ -156,7 +155,7 @@ class TestChatRoom(unittest.TestCase):
         john.talk(phone, "Hi, Jimmy?")
         assert self.test_room.broadcast() == f"[{phone.get_phone_id()}][John]: Hi, Jimmy?"
         assert john.hear() == "[John]: Hi, Jimmy?"
-        assert jimmy.hear() == None
+        assert jimmy.hear() is None
 
 
 if __name__ == '__main__':
