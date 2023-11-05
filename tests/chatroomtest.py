@@ -29,7 +29,7 @@ class TestChatRoom(unittest.TestCase):
 
     def test_add_and_get_microphone(self):
         phone_a = Microphone("A")
-        self.test_room.add_microphone(phone_a)
+        self.test_room.add_microphone([phone_a])
         assert self.test_room.how_many_microphone() == 1
         phone = self.test_room.get_microphone()
         assert phone.get_phone_id() == phone_a.get_phone_id()
@@ -37,7 +37,7 @@ class TestChatRoom(unittest.TestCase):
 
     def test_get_and_return_microphone(self):
         phone = Microphone("A")
-        self.test_room.add_microphone(phone)
+        self.test_room.add_microphone([phone])
         assert self.test_room.get_microphone()
         assert self.test_room.get_microphone() == None
         self.test_room.return_microphone(phone)
