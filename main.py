@@ -2,6 +2,7 @@ import socket
 import threading
 import unittest
 import time
+import re
 
 
 class Microphone:
@@ -64,20 +65,22 @@ class Room:
         pass
 
     def broadcast(self):
+        time.sleep(0.02)
         for phone in self.phonelist:
             if phone.speech_judgement == 'microphone':
                 self.microphone = phone
-                phone.speech_judgement = None
+                self.microphone.speech_judgement = None
                 break
         if self.microphone is None:
             return None
         for roomsocket in self.socketlist:
-            sendmsg = f"[{self.microphone.phoneid}][{self.microphone.people}]: " \
+            sendmsg = f"[{self.microphone.people}]: " \
                       f"{self.microphone.content}".encode('utf-8')
             roomsocket.send(sendmsg)
         msg = f"[{self.microphone.phoneid}][{self.microphone.people}]: " \
               f"{self.microphone.content}"
         self.microphone = None
+        print(msg)
         return msg
         pass
 
@@ -86,12 +89,21 @@ class Room:
             while True:
                 try:
                     recvmsg = roomsocket.recv(1024).decode('utf-8')
-
+                    time.sleep(0.02)
                 except OSError:
                     break
                 if str(recvmsg) == 'leave':
                     del self.socketlist[num]
                     self.room_members.remove(str(name.decode('utf-8')))
+                if str(recvmsg) is not None:
+                    select_results = re.match('(\w*)\s(.*)', str(recvmsg))
+                    if select_results is None:
+                        continue
+                    phoneid = select_results.group(1)
+                    content = select_results.group(2)
+                    self.microphone = Microphone(phoneid)
+                    self.microphone.input(self.room_members[num], content)
+                    pass
 
         while True:
             try:
@@ -125,19 +137,6 @@ class People:
         self.room.connect((room.roomip, room.port))
         self.room.send(self.name.encode('utf-8'))
 
-        def wait_for_message():
-            self.room.send(b'i have joined')
-            while True:
-                try:
-                    self.recvmsg = self.room.recv(1024)
-                except OSError:
-                    break
-                if self.recvmsg == b'':
-                    break
-                self.recvmsg = str(self.recvmsg.decode('utf-8'))
-
-        threading.Thread(target=wait_for_message).start()
-
     def leave(self):
         time.sleep(0.01)
         self.room.send(b'leave')
@@ -146,7 +145,20 @@ class People:
         pass
 
     def talk(self, microphone, content):
-        self.room.send(microphone.phoneid.encode('utf-8') + content.encode('utf-8'))
+
+        def wait_for_message():
+            while True:
+                try:
+                    self.recvmsg = self.room.recv(1024)
+                except OSError:
+                    break
+                if self.recvmsg == b'':
+                    break
+                if self.recvmsg:
+                    self.recvmsg = self.recvmsg.decode('utf-8')
+                    print(self.recvmsg)
+        threading.Thread(target=wait_for_message).start()
+        self.room.send(str(microphone.phoneid + ' ' + content).encode('utf-8'))
         pass
 
     def hear(self):
