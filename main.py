@@ -55,7 +55,7 @@ class Room:
         pass
 
     def how_many_people(self):
-        time.sleep(0.01)
+        time.sleep(0.05)
         print(self.room_members)
         return len(self.room_members)
         pass
@@ -65,7 +65,7 @@ class Room:
         pass
 
     def broadcast(self):
-        time.sleep(0.05)
+        time.sleep(0.1)
         print(self.room_members)
         for phone in self.phonelist:
             if phone.speech_judgement == 'microphone':
@@ -89,13 +89,15 @@ class Room:
         def getrecvmsg(num):
             while True:
                 try:
-                    recvmsg = roomsocket.recv(1024).decode('utf-8')    # 接收phoneid和content
-                    time.sleep(0.02)
+                    recvmsg = roomsocket.recv(1024).decode('utf-8')   # 接收phoneid和content
+                    time.sleep(0.03)
+                    print(recvmsg)
                 except OSError:
                     break
                 if str(recvmsg) == 'leave':
+                    self.room_members.remove(name.decode('utf-8'))
                     del self.socketlist[num]
-                    self.room_members.remove(str(name.decode('utf-8')))
+                    break
                 if str(recvmsg) is not None:
                     select_results = re.match('(\w*)\s(.*)', str(recvmsg))
                     if select_results is None:
@@ -112,6 +114,7 @@ class Room:
                 self.socketlist.append(roomsocket)
                 num = len(self.socketlist) - 1
                 name = roomsocket.recv(1024)    # 接收名字
+                print(name)
                 # 备注：先接收名字再接收phoneid和content
                 time.sleep(0.01)
                 if name:
@@ -122,10 +125,9 @@ class Room:
         pass
 
     def close(self):
-        time.sleep(0.01)
+        time.sleep(0.05)
         for i in range(len(self.socketlist)):
             self.socketlist[i].close()
-            del self.socketlist[i]
         self.socket.close()
         pass
 
