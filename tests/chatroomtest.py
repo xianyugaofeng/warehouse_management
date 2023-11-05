@@ -149,9 +149,7 @@ class TestChatRoom(unittest.TestCase):
         assert self.test_room.broadcast() == f"[{phone.get_phone_id()}][John]: I'm John."
         assert john.hear() == "[John]: I'm John."
         assert jimmy.hear() == "[John]: I'm John."
-
         jimmy.leave()
-
         john.talk(phone, "Hi, Jimmy?")
         assert self.test_room.broadcast() == f"[{phone.get_phone_id()}][John]: Hi, Jimmy?"
         assert john.hear() == "[John]: Hi, Jimmy?"
