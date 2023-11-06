@@ -157,6 +157,56 @@ class TestChatRoom(unittest.TestCase):
         assert john.hear() == "[John]: Hi, Jimmy?"
         assert jimmy.hear() is None
 
+    def test_leave_and_join_room(self):
+        self.test_room.add_microphone([Microphone("A"), Microphone("B")])
+        john = People("John")
+        jimmy = People("Jimmy")
+        john.join(self.test_room)
+        jimmy.join(self.test_room)
+
+        phone = self.test_room.get_microphone()
+
+        john.talk(phone, "I'm John.")
+        assert self.test_room.broadcast() == f"[{phone.get_phone_id()}][John]: I'm John."
+
+        jimmy.leave()
+
+        john.talk(phone, "Hi, Jimmy?")
+        assert self.test_room.broadcast() == f"[{phone.get_phone_id()}][John]: Hi, Jimmy?"
+        assert jimmy.hear() is None
+
+        jimmy.join(self.test_room)
+        john.talk(phone, "Are you here, Jimmy?")
+        assert self.test_room.broadcast() == f"[{phone.get_phone_id()}][John]: Are you here, Jimmy?"
+        assert john.hear() == "[John]: Are you here, Jimmy?"
+        assert jimmy.hear() == "[John]: Are you here, Jimmy?"
+
+        phone2 = self.test_room.get_microphone()
+        jimmy.talk(phone2, "Are you here, Jimmy?")
+        assert self.test_room.broadcast() == f"[{phone2.get_phone_id()}][Jimmy]: I'm here."
+        assert john.hear() == "[Jimmy]: I'm here."
+        assert jimmy.hear() == "[Jimmy]: I'm here."
+
+
+    def test_multi_messages(self):
+        self.test_room.add_microphone([Microphone("A"), Microphone("B")])
+        john = People("John")
+        jimmy = People("Jimmy")
+        john.join(self.test_room)
+        jimmy.join(self.test_room)
+
+        phone = self.test_room.get_microphone()
+
+        john.talk(phone, "I'm John.")
+        john.talk(phone, "Today I will make a presentation.")
+        john.talk(phone, "The topic is about chatroom.")
+        john.talk(phone, "Thank you for the coming.")
+
+        assert jimmy.hear() == "[John]: I'm here."
+        assert jimmy.hear() == "[John]: Today I will make a presentation."
+        assert jimmy.hear() == "[John]: The topic is about chatroom."
+        assert jimmy.hear() == "[John]: Thank you for the coming."
+
 
 if __name__ == '__main__':
     unittest.main()
