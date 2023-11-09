@@ -185,7 +185,6 @@ class TestChatRoom(unittest.TestCase):
         assert john.hear() == "[Jimmy]: I'm here."
         assert jimmy.hear() == "[Jimmy]: I'm here."
 
-
     def test_multi_messages(self):
         self.test_room.add_microphone([Microphone("A"), Microphone("B")])
         john = People("John")
