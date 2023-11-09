@@ -30,6 +30,7 @@ class Room:
         self.room_members = []
         self.socketlist = []
         self.phonelist = []
+        self.shutdownsockets = []
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.roomip = '127.0.0.1'
         self.port = 8080
@@ -65,7 +66,7 @@ class Room:
         pass
 
     def broadcast(self):
-        time.sleep(0.1)
+        time.sleep(0.1)  # 等待name和message中的phoneid和content全部传输完毕
         print(self.room_members)
         for phone in self.phonelist:
             if phone.speech_judgement == 'microphone':
@@ -75,13 +76,14 @@ class Room:
         if self.microphone is None:
             return None
         for roomsocket in self.socketlist:
+            for i in self.shutdownsockets:
+                if roomsocket == self.socketlist[i]:
+                    continue
             sendmsg = f"[{self.microphone.people}]: {self.microphone.content}".encode('utf-8')
-            roomsocket.send(sendmsg)    # 广播people发送的信息
-            print(sendmsg)
+            roomsocket.send(sendmsg)  # 广播people发送的信息
         msg = f"[{self.microphone.phoneid}][{self.microphone.people}]: " \
               f"{self.microphone.content}"
         self.microphone = None
-        print(msg)
         return msg
         pass
 
@@ -89,16 +91,22 @@ class Room:
         def getrecvmsg(num):
             while True:
                 try:
-                    recvmsg = roomsocket.recv(1024).decode('utf-8')   # 接收phoneid和content
-                    time.sleep(0.03)
+                    recvmsg = roomsocket.recv(1024).decode('utf-8')  # 接收phoneid和content
                     print(recvmsg)
                 except OSError:
                     break
                 if str(recvmsg) == 'leave':
                     self.room_members.remove(name.decode('utf-8'))
-                    del self.socketlist[num]
+                    self.socketlist[num].close()
+                    print(f'客户端已关闭 {address}')
+                    try:
+                        self.socketlist[num].send(b'data')
+                        raise AssertionError('套接字未关闭')
+                    except OSError:
+                        print('套接字已关闭')
+                        pass
                     break
-                if str(recvmsg) is not None:
+                elif str(recvmsg) is not None:
                     select_results = re.match('(\w*)\s(.*)', str(recvmsg))
                     if select_results is None:
                         continue
@@ -112,14 +120,14 @@ class Room:
             try:
                 roomsocket, address = self.socket.accept()
                 self.socketlist.append(roomsocket)
+                print(f'有新的客户端连接{address}')
                 num = len(self.socketlist) - 1
-                name = roomsocket.recv(1024)    # 接收名字
-                print(name)
+                name = roomsocket.recv(1024)  # 接收名字
                 # 备注：先接收名字再接收phoneid和content
                 time.sleep(0.01)
                 if name:
                     self.room_members.append(str(name.decode('utf-8')))
-                threading.Thread(target=getrecvmsg, args=(num,)).start()   # people.talk()以后执行
+                threading.Thread(target=getrecvmsg, args=(num,)).start()     # people.talk()以后执行
             except OSError:
                 break
         pass
@@ -140,17 +148,17 @@ class People:
 
     def join(self, room):
         self.room.connect((room.roomip, room.port))
-        self.room.send(self.name.encode('utf-8')) # 发送自己的名字
+        self.room.send(self.name.encode('utf-8'))  # 发送自己的名字
 
     def leave(self):
         time.sleep(0.01)
         self.room.send(b'leave')
         self.recvmsg = None
-        self.room.close()
+        print('套接字发送关闭请求')
         pass
 
     def talk(self, microphone, content):
-        time.sleep(0.01)
+        time.sleep(0.08)
         self.room.send(str(microphone.phoneid + ' ' + content).encode('utf-8'))  # 发送phoneid和content
         pass
 
@@ -165,6 +173,7 @@ class People:
                     break
                 if self.recvmsg:
                     self.recvmsg = self.recvmsg.decode('utf-8')
+
         threading.Thread(target=wait_for_message).start()
         time.sleep(0.03)
         return self.recvmsg
