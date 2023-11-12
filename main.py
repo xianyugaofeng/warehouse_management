@@ -79,6 +79,7 @@ class Room:
                 self.microphone.speech_judgement = None
                 break
         if self.microphone is None:
+            print('microphone is None')
             return None
         for roomsocket in self.socketlist:
             for i in self.shutdownsockets:
@@ -116,6 +117,8 @@ class Room:
                 elif str(recvmsg) is not None:
                     select_results = re.match('(\w*)\s(.*)', str(recvmsg))
                     if select_results is None:
+                        print(recvmsg)
+                        print('select_results is None')
                         self.microphone = None
                         self.lock1.notify()
                         self.lock1.release()
@@ -124,6 +127,8 @@ class Room:
                     content = select_results.group(2)
                     self.microphone = Microphone(phoneid)
                     self.microphone.input(self.room_members[num], content)
+                if str(recvmsg) is None:
+                    continue
                 self.lock1.notify()
                 self.lock1.release()
                 pass
@@ -138,7 +143,7 @@ class Room:
                 # 备注：先接收名字再接收phoneid和content
                 if name:
                     self.room_members.append(str(name.decode('utf-8')))
-                threading.Thread(target=getrecvmsg, args=(num,)).start()     # people.talk()以后执行
+                threading.Thread(target=getrecvmsg, args=(num,)).start()  # people.talk()以后执行
             except OSError:
                 break
         pass
