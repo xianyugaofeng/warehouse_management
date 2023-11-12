@@ -27,6 +27,8 @@ class Microphone:
 class Room:
     def __init__(self) -> None:
         self.microphone = None
+        self.lock1judge = None
+        self.lock1 = threading.Condition()
         self.room_members = []
         self.socketlist = []
         self.phonelist = []
@@ -56,7 +58,6 @@ class Room:
         pass
 
     def how_many_people(self):
-        time.sleep(0.05)
         print(self.room_members)
         return len(self.room_members)
         pass
@@ -66,8 +67,12 @@ class Room:
         pass
 
     def broadcast(self):
-        time.sleep(0.1)  # 等待name和message中的phoneid和content全部传输完毕
+        # 等待name和message中的phoneid和content全部传输完毕
         print(self.room_members)
+        if self.lock1judge is None:
+            self.lock1.acquire()
+            self.lock1.wait()
+            self.lock1.release()
         for phone in self.phonelist:
             if phone.speech_judgement == 'microphone':
                 self.microphone = phone
@@ -84,6 +89,7 @@ class Room:
         msg = f"[{self.microphone.phoneid}][{self.microphone.people}]: " \
               f"{self.microphone.content}"
         self.microphone = None
+        print(msg)
         return msg
         pass
 
@@ -92,7 +98,8 @@ class Room:
             while True:
                 try:
                     recvmsg = roomsocket.recv(1024).decode('utf-8')  # 接收phoneid和content
-                    print(recvmsg)
+                    self.lock1judge = True
+                    self.lock1.acquire()
                 except OSError:
                     break
                 if str(recvmsg) == 'leave':
@@ -114,7 +121,9 @@ class Room:
                     content = select_results.group(2)
                     self.microphone = Microphone(phoneid)
                     self.microphone.input(self.room_members[num], content)
-                    pass
+                self.lock1.notify()
+                self.lock1.release()
+                pass
 
         while True:
             try:
@@ -124,7 +133,6 @@ class Room:
                 num = len(self.socketlist) - 1
                 name = roomsocket.recv(1024)  # 接收名字
                 # 备注：先接收名字再接收phoneid和content
-                time.sleep(0.01)
                 if name:
                     self.room_members.append(str(name.decode('utf-8')))
                 threading.Thread(target=getrecvmsg, args=(num,)).start()     # people.talk()以后执行
@@ -133,7 +141,6 @@ class Room:
         pass
 
     def close(self):
-        time.sleep(0.05)
         for i in range(len(self.socketlist)):
             self.socketlist[i].close()
         self.socket.close()
@@ -142,27 +149,16 @@ class Room:
 
 class People:
     def __init__(self, name) -> None:
+        self.recvmsglist = []
         self.name = name
         self.room = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.recvmsg = None
+        self.thread = None
 
     def join(self, room):
         self.room.connect((room.roomip, room.port))
         self.room.send(self.name.encode('utf-8'))  # 发送自己的名字
 
-    def leave(self):
-        time.sleep(0.01)
-        self.room.send(b'leave')
-        self.recvmsg = None
-        print('套接字发送关闭请求')
-        pass
-
-    def talk(self, microphone, content):
-        time.sleep(0.08)
-        self.room.send(str(microphone.phoneid + ' ' + content).encode('utf-8'))  # 发送phoneid和content
-        pass
-
-    def hear(self):
         def wait_for_message():
             while True:
                 try:
@@ -173,8 +169,22 @@ class People:
                     break
                 if self.recvmsg:
                     self.recvmsg = self.recvmsg.decode('utf-8')
+                    self.recvmsglist.append(self.recvmsg)
 
         threading.Thread(target=wait_for_message).start()
-        time.sleep(0.03)
+
+    def leave(self):
+        self.room.send(b'leave')
+        self.recvmsg = None
+        print('套接字发送关闭请求')
+        pass
+
+    def talk(self, microphone, content):
+        self.room.send(str(microphone.phoneid + ' ' + content).encode('utf-8'))  # 发送phoneid和content
+        pass
+
+    def hear(self):
+        # recvmsg = self.recvmsglist[0]
+        # del self.recvmsglist[0]
         return self.recvmsg
         pass
