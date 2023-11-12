@@ -97,7 +97,7 @@ class Room:
         def getrecvmsg(num):
             while True:
                 try:
-                    recvmsg = roomsocket.recv(1024).decode('utf-8')  # 接收phoneid和content
+                    recvmsg = self.socketlist[num].recv(1024).decode('utf-8')  # 接收phoneid和content
                     self.lock1judge = True
                     self.lock1.acquire()
                 except OSError:
@@ -116,6 +116,9 @@ class Room:
                 elif str(recvmsg) is not None:
                     select_results = re.match('(\w*)\s(.*)', str(recvmsg))
                     if select_results is None:
+                        self.microphone = None
+                        self.lock1.notify()
+                        self.lock1.release()
                         continue
                     phoneid = select_results.group(1)
                     content = select_results.group(2)

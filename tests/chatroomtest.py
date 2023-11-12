@@ -199,7 +199,7 @@ class TestChatRoom(unittest.TestCase):
         john.talk(phone, "The topic is about chatroom.")
         john.talk(phone, "Thank you for the coming.")
 
-        assert jimmy.hear() == "[John]: I'm here."
+        assert jimmy.hear() == "[John]: I'm John."
         assert jimmy.hear() == "[John]: Today I will make a presentation."
         assert jimmy.hear() == "[John]: The topic is about chatroom."
         assert jimmy.hear() == "[John]: Thank you for the coming."
