@@ -195,9 +195,13 @@ class TestChatRoom(unittest.TestCase):
         phone = self.test_room.get_microphone()
 
         john.talk(phone, "I'm John.")
+        self.test_room.broadcast()
         john.talk(phone, "Today I will make a presentation.")
+        self.test_room.broadcast()
         john.talk(phone, "The topic is about chatroom.")
+        self.test_room.broadcast()
         john.talk(phone, "Thank you for the coming.")
+        self.test_room.broadcast()
 
         assert jimmy.hear() == "[John]: I'm John."
         assert jimmy.hear() == "[John]: Today I will make a presentation."
