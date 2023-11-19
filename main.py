@@ -27,8 +27,6 @@ class Microphone:
 class Room:
     def __init__(self) -> None:
         self.microphone = None
-        self.lock1judge = None
-        self.lock1 = threading.Condition()
         self.room_members = []
         self.socketlist = []
         self.phonelist = []
@@ -67,12 +65,9 @@ class Room:
         pass
 
     def broadcast(self):
+        time.sleep(0.1)
         # 等待name和message中的phoneid和content全部传输完毕
         print(self.room_members)
-        if self.lock1judge is None:
-            self.lock1.acquire()
-            self.lock1.wait()
-            self.lock1.release()
         for phone in self.phonelist:
             if phone.speech_judgement == 'microphone':
                 self.microphone = phone
@@ -82,15 +77,26 @@ class Room:
             print('microphone is None')
             return None
         for roomsocket in self.socketlist:
+            roomsocket_loop = 0
             for i in self.shutdownsockets:
-                if roomsocket == self.socketlist[i]:
-                    continue
-            sendmsg = f"[{self.microphone.people}]: {self.microphone.content}".encode('utf-8')
-            roomsocket.send(sendmsg)  # 广播people发送的信息
+                if int(self.socketlist.index(roomsocket)) == int(i):
+                    if i == len(self.socketlist) - 1:
+                        roomsocket_loop = 2
+                    else:
+                        roomsocket_loop = 1
+            if roomsocket_loop == 1:
+                continue
+            elif roomsocket_loop == 2:
+                break
+            try:
+                sendmsg = f"[{self.microphone.people}]: {self.microphone.content}".encode('utf-8')
+                roomsocket.send(sendmsg)  # 广播people发送的信息
+            except OSError:
+                print(self.socketlist.index(roomsocket))
+                print('选择了已关闭的套接字')
         msg = f"[{self.microphone.phoneid}][{self.microphone.people}]: " \
               f"{self.microphone.content}"
         self.microphone = None
-        print(msg)
         return msg
         pass
 
@@ -99,13 +105,12 @@ class Room:
             while True:
                 try:
                     recvmsg = self.socketlist[num].recv(1024).decode('utf-8')  # 接收phoneid和content
-                    self.lock1judge = True
-                    self.lock1.acquire()
                 except OSError:
                     break
                 if str(recvmsg) == 'leave':
                     self.room_members.remove(name.decode('utf-8'))
                     self.socketlist[num].close()
+                    self.shutdownsockets.append(num)
                     print(f'客户端已关闭 {address}')
                     try:
                         self.socketlist[num].send(b'data')
@@ -117,20 +122,13 @@ class Room:
                 elif str(recvmsg) is not None:
                     select_results = re.match('(\w*)\s(.*)', str(recvmsg))
                     if select_results is None:
-                        print(recvmsg)
                         print('select_results is None')
                         self.microphone = None
-                        self.lock1.notify()
-                        self.lock1.release()
                         continue
                     phoneid = select_results.group(1)
                     content = select_results.group(2)
                     self.microphone = Microphone(phoneid)
                     self.microphone.input(self.room_members[num], content)
-                if str(recvmsg) is None:
-                    continue
-                self.lock1.notify()
-                self.lock1.release()
                 pass
 
         while True:
@@ -157,33 +155,37 @@ class Room:
 
 class People:
     def __init__(self, name) -> None:
+        self.room = None
         self.recvmsglist = []
         self.name = name
-        self.room = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.recvmsg = None
         self.thread = None
 
     def join(self, room):
+        self.room = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.room.connect((room.roomip, room.port))
         self.room.send(self.name.encode('utf-8'))  # 发送自己的名字
 
         def wait_for_message():
             while True:
                 try:
-                    self.recvmsg = self.room.recv(1024)
+                    recvmsg = self.room.recv(1024)
                 except OSError:
                     break
-                if self.recvmsg == b'':
+                if recvmsg == b'':
                     break
-                if self.recvmsg:
-                    self.recvmsg = self.recvmsg.decode('utf-8')
+                if recvmsg is not None:
+                    self.recvmsg = str(recvmsg.decode('utf-8'))
                     self.recvmsglist.append(self.recvmsg)
+                    print(self.recvmsglist[0])
 
         threading.Thread(target=wait_for_message).start()
 
     def leave(self):
         self.room.send(b'leave')
         self.recvmsg = None
+        self.room.close()
+        self.recvmsglist = []
         print('套接字发送关闭请求')
         pass
 
@@ -192,7 +194,13 @@ class People:
         pass
 
     def hear(self):
-        # recvmsg = self.recvmsglist[0]
-        # del self.recvmsglist[0]
-        return self.recvmsg
+        time.sleep(0.01)
+        if self.recvmsglist is None:
+            pass
+        recvmsglist = self.recvmsglist.copy()
+        try:
+            del self.recvmsglist[0]
+            return recvmsglist[0]
+        except IndexError:
+            return None
         pass
