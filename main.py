@@ -67,7 +67,7 @@ class Room:
     def broadcast(self):
         time.sleep(0.1)
         # 等待name和message中的phoneid和content全部传输完毕
-        print(self.room_members)
+        print("聊天室成员：", self.room_members)
         for phone in self.phonelist:
             if phone.speech_judgement == 'microphone':
                 self.microphone = phone
@@ -101,7 +101,7 @@ class Room:
         pass
 
     def open(self):
-        def getrecvmsg(num):
+        def getrecvmsg(num, room_num):
             while True:
                 try:
                     recvmsg = self.socketlist[num].recv(1024).decode('utf-8')  # 接收phoneid和content
@@ -128,7 +128,7 @@ class Room:
                     phoneid = select_results.group(1)
                     content = select_results.group(2)
                     self.microphone = Microphone(phoneid)
-                    self.microphone.input(self.room_members[num], content)
+                    self.microphone.input(self.room_members[room_num], content)
                 pass
 
         while True:
@@ -138,10 +138,11 @@ class Room:
                 print(f'有新的客户端连接{address}')
                 num = len(self.socketlist) - 1
                 name = roomsocket.recv(1024)  # 接收名字
+                room_num = len(self.room_members)
                 # 备注：先接收名字再接收phoneid和content
                 if name:
                     self.room_members.append(str(name.decode('utf-8')))
-                threading.Thread(target=getrecvmsg, args=(num,)).start()  # people.talk()以后执行
+                threading.Thread(target=getrecvmsg, args=(num, room_num)).start()  # people.talk()以后执行
             except OSError:
                 break
         pass
@@ -177,7 +178,7 @@ class People:
                 if recvmsg is not None:
                     self.recvmsg = str(recvmsg.decode('utf-8'))
                     self.recvmsglist.append(self.recvmsg)
-                    print(self.recvmsglist[0])
+                    print({self.name}, self.recvmsglist[0])
 
         threading.Thread(target=wait_for_message).start()
 
@@ -194,7 +195,7 @@ class People:
         pass
 
     def hear(self):
-        time.sleep(0.01)
+        time.sleep(0.02)
         if self.recvmsglist is None:
             pass
         recvmsglist = self.recvmsglist.copy()
