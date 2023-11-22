@@ -76,26 +76,12 @@ class Room:
         if self.microphone is None:
             print('microphone is None')
             return None
-        for roomsocket in self.socketlist:
-            roomsocket_loop = 0
-            for i in self.shutdownsockets:
-                if int(self.socketlist.index(roomsocket)) == int(i):
-                    if i == len(self.socketlist) - 1:
-                        roomsocket_loop = 2
-                    else:
-                        roomsocket_loop = 1
-            if roomsocket_loop == 1:
-                continue
-            elif roomsocket_loop == 2:
-                break
         msg = f"[{self.microphone.phoneid}][{self.microphone.people}]: " \
               f"{self.microphone.content}"
-        self.microphone = None
         return msg
         pass
 
-    def sendmsg(self, microphone):
-        time.sleep(0.1)
+    def send_content(self, microphone):
         for phone in self.phonelist:
             if phone.speech_judgement == 'microphone':
                 self.microphone = phone
@@ -104,6 +90,7 @@ class Room:
         if microphone is None:
             print('microphone is None')
             return None
+        num = 0
         for roomsocket in self.socketlist:
             roomsocket_loop = 0
             for i in self.shutdownsockets:
@@ -118,11 +105,12 @@ class Room:
                 break
             try:
                 sendmsg = f"[{microphone.people}]: {microphone.content}".encode('utf-8')
-                print(f'room发送的信息:{sendmsg}')
+                print(f'向用户 {self.room_members[num]}发送:{sendmsg}')
                 roomsocket.send(sendmsg)  # 广播people发送的信息
             except OSError:
                 print(self.socketlist.index(roomsocket))
                 print('选择了已关闭的套接字')
+            num = num + 1
 
     def open(self):
         def getrecvmsg(num, room_num):
@@ -131,31 +119,35 @@ class Room:
                     recvmsg = self.socketlist[num].recv(1024).decode('utf-8')  # 接收phoneid和content
                 except OSError:
                     break
-                if str(recvmsg) == 'leave':
-                    self.room_members.remove(name.decode('utf-8'))
-                    self.socketlist[num].close()
-                    self.shutdownsockets.append(num)
-                    print(f'客户端已关闭 {address}')
-                    try:
-                        self.socketlist[num].send(b'data')
-                        raise AssertionError('套接字未关闭')
-                    except OSError:
-                        print('套接字已关闭')
-                        pass
-                    break
-                elif str(recvmsg) is not None:
-                    select_results = re.match('(\w*)\s(.*)', str(recvmsg))
+                if str(recvmsg) is not None:
+                    select_results = re.match('function:{(.*)}'
+                                              'data:(.*)', str(recvmsg))
                     if select_results is None:
                         print('select_results is None')
                         self.microphone = None
                         continue
-                    phoneid = select_results.group(1)
-                    content = select_results.group(2)
-                    self.microphone = Microphone(phoneid)
-                    self.microphone.input(self.room_members[room_num], content)
-                    microphone = self.microphone
-                    self.sendmsg(microphone)
-                pass
+                    elif select_results.group(1) == 'talk':
+                        data = select_results.group(2)
+                        talkcontent = re.match('(\w*)\s(.*)', data)
+                        phoneid = talkcontent.group(1)
+                        content = talkcontent.group(2)
+                        self.microphone = Microphone(phoneid)
+                        self.microphone.input(self.room_members[room_num], content)
+                        microphone = self.microphone
+                        self.send_content(microphone)
+                    elif select_results.group(1) == 'leave':
+                        self.room_members.remove(name.decode('utf-8'))
+                        self.socketlist[num].close()
+                        self.shutdownsockets.append(num)
+                        print(f'客户端已关闭 {address}')
+                        try:
+                            self.socketlist[num].send(b'data')
+                            raise AssertionError('套接字未关闭')
+                        except OSError:
+                            print('套接字已关闭')
+                            pass
+                        break
+                    pass
 
         while True:
             try:
@@ -204,12 +196,13 @@ class People:
                 if recvmsg is not None:
                     self.recvmsg = str(recvmsg.decode('utf-8'))
                     self.recvmsglist.append(self.recvmsg)
-                    print({self.name}, self.recvmsglist[0])
+                    print({self.name}, self.recvmsg)
 
         threading.Thread(target=wait_for_message).start()
 
     def leave(self):
-        self.room.send(b'leave')
+        self.room.send(str('function:{leave}'
+                           'data:').encode('utf-8'))
         self.recvmsg = None
         self.room.close()
         self.recvmsglist = []
@@ -217,7 +210,9 @@ class People:
         pass
 
     def talk(self, microphone, content):
-        self.room.send(str(microphone.phoneid + ' ' + content).encode('utf-8'))  # 发送phoneid和content
+        time.sleep(0.01)
+        self.room.send(str('function:{talk}'
+                           'data:' + microphone.phoneid + ' ' + content).encode('utf-8'))  # 发送phoneid和content
         pass
 
     def hear(self):
