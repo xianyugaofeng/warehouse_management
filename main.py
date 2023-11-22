@@ -31,6 +31,7 @@ class Room:
         self.socketlist = []
         self.phonelist = []
         self.shutdownsockets = []
+        self.room_history = []
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.roomip = '127.0.0.1'
         self.port = 8080
@@ -78,7 +79,8 @@ class Room:
             return None
         msg = f"[{self.microphone.phoneid}][{self.microphone.people}]: " \
               f"{self.microphone.content}"
-        return msg
+        self.room_history.append(msg)
+        return self.room_history[-1]
         pass
 
     def send_content(self, microphone):
