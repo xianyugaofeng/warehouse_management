@@ -219,10 +219,8 @@ class People:
         time.sleep(0.02)
         if self.recvmsglist is None:
             pass
-        recvmsglist = self.recvmsglist.copy()
         try:
-            del self.recvmsglist[0]
-            return recvmsglist[0]
+            return self.recvmsglist.pop(0)
         except IndexError:
             return None
         pass
