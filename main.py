@@ -88,17 +88,41 @@ class Room:
                 continue
             elif roomsocket_loop == 2:
                 break
-            try:
-                sendmsg = f"[{self.microphone.people}]: {self.microphone.content}".encode('utf-8')
-                roomsocket.send(sendmsg)  # 广播people发送的信息
-            except OSError:
-                print(self.socketlist.index(roomsocket))
-                print('选择了已关闭的套接字')
         msg = f"[{self.microphone.phoneid}][{self.microphone.people}]: " \
               f"{self.microphone.content}"
         self.microphone = None
         return msg
         pass
+
+    def sendmsg(self, microphone):
+        time.sleep(0.1)
+        for phone in self.phonelist:
+            if phone.speech_judgement == 'microphone':
+                self.microphone = phone
+                self.microphone.speech_judgement = None
+                break
+        if microphone is None:
+            print('microphone is None')
+            return None
+        for roomsocket in self.socketlist:
+            roomsocket_loop = 0
+            for i in self.shutdownsockets:
+                if int(self.socketlist.index(roomsocket)) == int(i):
+                    if i == len(self.socketlist) - 1:
+                        roomsocket_loop = 2
+                    else:
+                        roomsocket_loop = 1
+            if roomsocket_loop == 1:
+                continue
+            elif roomsocket_loop == 2:
+                break
+            try:
+                sendmsg = f"[{microphone.people}]: {microphone.content}".encode('utf-8')
+                print(f'room发送的信息:{sendmsg}')
+                roomsocket.send(sendmsg)  # 广播people发送的信息
+            except OSError:
+                print(self.socketlist.index(roomsocket))
+                print('选择了已关闭的套接字')
 
     def open(self):
         def getrecvmsg(num, room_num):
@@ -129,6 +153,8 @@ class Room:
                     content = select_results.group(2)
                     self.microphone = Microphone(phoneid)
                     self.microphone.input(self.room_members[room_num], content)
+                    microphone = self.microphone
+                    self.sendmsg(microphone)
                 pass
 
         while True:
