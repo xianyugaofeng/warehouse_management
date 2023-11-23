@@ -124,6 +124,16 @@ class TestChatRoom(unittest.TestCase):
         for guy in guys:
             assert guy.hear() == "[John]: I'm John."
 
+    def test_many_people(self):
+        self.test_room.add_microphone([Microphone("A")])
+        john = People("John")
+        guys = [People(str(f"Person_{i}")) for i in range(1, 100)]
+        john.join(self.test_room)
+        for guy in guys:
+            guy.join(self.test_room)
+
+        assert self.test_room.how_many_people() > 85
+
     def test_two_people_chat(self):
         self.test_room.add_microphone([Microphone("A"), Microphone("B")])
         john = People("John")
