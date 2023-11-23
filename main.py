@@ -94,17 +94,6 @@ class Room:
             return None
         num = 0
         for roomsocket in self.socketlist:
-            roomsocket_loop = 0
-            for i in self.shutdownsockets:
-                if int(self.socketlist.index(roomsocket)) == int(i):
-                    if i == len(self.socketlist) - 1:
-                        roomsocket_loop = 2
-                    else:
-                        roomsocket_loop = 1
-            if roomsocket_loop == 1:
-                continue
-            elif roomsocket_loop == 2:
-                break
             try:
                 sendmsg = f"[{microphone.people}]: {microphone.content}".encode('utf-8')
                 print(f'向用户 {self.room_members[num]}发送:{sendmsg}')
@@ -148,6 +137,7 @@ class Room:
                         except OSError:
                             print('套接字已关闭')
                             pass
+                        del self.socketlist[num]
                         break
                     pass
 
@@ -180,7 +170,6 @@ class People:
         self.recvmsglist = []
         self.name = name
         self.recvmsg = None
-        self.thread = None
 
     def join(self, room):
         self.room = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
