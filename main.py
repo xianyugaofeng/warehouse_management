@@ -1,7 +1,7 @@
 import socket
 import threading
-import unittest
 import time
+import random
 import re
 
 
@@ -11,17 +11,17 @@ class Microphone:
         self.people = None
         self.content = None
         self.speech_judgement = None
-        pass
+
 
     def input(self, people, content):
         self.people = people
         self.content = content
         self.speech_judgement = 'microphone'
-        pass
+
 
     def get_phone_id(self):
         return self.phoneid
-        pass
+
 
 
 class Room:
@@ -32,16 +32,15 @@ class Room:
         self.phonelist = []
         self.room_history = []
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.roomip = '127.0.0.1'
-        self.port = 8080
-        self.socket.bind((self.roomip, self.port))
-        self.socket.listen(5)
+        self.roomip = 'localhost'
+        self.port = random.randint(10000, 20000)
+
 
     def add_microphone(self, phones: list):
         for phone in phones:
             assert phone.phoneid is not None
             self.phonelist.append(phone)
-        pass
+
 
     def get_microphone(self):
         if not self.phonelist:
@@ -49,20 +48,20 @@ class Room:
         phone = self.phonelist[0]
         del self.phonelist[0]
         return phone
-        pass
+
 
     def return_microphone(self, phone):
         self.phonelist.append(phone)
-        pass
+
 
     def how_many_people(self):
         print(self.room_members)
         return len(self.room_members)
-        pass
+
 
     def how_many_microphone(self):
         return len(self.phonelist)
-        pass
+
 
     def broadcast(self):
         time.sleep(0.1)
@@ -80,7 +79,7 @@ class Room:
               f"{self.microphone.content}"
         self.room_history.append(msg)
         return self.room_history[-1]
-        pass
+
 
     def send_content(self, microphone):
         for phone in self.phonelist:
@@ -102,7 +101,10 @@ class Room:
                 print('选择了已关闭的套接字')
             num = num + 1
 
+
+
     def open(self):
+
         def getrecvmsg(num, room_num):
             while True:
                 try:
@@ -134,10 +136,11 @@ class Room:
                             raise AssertionError('套接字未关闭')
                         except OSError:
                             print('套接字已关闭')
-                            pass
+
                         del self.socketlist[num]
                         break
-                    pass
+        self.socket.bind((self.roomip, self.port))
+        self.socket.listen()
 
         while True:
             try:
@@ -152,14 +155,15 @@ class Room:
                     self.room_members.append(str(name.decode('utf-8')))
                 threading.Thread(target=getrecvmsg, args=(num, room_num)).start()  # people.talk()以后执行
             except OSError:
+                print("Server shutdown")
                 break
-        pass
+
 
     def close(self):
         for i in range(len(self.socketlist)):
             self.socketlist[i].close()
         self.socket.close()
-        pass
+
 
 
 class People:
@@ -196,20 +200,20 @@ class People:
         self.room.close()
         self.recvmsglist = []
         print('套接字发送关闭请求')
-        pass
+
 
     def talk(self, microphone, content):
         time.sleep(0.01)
         self.room.send(str('function:{talk}'
                            'data:' + microphone.phoneid + ' ' + content).encode('utf-8'))  # 发送phoneid和content
-        pass
+
 
     def hear(self):
         time.sleep(0.02)
         if self.recvmsglist is None:
-            pass
+            return None
         try:
             return self.recvmsglist.pop(0)
         except IndexError:
             return None
-        pass
+

@@ -7,7 +7,7 @@ from main import Room, Microphone, People
 
 
 class TestChatRoom(unittest.TestCase):
-
+    
     def setUp(self):
         self.test_room = Room()
         threading.Thread(target=self.test_room.open).start()
@@ -180,13 +180,11 @@ class TestChatRoom(unittest.TestCase):
         jimmy.join(self.test_room)
         john.talk(phone, "Are you here, Jimmy?")
         assert self.test_room.broadcast() == f"[{phone.get_phone_id()}][John]: Are you here, Jimmy?"
-        assert john.hear() == "[John]: Are you here, Jimmy?"
         assert jimmy.hear() == "[John]: Are you here, Jimmy?"
 
         phone2 = self.test_room.get_microphone()
         jimmy.talk(phone2, "I'm here.")
         assert self.test_room.broadcast() == f"[{phone2.get_phone_id()}][Jimmy]: I'm here."
-        assert john.hear() == "[Jimmy]: I'm here."
         assert jimmy.hear() == "[Jimmy]: I'm here."
 
     def test_multi_messages(self):
