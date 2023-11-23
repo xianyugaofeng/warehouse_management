@@ -26,6 +26,7 @@ class Microphone:
 
 class Room:
     def __init__(self) -> None:
+        self.people_judgement = None
         self.microphone = None
         self.room_members = []
         self.socketlist = []
@@ -55,8 +56,13 @@ class Room:
 
 
     def how_many_people(self):
-        print(self.room_members)
-        return len(self.room_members)
+        while True:
+            time.sleep(1)
+            if self.people_judgement == 'leave' or \
+                    self.people_judgement == 'join':
+                print(self.room_members)
+                self.people_judgement = 0
+                return len(self.room_members)
 
 
     def how_many_microphone(self):
@@ -128,7 +134,7 @@ class Room:
                         microphone = self.microphone
                         self.send_content(microphone)
                     elif select_results.group(1) == 'leave':
-                        self.room_members.remove(name.decode('utf-8'))
+                        self.room_members.remove(str(name.decode('utf-8')))
                         self.socketlist[num].close()
                         print(f'客户端已关闭 {address}')
                         try:
@@ -138,6 +144,7 @@ class Room:
                             print('套接字已关闭')
 
                         del self.socketlist[num]
+                        self.people_judgement = 'leave'
                         break
         self.socket.bind((self.roomip, self.port))
         self.socket.listen()
@@ -153,6 +160,7 @@ class Room:
                 # 备注：先接收名字再接收phoneid和content
                 if name:
                     self.room_members.append(str(name.decode('utf-8')))
+                    self.people_judgement = 'join'
                 threading.Thread(target=getrecvmsg, args=(num, room_num)).start()  # people.talk()以后执行
             except OSError:
                 print("Server shutdown")
