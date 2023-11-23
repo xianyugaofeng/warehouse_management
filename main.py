@@ -30,7 +30,6 @@ class Room:
         self.room_members = []
         self.socketlist = []
         self.phonelist = []
-        self.shutdownsockets = []
         self.room_history = []
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.roomip = '127.0.0.1'
