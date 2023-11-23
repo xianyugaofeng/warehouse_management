@@ -1,8 +1,9 @@
 import threading
 import unittest
 import sys
-from main import Room, Microphone, People
+
 sys.path.append("..")
+from main import Room, Microphone, People
 
 
 class TestChatRoom(unittest.TestCase):
