@@ -128,7 +128,6 @@ class Room:
                     elif select_results.group(1) == 'leave':
                         self.room_members.remove(name.decode('utf-8'))
                         self.socketlist[num].close()
-                        self.shutdownsockets.append(num)
                         print(f'客户端已关闭 {address}')
                         try:
                             self.socketlist[num].send(b'data')
