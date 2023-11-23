@@ -8,6 +8,12 @@ from main import Room, Microphone, People
 
 class TestChatRoom(unittest.TestCase):
     
+    @classmethod
+    def tearDownClass(self):
+        cnt = threading.active_count()
+        print("Active Thread Count:", cnt)
+        assert cnt < 3
+
     def setUp(self):
         self.test_room = Room()
         threading.Thread(target=self.test_room.open).start()
@@ -205,6 +211,7 @@ class TestChatRoom(unittest.TestCase):
         assert jimmy.hear() == "[John]: Today I will make a presentation."
         assert jimmy.hear() == "[John]: The topic is about chatroom."
         assert jimmy.hear() == "[John]: Thank you for the coming."
+
 
 
 if __name__ == '__main__':
