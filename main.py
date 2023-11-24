@@ -26,6 +26,7 @@ class Microphone:
 
 class Room:
     def __init__(self) -> None:
+        self.close_judgement = None
         self.people_judgement = None
         self.microphone = None
         self.room_members = []
@@ -57,7 +58,7 @@ class Room:
 
     def how_many_people(self):
         while True:
-            time.sleep(1)
+            time.sleep(0.1)
             if self.people_judgement == 'leave' or \
                     self.people_judgement == 'join':
                 print(self.room_members)
@@ -115,6 +116,8 @@ class Room:
             while True:
                 try:
                     recvmsg = self.socketlist[num].recv(1024).decode('utf-8')  # 接收phoneid和content
+                    if self.close_judgement == 1:
+                        break
                 except OSError:
                     break
                 if str(recvmsg) is not None:
@@ -146,11 +149,17 @@ class Room:
                         del self.socketlist[num]
                         self.people_judgement = 'leave'
                         break
-        self.socket.bind((self.roomip, self.port))
-        self.socket.listen()
+        try:
+            self.socket.bind((self.roomip, self.port))
+            self.socket.listen()
+        except OSError:
+            pass
 
         while True:
             try:
+                if self.close_judgement == 1:
+                    print("Server shutdown")
+                    break
                 roomsocket, address = self.socket.accept()
                 self.socketlist.append(roomsocket)
                 print(f'有新的客户端连接{address}')
@@ -168,9 +177,14 @@ class Room:
 
 
     def close(self):
-        for i in range(len(self.socketlist)):
-            self.socketlist[i].close()
+        for i in self.socketlist:
+            try:
+               i.send(b'close')
+            except OSError:
+                pass
+            i.close()
         self.socket.close()
+        self.close_judgement = 1
 
 
 
@@ -191,6 +205,8 @@ class People:
                 try:
                     recvmsg = self.room.recv(1024)
                 except OSError:
+                    break
+                if recvmsg == b'close':
                     break
                 if recvmsg == b'':
                     break
