@@ -171,7 +171,8 @@ class Room:
                 if name:
                     self.room_members.append(str(name.decode('utf-8')))
                     self.people_judgement = 'join'
-                sub_thread = threading.Thread(target=getrecvmsg, args=(num, room_num), daemon=True) # people.talk()以后执行
+                sub_thread = threading.Thread(target=getrecvmsg, args=(num, room_num), daemon=True)    # people.talk()以后执行
+                sub_thread.setName(name=str(name.decode('utf-8')))
                 sub_thread.start()
                 self.threadlist.append(sub_thread)
             except OSError:
@@ -186,6 +187,9 @@ class Room:
             except OSError:
                 pass
             i.close()
+        for j in self.threadlist:
+            j.join()
+            print(j.getName(), '线程已结束')
         self.socket.close()
         self.close_judgement = 1
 
