@@ -16,11 +16,17 @@ class TestChatRoom(unittest.TestCase):
 
     def setUp(self):
         self.test_room = Room()
-        threading.Thread(target=self.test_room.open, daemon=True).start()
+        self.threadlist = []
+        sub_thread = threading.Thread(target=self.test_room.open, daemon=True)
+        sub_thread.start()
+        self.threadlist.append(sub_thread)
 
     def tearDown(self):
         self.test_room.close()
         self.test_room = None
+        for i in self.threadlist:
+            i.join()
+        self.threadlist = []
 
     def test_people_join(self):
         john = People("John")
