@@ -57,13 +57,12 @@ class Room:
 
 
     def how_many_people(self):
-        while True:
-            time.sleep(0.1)
-            if self.people_judgement == 'leave' or \
-                    self.people_judgement == 'join':
-                print(self.room_members)
-                self.people_judgement = 0
-                return len(self.room_members)
+        time.sleep(0.1)
+        if self.people_judgement == 'leave' or \
+                self.people_judgement == 'join':
+            print(self.room_members)
+            self.people_judgement = 0
+            return len(self.room_members)
 
 
     def how_many_microphone(self):
@@ -126,6 +125,7 @@ class Room:
                     if select_results is None:
                         print('select_results is None')
                         self.microphone = None
+                        print('Server shutdown')
                         continue
                     elif select_results.group(1) == 'talk':
                         data = select_results.group(2)
@@ -170,7 +170,7 @@ class Room:
                 if name:
                     self.room_members.append(str(name.decode('utf-8')))
                     self.people_judgement = 'join'
-                threading.Thread(target=getrecvmsg, args=(num, room_num)).start()  # people.talk()以后执行
+                threading.Thread(target=getrecvmsg, args=(num, room_num), daemon=True).start()  # people.talk()以后执行
             except OSError:
                 print("Server shutdown")
                 break
@@ -207,6 +207,7 @@ class People:
                 except OSError:
                     break
                 if recvmsg == b'close':
+                    self.room.close()
                     break
                 if recvmsg == b'':
                     break
@@ -215,7 +216,7 @@ class People:
                     self.recvmsglist.append(self.recvmsg)
                     print({self.name}, self.recvmsg)
 
-        threading.Thread(target=wait_for_message).start()
+        threading.Thread(target=wait_for_message, daemon=True).start()
 
     def leave(self):
         self.room.send(str('function:{leave}'
