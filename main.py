@@ -26,6 +26,7 @@ class Microphone:
 
 class Room:
     def __init__(self) -> None:
+        self.threadlist = []
         self.close_judgement = None
         self.people_judgement = None
         self.microphone = None
@@ -170,7 +171,9 @@ class Room:
                 if name:
                     self.room_members.append(str(name.decode('utf-8')))
                     self.people_judgement = 'join'
-                threading.Thread(target=getrecvmsg, args=(num, room_num), daemon=True).start()  # people.talk()以后执行
+                sub_thread = threading.Thread(target=getrecvmsg, args=(num, room_num), daemon=True) # people.talk()以后执行
+                sub_thread.start()
+                self.threadlist.append(sub_thread)
             except OSError:
                 print("Server shutdown")
                 break
@@ -193,6 +196,7 @@ class People:
         self.room = None
         self.recvmsglist = []
         self.name = name
+        self.sub_thread = None
         self.recvmsg = None
 
     def join(self, room):
@@ -216,7 +220,8 @@ class People:
                     self.recvmsglist.append(self.recvmsg)
                     print({self.name}, self.recvmsg)
 
-        threading.Thread(target=wait_for_message, daemon=True).start()
+        self.sub_thread = threading.Thread(target=wait_for_message, daemon=True)
+        self.sub_thread.start()
 
     def leave(self):
         self.room.send(str('function:{leave}'
@@ -225,6 +230,7 @@ class People:
         self.room.close()
         self.recvmsglist = []
         print('套接字发送关闭请求')
+        self.sub_thread.join()
 
 
     def talk(self, microphone, content):
