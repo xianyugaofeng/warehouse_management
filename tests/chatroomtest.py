@@ -16,7 +16,7 @@ class TestChatRoom(unittest.TestCase):
 
     def setUp(self):
         self.test_room = Room()
-        threading.Thread(target=self.test_room.open).start()
+        threading.Thread(target=self.test_room.open, daemon=True).start()
 
     def tearDown(self):
         self.test_room.close()
