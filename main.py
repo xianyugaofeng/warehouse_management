@@ -126,7 +126,6 @@ class Room:
                     if select_results is None:
                         print('select_results is None')
                         self.microphone = None
-                        print('Server shutdown')
                         continue
                     elif select_results.group(1) == 'talk':
                         data = select_results.group(2)
@@ -150,16 +149,14 @@ class Room:
                         del self.socketlist[num]
                         self.people_judgement = 'leave'
                         break
-        try:
-            self.socket.bind((self.roomip, self.port))
-            self.socket.listen()
-        except OSError:
-            pass
+
+        self.socket.bind((self.roomip, self.port))
+        self.socket.listen()
+        self.socket.settimeout(0.0)
 
         while True:
             try:
                 if self.close_judgement == 1:
-                    print("Server shutdown")
                     break
                 roomsocket, address = self.socket.accept()
                 self.socketlist.append(roomsocket)
@@ -171,14 +168,15 @@ class Room:
                 if name:
                     self.room_members.append(str(name.decode('utf-8')))
                     self.people_judgement = 'join'
-                sub_thread = threading.Thread(target=getrecvmsg, args=(num, room_num), daemon=True)    # people.talk()以后执行
+                sub_thread = threading.Thread(target=getrecvmsg, args=(num, room_num))    # people.talk()以后执行
                 sub_thread.setName(name=str(name.decode('utf-8')))
                 sub_thread.start()
                 self.threadlist.append(sub_thread)
             except OSError:
-                print("Server shutdown")
-                break
+                continue
 
+
+        print("Server shutdown")
 
     def close(self):
         for i in self.socketlist:
@@ -188,6 +186,7 @@ class Room:
                 pass
             i.close()
         for j in self.threadlist:
+            print("Join ", j.getName())
             j.join()
             print(j.getName(), '线程已结束')
         self.socket.close()
@@ -224,7 +223,7 @@ class People:
                     self.recvmsglist.append(self.recvmsg)
                     print({self.name}, self.recvmsg)
 
-        self.sub_thread = threading.Thread(target=wait_for_message, daemon=True)
+        self.sub_thread = threading.Thread(target=wait_for_message)
         self.sub_thread.start()
 
     def leave(self):
