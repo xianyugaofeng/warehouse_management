@@ -150,9 +150,12 @@ class Room:
                         self.people_judgement = 'leave'
                         break
 
-        self.socket.bind((self.roomip, self.port))
-        self.socket.listen()
-        self.socket.settimeout(0.0)
+        try:
+            self.socket.bind((self.roomip, self.port))
+            self.socket.listen()
+            # self.socket.settimeout(0.0)
+        except OSError:
+            pass
 
         while True:
             try:
