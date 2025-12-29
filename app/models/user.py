@@ -45,7 +45,7 @@ class Role(db.Model):
     id = db.Column(db.Integer, primary_key= True)
     name = db.Column(db.String(32), unique=True, nullable=False)  # 角色名称（管理员/普通员工/仓库管理员)
     desc = db.Column(db.String(64))  # 角色描述
-    users = db.relationship('Users', secondary=user_role, backref=db.backref('roles', lazy='dynamic'))
+    users = db.relationship('User', secondary=user_role, backref=db.backref('roles', lazy='dynamic'))
     # 通过user.roles获取该用户的所有角色（动态加载）
     # 通过role.users获取作为该角色的所有用户（立即加载）
 
