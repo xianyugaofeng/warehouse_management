@@ -22,14 +22,15 @@ class WarehouseLocation(db.Model):
 class Inventory(db.Model):
     __tablename__ = 'inventories'
     id = db.Column(db.Integer, primary_key=True)
-    product_id = db.Column(db.Integer, db.Foreignkey('products.id'), nullable=False)  # 关联商品
-    location_id = db.Column(db.Integer, db.Foreingkey('warehouse_locations.id'), nullable=False)  # 关联库位
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)  # 关联商品
+    location_id = db.Column(db.Integer, db.ForeignKey('warehouse_locations.id'), nullable=False)  # 关联库位
     quantity = db.Column(db.Integer, default=0, nullable=False)  # 库存数量
     batch_no = db.Column(db.String(32))  # 批次号
     production_date = db.Column(db.Date)  # 生产日期
     expire_date = db.Column(db.Date)  # 过期日期
     update_time = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)  # 最后更新时间
-    product = db.relationship('Product', backref='inventories', lazy='dynamic')
+    # 关联商品
+    product = db.relationship('Product')
 
     # 联合唯一约束（同一商品同一库位同一批次唯一）
     __table_args__ = (
