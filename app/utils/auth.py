@@ -5,7 +5,7 @@ from flask_login import current_user          # 当前登录对象
 
 # 权限检查装饰器
 def permission_required(permission_name):          # 接收权限名称
-    def decorator(f):  # 装饰原函数,接收被装饰函数
+    def decorator(f):  # 装饰原函数,接收被装饰函数,可以有多个函数
         @wraps(f)   # 保留原函数的元数据
         def decorated_function(*args, **kwargs):   # 内层实际执行的包装函数
             if not current_user.is_authenticated:
