@@ -10,7 +10,7 @@ def permission_required(permission_name):          # 接收权限名称
         def decorated_function(*args, **kwargs):   # 内层实际执行的包装函数
             if not current_user.is_authenticated:
                 # 未登录，跳转登录页
-                return redirect(url_for('auth.login', next='request.url'))
+                return redirect(url_for('auth.login', next=request.url))
             if not current_user.has_permission(permission_name):
                 # 无权限 返回403
                 abort(403)
