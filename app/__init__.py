@@ -5,14 +5,6 @@ from flask_migrate import Migrate
 from app.config import config
 from flask import url_for, redirect
 
-from app.views.user_manage import user_bp
-from app.views.auth import auth as auth_bp
-from app.views.inbound_manage import inbound_bp
-from app.views.outbound_manage import outbound_bp
-from app.views.inventory_manage import inventory_bp
-from app.views.product_manage import product_bp
-from app.views.report import report_bp
-
 # 初始化扩展
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -29,6 +21,13 @@ def create_app(config_name='default'):
     login_manager.init_app(app)
     migrate.init_app(app, db)
 
+    from app.views.user_manage import user_bp
+    from app.views.auth import auth as auth_bp
+    from app.views.inbound_manage import inbound_bp
+    from app.views.outbound_manage import outbound_bp
+    from app.views.inventory_manage import inventory_bp
+    from app.views.product_manage import product_bp
+    from app.views.report import report_bp
     # 注册蓝图（这会注册所有蓝图中的路由）
     app.register_blueprint(user_bp, url_prefix='/user')
     app.register_blueprint(auth_bp, url_prefix='/auth')

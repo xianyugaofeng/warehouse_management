@@ -7,7 +7,7 @@ from app.utils.helpers import generate_inbound_no
 auth = Blueprint('auth', __name__)
 
 @auth.route('/login', methods=['GET', 'POST'])
-def login():           #  auth.login视图函数\
+def login():           #  auth/login绑定auth.login视图函数
     # 这里的代码只有用户访问/auth/login时才会执行
     if request.method == 'POST':
         username = request.form.get('username')         # 获取表单数据
@@ -27,3 +27,40 @@ def login():           #  auth.login视图函数\
 
     return render_template('auth/login.html')    # GET请求或POST请求失败，渲染登录模板
 
+
+@auth.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('已成功退出登录', 'success')
+    return redirect(url_for('auth.login'))
+
+@auth.route('/register', methods=['GET', 'POST'])
+def register():
+    # 仅管理员可访问
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        real_name = request.form.get('real_name')
+        phone = request.form.get('phone')
+        email = request.form.get('email')
+
+        # 检查用户名是否已存在
+        if User.query.filter_by(username=username).first():
+            flash('用户名已存在', 'danger')
+
+        # 创建新用户
+        user = User(
+            username=username,
+            real_name=real_name,
+            phone=phone,
+            email=email
+        )
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+
+        flash('注册成功,请联系管理员分配角色', 'success')
+        return redirect(url_for('auth.login'))
+
+    return render_template('login/register.html')   # GET请求
