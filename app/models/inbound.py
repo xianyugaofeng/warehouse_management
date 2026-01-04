@@ -43,7 +43,7 @@ class InboundItem(db.Model):
     subtotal = db.Column(db.Float)     # 小计（可选）
 
     # 关联商品、库位
-    production = db.relationship('Product')
+    product = db.relationship('Product')
     location = db.relationship('WarehouseLocation')
 
     def __repr__(self):
