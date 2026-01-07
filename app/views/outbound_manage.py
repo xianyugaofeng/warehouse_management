@@ -4,7 +4,7 @@ from datetime import datetime
 from app import db
 from app.models.outbound import OutboundOrder, OutboundItem
 from app.models.product import Product
-from app.models.inventory import WarehouseLocation, Inventory
+from app.models.inventory import WarehouseLocation
 from app.utils.auth import permission_required
 from app.utils.helpers import generate_outbound_no, update_inventory
 
