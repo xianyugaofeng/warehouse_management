@@ -29,6 +29,29 @@
     {% block css %}{% endblock %}
 </head>
 <body>
-
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">   <!--大屏幕显示完整导航-->
+        <div class="container-fluid">       <!--全宽度容器-->
+            <a class="navbar-brand" href="{{ url_for('product.list')}}">仓库管理系统</a>    <!--品牌标识-->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">     <!--控制 id="navbarNav" 的元素-->
+                <span class="navbar-toggler-icon"></span>   <!--显示汉堡菜单按钮-->
+            </button>   <!--小屏幕下的折叠/展开按钮 自动折叠-->
+            <div class="collapse navbar-collapse" id="navbarNav">  <!--与折叠按钮的 data-bs-target 对应-->
+                <ul class="navbar-nav ms-auto"> 
+                    {% if current_user.is_authenticated %}      <!--Jinja2模板条件判断-->
+                    <li class="nav-item dropdown">      <!-- 表示一个导航项下拉菜单 Bootstrap 导航项，带下拉功能-->
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">    <!--Bootstrap 下拉菜单的触发方式 可点击的下拉触发链接-->
+                            {{ current_user.real_name or current_user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">    <!--下拉菜单向右下方弹出-->
+                            <!--下拉菜单中包含"退出登录"选项-->
+                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">退出登录</a></li>   <!--链接触发退出登录的路由-->
+                        </ul>
+                    </li>
+                    {% endif %}   <!--当用户登录后显示用户信息和一个退出登录的下拉选项-->
+                </ul>   <!--navbar-nav：导航链接列表容器 ms-auto：将内容向右对齐（margin-start auto）-->
+            </div>  <!--可折叠的导航内容区域-->
+        </div>
+    </nav>
 </body>
 </html>
