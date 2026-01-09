@@ -53,5 +53,18 @@
             </div>  <!--可折叠的导航内容区域-->
         </div>
     </nav>
+
+    <div class="container-fluid">   <!--包含一个侧边栏和主内容区-->
+        <div class="row">   <!--创建一行-->
+            <!-- 侧边栏 -->
+            {% if current_user.is_authenticated %}  <!--仅当用户已登录时显示侧边栏-->
+            <div class="col-md-2 sidebar">  <!--中等屏幕及以上占 2 列宽度 sidebar: 自定义 CSS 类 之前定义过的样式-->
+                <div class="list-group list-group-flush mt-4">
+
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
 </body>
 </html>
