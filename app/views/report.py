@@ -18,5 +18,48 @@ report_bp = Blueprint('report', __name__)
 def index():
     # 1. 库存Top10商品(按数量排序)
     top_products = db.session.query(
+        Product.name, Product.code, db.func.sum(Inventory.quantity)
+    ).join(Inventory).group_by(Product.id).order_by(db.func.sum(Inventory.quantity).desc()).limit(10).all()
+    # 查询会返回一个包含元组的列表，每个元组包含产品名称、产品代码和该产品的总库存量
 
-    )
+    # 2. 近30天出入库趋势（按日期分组）
+    end_date = datetime.now()
+    start_date = datetime.now() - timedelta(days=30)
+
+    # 入库趋势
+    inbound_trend = db.session.query(
+        InboundOrder.inbound_date.label('date'),
+        db.func.sum(InboundItem.quantity).label('total')
+    ).join(InboundItem).filter(InboundOrder.inbound_date >= start_date,
+                               InboundOrder.inbound_date <= end_date
+    ).group_by(InboundOrder.inbound_date).order_by(InboundOrder.inbound_date).all()
+
+    # 出库趋势
+    outbound_trend = db.session.query(
+        OutboundOrder.outbound_date.label('date'),
+        db.func.sum(OutboundItem.quantity).label('total'),
+    ).join(OutboundItem).filter(OutboundOrder.outbound_date >= start_date,
+                                OutboundOrder.outbound_date <= end_date
+    ).group_by(OutboundOrder.outbound_date).order_by(OutboundOrder.outbound_date).all()
+
+    # 格式化数据(适配Echart)
+    dates = [d.strftime('%Y-%m-%d') for d in [start_date + timedelta(days=i) for i in range(31)]]
+    # 从start_date开始遍历的后30天日期进行格式化
+    inbound_data = [0] * 31
+    outbound_data = [0] * 31
+
+    for item in inbound_trend:
+        idx = (item.date - start_date).days
+        if 0 <= idx < 31:
+            inbound_data[idx] == item.total
+
+    for item in outbound_trend:
+        idx = (item.date - start_date).days
+        if 0 <= idx < 31:
+            outbound_data[idx] == item.total
+
+    return render_template('report/index.html',
+                           top_products=top_products,
+                           dates=dates,
+                           inbound_data=inbound_data,
+                           outbound_data=outbound_data)

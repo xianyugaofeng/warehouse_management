@@ -20,6 +20,7 @@ class WarehouseLocation(db.Model):
 
 
 class Inventory(db.Model):
+    # product_id相同的商品可以有不同的库位和不同的批次
     __tablename__ = 'inventories'
     id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)  # 关联商品
