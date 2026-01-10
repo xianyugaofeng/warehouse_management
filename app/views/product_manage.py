@@ -101,7 +101,7 @@ def edit(id=0):
                            product=product,
                            categories=categories,
                            suppliers=suppliers
-                           )
+    )
 
 @product_bp.route('/delete/<int:id>')
 @permission_required('product_manage')

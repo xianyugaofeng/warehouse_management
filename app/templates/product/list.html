@@ -3,8 +3,90 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">    
-    <!--justify-content-between：两端对齐 align-items-center：垂直居中-->
+    <!--justify-content-between：两端水平对齐 align-items-center：垂直居中对齐-->
     <h2>商品列表</h2>
-    
+    <a href="{{ url_for('product.edit')}}" class="btn btn-primary">
+        <i class="fa fa-plus"></i>添加商品
+    </a>
 </div>
+
+<!--搜索表单-->
+<div class="card mb-4">
+    <div class="card-body">
+        <form action="{{ url_for('product.list') }}" method="get" class="row g-3">  <!--row g-3：Bootstrap 栅格行 水平和垂直间隙为3-->
+            <div class="col-md-3">      <!--中等屏幕占3列-->
+                <input type="text" name="keyword" class="form-control" placeholder="商品名称/编码" value="{{ keyword }}">
+            </div>
+            <div class="col-md-3">
+                <select name="category_id" class="form-select">
+                    <option value="">所有分类</option>      <!--默认选项所有分类-->
+                    {% for category in categories %}    <!--遍历 categories 变量生成选项-->
+                    <option value="{{ category.id }}" {% if category_id == category.id|string %}selected{% endif %}>    <!--根据category_id变量设置选中状态-->
+                        {{ category.name }}     <!--使用 category.id|string 将 ID 转换为字符串比较-->
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="supplier_id" class="form-select">
+                    <option value="">所有供应商</option>
+                    {% for supplier in suppliers %}     <!--遍历 suppliers 变量生成供应商选项-->
+                    <option value="{{ supplier.id }}" {% if supplier.id == supplier.id|string %}selected{% endif %}>
+                        {{ supplier.name }}
+                    </option>
+                    {% endif %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-secondary w-100">      <!--w-100：宽度 100%-->
+                    <i class="fa fa-search"></i>搜索
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 商品表格 -->
+ <div class="card">
+    <div class="card-body">
+        <div class="table-responsive">      <!--使表格在小屏幕上可以水平滚动-->
+            <!--当屏幕宽度小于特定阈值时，表格会变得可滚动，以便用户可以查看所有内容，而不会影响页面布局-->
+            <table class="table table-hover table-bordered">    <!--table-bordered：添加边框 table-hover：鼠标悬停时行高亮效果-->
+                <thead class="table-light">     <!--浅灰色表头背景-->
+                    <tr>
+                        <th>商品编码</th>
+                        <th>商品名称</th>
+                        <th>规格型号</th>
+                        <th>单位</th>
+                        <th>分类</th>
+                        <th>供应商</th>
+                        <th>预警阈值</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}       <!--从后端传递的商品数据列表-->
+                    <tr>
+                        <td>{{ product.code }}</td>
+                        <td>{{ product.name }}</td>
+                        <td>{{ product.spec or '-' }}</td>
+                        <td>{{ product.unit or '-' }}</td>
+                        <td>{{ product.category.name if product.category else '-' }}</td>
+                        <td>{{ product.supplier.name if product.supplier else '-' }}</td>
+                        <td>{{ product.warning_stock }}</td>
+                        <td>
+                            <a href="{{ url_for('product.edit', id=product.id) }}" class="btn btn-sm btn-outline-primary">
+                                <!-- 链接到 product.edit 路由，传递商品ID -->
+                                <i class="fa fa-edit"></i>编辑
+                            </a>
+                            <a href="{{ url_for('product.delete', id=product.id) }}" class="btn btn-sm btn-outline-danger" onclick="">
+                                <i class="fa fa-trash"></i>删除
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>      <!--Bootstrap 响应式表格类-->
+    </div>
+ </div>
 {% endblock %}
