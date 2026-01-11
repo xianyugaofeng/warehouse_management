@@ -1,5 +1,5 @@
-{% extend "base.html" %}
-{% block title}登录 - 仓库管理系统{% endblock %}
+{% extends "base.html" %}
+{% block title %}登录 - 仓库管理系统{% endblock %}
 
 {% block content %}
     <div class="row justify-content-center mt-5">     <!--上边距 5em-->
@@ -17,7 +17,7 @@
                         </div>
                         <div class="mb-3">
                             <label for="password" class="form-label">密码</label>
-                            <input type="text" class="form-control" id="password" name="password" required placeholder="请输入密码">
+                            <input type="password" class="form-control" id="password" name="password" required placeholder="请输入密码">
                         </div>
                         <div class="mb-3 form-check">       <!--form-check：Bootstrap 复选框容器-->
                             <input type="checkbox" class="form-check-input" id="remember" name="remember">
