@@ -40,15 +40,15 @@
             <div class="collapse navbar-collapse" id="navbarNav">  <!--与折叠按钮的 data-bs-target 对应-->
                 <ul class="navbar-nav ms-auto">     <!--navbar-nav：导航链接列表容器 ms-auto：将内容向右对齐（margin-start auto）-->
                     {% if current_user.is_authenticated %}      <!--Jinja2模板条件判断-->
-                    <li class="nav-item dropdown">      <!-- 表示一个导航项下拉菜单 Bootstrap 导航项，带下拉功能-->
-                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">    <!--Bootstrap 下拉菜单的触发方式 可点击的下拉触发链接-->
-                            {{ current_user.real_name or current_user.username }}
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">    <!--下拉菜单向右下方弹出-->
-                            <!--下拉菜单中包含"退出登录"选项-->
-                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">退出登录</a></li>   <!--链接触发退出登录的路由-->
-                        </ul>
-                    </li>
+                        <li class="nav-item dropdown">      <!-- 表示一个导航项下拉菜单 Bootstrap 导航项，带下拉功能-->
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">    <!--Bootstrap 下拉菜单的触发方式 可点击的下拉触发链接-->
+                                {{ current_user.real_name or current_user.username }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">    <!--下拉菜单向右下方弹出-->
+                                <!--下拉菜单中包含"退出登录"选项-->
+                                <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">退出登录</a></li>   <!--链接触发退出登录的路由-->
+                            </ul>
+                        </li>
                     {% endif %}   <!--当用户登录后显示用户信息和一个退出登录的下拉选项-->
                 </ul>   
             </div>  <!--可折叠的导航内容区域-->
@@ -62,22 +62,22 @@
             <div class="col-md-2 sidebar">  <!--中等屏幕及以上占 2 列宽度 sidebar: 自定义 CSS 类 之前定义过的样式-->
                 <div class="list-group list-group-flush mt-4">  <!--Bootstrap 列表组 无边框样式list-group-flush mt-4：上边距 1.5rem-->
                     {% if current_user.has_permission('product_manage') %}
-                    <a href="{{ url_for('product.list') }}" class="list-group-item list-group-item-action">商品管理</a>
+                        <a href="{{ url_for('product.list') }}" class="list-group-item list-group-item-action">商品管理</a>
                     {% endif %}
                     {% if current_user.has_permission('inbound_manage') %}
-                    <a href="{{ url_for('inbound.list') }}" class="list-group-item list-group-item-action">入库管理</a>
+                        <a href="{{ url_for('inbound.list') }}" class="list-group-item list-group-item-action">入库管理</a>
                     {% endif %}
                     {% if current_user.has_permission('outbound_manage') %}
-                    <a href="{{ url_for('outbound.list') }}" class="list-group-item list-group-item-action">出库管理</a>
+                        <a href="{{ url_for('outbound.list') }}" class="list-group-item list-group-item-action">出库管理</a>
                     {% endif %}
                     {% if current_user.has_permission('inventory_manage') %}
-                    <a href="{{ url_for('inventory.list') }}" class="list-group-item list-group-item-action">库存管理</a>
+                        <a href="{{ url_for('inventory.list') }}" class="list-group-item list-group-item-action">库存管理</a>
                     {% endif %}
                     {% if current_user.has_permission('report_view') %}
-                    <a href="{{ url_for('report.index') }}" class="list-group-item list-group-item-action">报表统计</a>
+                        <a href="{{ url_for('report.index') }}" class="list-group-item list-group-item-action">报表统计</a>
                     {% endif %}
                     {% if current_user.has_permission('user_manage') %}
-                    <a href="{{ url_for('user.list')}}" class="list-group-item list-group-item-action">用户管理</a>
+                        <a href="{{ url_for('user.list')}}" class="list-group-item list-group-item-action">用户管理</a>
                     {% endif %}
                 </div>
             </div>
@@ -89,16 +89,16 @@
             <!--主内容区顶部显示 flash 消息，底部为具体页面内容-->
                 {% with messages = get_flashed_messages(with_categories=true) %}      <!--获取Flask的flash消息，同时获取消息分类-->
                 <!--使用 with 语句创建局部变量 messages-->
-                {% if messages %}       <!--如果有消息，遍历每一条消息-->
-                {% for category, message in messages %}       <!--对于每条消息，使用Bootstrap警告框组件显示，警告框的样式类由消息的category动态决定-->
-                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                    <!--alert-{{ category }} 根据消息分类设置颜色 alert-dismissible 类使警告框可关闭 fade show 添加淡入动画-->
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    <!--btn-close：Bootstrap 5 关闭按钮样式 data-bs-dismiss="alert"：点击后关闭警告框 aria-label="Close"：无障碍标签-->
-                </div>
-                {% endfor %}
-                {% endif %}
+                    {% if messages %}       <!--如果有消息，遍历每一条消息-->
+                        {% for category, message in messages %}       <!--对于每条消息，使用Bootstrap警告框组件显示，警告框的样式类由消息的category动态决定-->
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                <!--alert-{{ category }} 根据消息分类设置颜色 alert-dismissible 类使警告框可关闭 fade show 添加淡入动画-->
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                <!--btn-close：Bootstrap 5 关闭按钮样式 data-bs-dismiss="alert"：点击后关闭警告框 aria-label="Close"：无障碍标签-->
+                            </div>
+                        {% endfor %}
+                    {% endif %}
                 {% endwith %}
 
                 {% block content %}{% endblock %}   <!--定义名为content的Jinja2块 子模板将在此处注入具体页面内容-->
