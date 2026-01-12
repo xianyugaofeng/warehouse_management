@@ -2,32 +2,82 @@
 {% block title %}{% if product.id %}编辑商品{% else %}添加商品{% endif %} - 仓库管理系统{% endblock %}
 
 {% block content %}
-<div class="row mb-4">    <!--Bootstrap行布局 下边距1.5em-->
-    <div class="col">    <!--Bootstrap 列，自动占用所有可用宽度-->
-        <h2>{% if product.id %}编辑商品{% else %}添加商品{% endif %}</h2>
-        <nav aria-label="breadcrumb">       <!--无障碍访问标签，为屏幕阅读器描述这是面包屑导航-->
-            <ol class="breadcrumb">     <!--Bootstrap 面包屑导航样式-->
-                <li class="breadcrumb-item"><a href="{{ url_for('product.list') }}">商品管理</a></li>
-                <li class="breadcrumb-item active" aria-current="page">{% if product.id %}编辑商品{% else %}添加商品{% endif %}</li>
-                <!--breadcrumb-item active：当前激活的面包屑项-->
-            </ol>
-        </nav>
+    <div class="row mb-4">    <!--Bootstrap行布局 下边距1.5em-->
+        <div class="col">    <!--Bootstrap 列，自动占用所有可用宽度-->
+            <h2>{% if product.id %}编辑商品{% else %}添加商品{% endif %}</h2>
+            <nav aria-label="breadcrumb">       <!--无障碍访问标签，为屏幕阅读器描述这是面包屑导航-->
+                <ol class="breadcrumb">     <!--Bootstrap 面包屑导航样式-->
+                    <li class="breadcrumb-item"><a href="{{ url_for('product.list') }}">商品管理</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{% if product.id %}编辑商品{% else %}添加商品{% endif %}</li>
+                    <!--breadcrumb-item active：当前激活的面包屑项-->
+                </ol>
+            </nav>
+        </div>
     </div>
-</div>
 
-<div class="card shadow-sm">
-    <div class="card-body p-4">
-        <form method="POST" action="{{ url_for('product.edit', id=product.id) }}">
-            <!--提交到 product.edit 路由 product.id 在添加模式下可能为 0 或空，由后端处理-->
-            <div class="row mb-3">      <!--Bootstrap栅格行-->
-                <div class="col-md-6">
-                    <label for="code" class="form-label">商品编码<span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="code" name="code" value="{{ product.code or '' }}" required placeholder="请输入唯一商品编码">
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <form method="POST" action="{{ url_for('product.edit', id=product.id) }}">
+                <!--提交到 product.edit 路由 product.id 在添加模式下可能为 0 或空，由后端处理-->
+                <div class="row mb-3">      <!--Bootstrap栅格行-->
+                    <div class="col-md-6">
+                        <label for="code" class="form-label">商品编码<span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="code" name="code" value="{{ product.code or '' }}" required placeholder="请输入唯一商品编码">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="name" class="form-label">商品名称<span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ product.name or '' }}" required placeholder="请输入商品名称">
+                    </div>
                 </div>
-                <div class="col-md-6">
-                    <label for=""
+                <div class="row mb-3">      <!--创建新的一行-->
+                    <div class="col-md-4">
+                        <label for="spec" class="form-label">规格型号</label>
+                        <input type="text" class="form-control" id="spec" name="name" value="{{ product.spec or '' }}" placeholder="请输入规格型号">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="unit" class="form-label">单位</label>
+                        <input type="text" class="form-control" id="unit" name="name" value="{{ product.unit or '' }}" placeholder="个/箱/kg">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="warning_stock" class="form-label">库存预警阈值</label>
+                        <input type="text" class="form-control" id="warning_stock" name="warning_stock" value="｛｛ product.warning_stock or '' }}" placeholder="默认10">
+                    </div>
                 </div>
-            </div>
-        </form>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="category_id" class="form-label">商品分类</label>
+                        <select class="form-select" id="category_id" name="category_id"></select>     <!--form-select：Bootstrap下拉选择框样式-->
+                            <option value="">请选择分类</option>         <!--默认选项值为空-->
+                            {% for category in categories %}         <!--遍历分类列表-->
+                                <option value="{{ category.id }}" {% if product.category_id == category.id %｝selected{% endif %}>
+                                    {{ category.name }}     <!--编辑模式：如果商品当前属于此分类，则选中-->     <!--添加模式：没有选中项-->
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="supplier_id" class="form-label">供应商</label>
+                        <select class="form-select" id="supplier_id" name="supplier_id"></select>
+                            <option value="">请选择供应商</option>
+                            {% for supplier in suppliers %}
+                                <option value="{{ supplier.id }}" {% if product.supplier_id == supplier.id %}selected{% endif %}>
+                                    {{ supplier.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="remark" class="form-label">备注</label>
+                    <textarea class="form-label" id="remark" name="remark" rows="3" placeholder="请输入备注信息">
+                        {{ product.remark or '' }}
+                    </textarea>       <!--textarea：多行文本输入框 rows="3"：默认显示3行-->
+                </div>
+                <div class="d-flex gap-2">      <!--Bootstrap弹性布局 子元素之间间距 0.5rem -->
+                    <button type="submit" class="btn btn-primary">保存</button>
+                    <a href="{{ url_for(product.list) }}" class="btn-outline-secondary">取消</a>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
+{% endblock %}
