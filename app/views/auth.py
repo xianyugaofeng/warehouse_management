@@ -63,4 +63,4 @@ def register():
         flash('注册成功,请联系管理员分配角色', 'success')
         return redirect(url_for('auth.login'))
 
-    return render_template('login/register.html')   # GET请求
+    return render_template('auth/register.html')   # GET请求

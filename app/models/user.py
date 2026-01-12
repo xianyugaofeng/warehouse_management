@@ -35,6 +35,7 @@ class Permission(db.Model):
     roles = db.relationship('Role', secondary=role_permission, backref=db.backref('permissions', lazy='dynamic'))
     # 通过role.permissions获取该角色拥有的所有权限(动态加载)
     # 通过permission.roles获取拥有该权限的所有角色(立即加载)
+    PERMISSIONS = PERMISSIONS
 
     def __repr__(self):
         return f'<Permission {self.name}>'

@@ -3,7 +3,7 @@ from app import db
 
 
 class WarehouseLocation(db.Model):
-    __tablename__ = 'warehouse_location'
+    __tablename__ = 'warehouse_locations'
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(32), unique=True, nullable=False)  # 库位编码(如A1-01-02)
     name = db.Column(db.String(64), nullable=False)  # 库位名称
