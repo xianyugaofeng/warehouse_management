@@ -2,4 +2,27 @@
 ｛% block title %}入库管理 - 仓库管理系统{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-bet"
+    <div class="d-flex justify-content-between align-items-center mb-4">      <!--用于在主轴方向上均匀分配元素-->
+        <h2>入库单列表</h2>                                          <!--使第一个元素贴近起点，最后一个元素贴近终点，中间元素间距相等-->
+        <a href="{{ url_for('inbound.add') }}" class="btn btn-primary">     <!--链接到添加入库单页面-->
+            <i class="fa fa-plus"></i>添加入库单
+        </a>
+    </div>
+
+    <!--搜索表单-->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form action="{{ url_for('inbound.list') }}" method="get" class="row g-3">      <!--Bootstrap栅格行 水平和垂直间隙为3-->
+                <div class="col-md-3">      <!--占三列-->
+                    <input type="text" name="keyword" class="form-control" placeholder="入库单号/关联采购单" value="{{ keyword }}">
+                </div>
+                <div class="col-md-3">
+                    <select name="supplier_id" class="form-select">
+                        <option value="">所有供应商</option>
+                            {% for supplier in suppliers %}
+                                <option value="{{ supplier.id }}"></option>
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>

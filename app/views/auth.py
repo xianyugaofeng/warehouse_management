@@ -1,3 +1,4 @@
+import pymysql
 from flask import Blueprint, request, url_for, redirect, flash, render_template
 from flask_login import login_user, logout_user, login_required
 from app import db
@@ -56,10 +57,12 @@ def register():
             phone=phone,
             email=email
         )
-        user.set_password(password)
-        db.session.add(user)
-        db.session.commit()
-
+        try:
+            user.set_password(password)
+            db.session.add(user)
+            db.session.commit()
+        except pymysql.err.IntegrityError:
+            flash('账号已存在', 'danger')
         flash('注册成功,请联系管理员分配角色', 'success')
         return redirect(url_for('auth.login'))
 

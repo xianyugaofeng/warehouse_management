@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
@@ -41,4 +41,9 @@ def create_app(config_name='default'):
     @app.route('/')
     def index():
         return redirect(url_for('auth.login'))
+
+    # 注册index网页
+    @app.route('/index')
+    def next_page():
+        return render_template('base.html')
     return app
