@@ -20,7 +20,7 @@ class Supplier(db.Model):
     __tablename__ = 'suppliers'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True, nullable=False)   # 供应商名称
-    contact_preson = db.Column(db.String(32))   # 联系人
+    contact_person = db.Column(db.String(32))   # 联系人
     phone = db.Column(db.String(16))   # 联系电话
     address = db.Column(db.String(256))   # 地址
     email = db.Column(db.String(64))  # 邮箱
