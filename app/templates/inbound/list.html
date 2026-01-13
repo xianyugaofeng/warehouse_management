@@ -52,7 +52,7 @@
             <div class="table-responsive">      <!--使表格在小屏幕上可以水平滚动-->
                 <table class="table table-hover table-bordered">    <!--table-bordered：添加边框 table-hover：鼠标悬停时行高亮效果-->
                     <thead class="table-light">       <!--浅灰色表头背景-->
-                        <tr>
+                        <tr>                          <!--定义9个表头列-->
                             <th>入库单号</th>
                             <th>供应商</th>
                             <th>关联采购单</th>
@@ -64,6 +64,65 @@
                             <th>操作</th>
                         </tr>
                     </thead>
+                    <tbody>
+                        {% for order in orders %}       <!--遍历 orders 变量中的每个入库单对象-->
+                        <tr>
+                            <td>{{ order.order_no }}</td>
+                            <td>{{ order.supplier.name if order.supplier else '-' }}</td>
+                            <td>{{ order.related_order or '-' }}</td>       <!--如果order.related_order存在：显示关联采购单号-->
+                            <td>{{ order.inbound_date.strftime('%Y-%m-%d') }}</td>      <!--格式化显示入库日期-->
+                            <td>{{ order.total_amount }}</td>
+                            <td>{{ order.operator.real_name or order.operator.username }}</td>      <!--优先显示操作员的真实姓名-->
+                            <td>        <!--显示入库单的核心信息-->
+                                {% if order.status == 'completed' %}
+                                    <span class="badge bg-success">已完成</span>      <!--绿色徽章样式-->
+                                {% elif order.status == 'draft' %}
+                                    <span class="badge bg-warning">草稿</span>        <!--黄色警告徽章样式-->
+                                {% else %}
+                                    <span class="badge bg-danger">已取消</span>        <!--红色危险徽章样式-->
+                                {% endif %}     <!--使用不同颜色的徽章直观显示入库单状态-->
+                            </td>
+                            <td>{{ order.create_time.strftime('%Y-%m-%d %H-%M') }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#detailModal{{ order.id }}">
+                                    <!--Bootstrap 5模态框触发属性-->
+                                    <i class="fa fa-eye"></i>详情
+                                </button>       <!--提供查看详情的按钮，通过模态框展示更多信息-->
+                            </td>
+                        </tr>
+
+                        <!--入库单详情模态框-->
+                        <div class="modal fade" id="detailModal{{ order.id }}" tabindex="-1" aria-labelledby="detailModalLabel{{ order.id }}" aria-hidden="true">
+                            <!--初始时模态框隐藏 无障碍属性关联到模态框标题 Bootstrap模态框,带淡入动画-->
+                            <div class="modal-dialog modal-lg">     <!--modal-dialog：模态框对话框容器-->
+                                <div class="modal-content">     <!--模态框内容容器-->
+                                    <div class="modal-header">      <!--模态框头部-->
+                                        <h5 class="modal-title" id="detailModalLabel{{ order.id }}">入库单详情 - {{ order.order_no }}</h5>
+                                        <button type="button" class="btn-close" data-bs-miss="modal" aria-label="Close"></button>
+                                        <!--Bootstrap 5 关闭按钮样式 点击该元素将关闭当前的模态框-->
+                                    </div>
+                                    <div class="modal-body">      <!--模态框主体-->
+                                        <div class="row mb-3">      <!--Bootstrap 5 栅格行-->
+                                            <div class="col-md-6">
+                                                <p><strong>供应商:</strong>{{ order.supplier.name if order.supplier else '-' }}</p>
+                                                <p><strong>关联采购单:</strong>{{ order.related_order or '-' }}</p>
+                                                <p><strong>入库日期:</strong>{{ order.inbound_date.strftime('%Y-%m-%d') }}</p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <p><strong>操作员:</strong>{{ order.operator.real_name or order.operator.username }}</p>
+                                                <p><strong>状态:</strong>
+                                                    {% if order.status == 'completed' %}
+                                                        <span class="badge bg-success">已完成</span>
+                                                    {% if order.status == 'draft' %}
+                                                        <span class="badge bg-warning">草稿</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </tbody>
                 </table>
             </div>
         </div>
