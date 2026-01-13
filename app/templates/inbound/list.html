@@ -11,18 +11,60 @@
 
     <!--搜索表单-->
     <div class="card mb-4">
-        <div class="card-body">
-            <form action="{{ url_for('inbound.list') }}" method="get" class="row g-3">      <!--Bootstrap栅格行 水平和垂直间隙为3-->
+        <div class="card-body">                                                             <!--页面刷新显示筛选结果-->
+            <form action="{{ url_for('inbound.list') }}" method="GET" class="row g-3">      <!--Bootstrap栅格行 水平和垂直间隙为3-->
                 <div class="col-md-3">      <!--占三列-->
                     <input type="text" name="keyword" class="form-control" placeholder="入库单号/关联采购单" value="{{ keyword }}">
-                </div>
+                </div>                                          <!--value="{{ keyword }}"：显示传入的搜索关键词-->
                 <div class="col-md-3">
-                    <select name="supplier_id" class="form-select">
-                        <option value="">所有供应商</option>
-                            {% for supplier in suppliers %}
-                                <option value="{{ supplier.id }}"></option>
+                    <select name="supplier_id" class="form-select">       <!--Bootstrap 下拉选择框样式-->
+                        <option value="">所有供应商</option>     <!--默认选项所有分类-->
+                        {% for supplier in suppliers %}     <!--遍历 suppliers 变量生成供应商选项-->
+                            <option value="{{ supplier.id }}">{% if supplier_id == supplier.id|string %}selected{% endif %}
+                                {{ supplier.name }}
+                            </option>
+                        {% endfor %}
                     </select>
                 </div>
+                <div class="col-md-3">      <!--HTML5 日期选择器-->
+                    <input type="date" name="start_date" value="{{ start_date }}" class="form-control" placeholder="开始日期">
+                </div>
+                <div class="col-md-3">
+                    <div class="row g-2">   <!--内部嵌套一个栅格行,列间距为 0.5rem-->
+                        <div class="col-6">
+                            <input type="date" name="end_date" value="{{ end_date }}" class="form-control" placeholder="结束日期">
+                            <!--显示传入的结束日期值-->
+                        </div>
+                        <div class="col-6">
+                            <button type="submit" class="btn btn-secondary w-100">      <!--Bootstrap 次要按钮样式（灰色）-->
+                                <i class="fa fa-search"></i>搜索
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </form>
+        </div>      <!--按特定供应商筛选入库单-->      <!--按入库日期范围筛选-->
+    </div>          <!--所有搜索条件都会保留在表单中（通过 value 属性）-->
+
+    <!--入库单表格-->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">      <!--使表格在小屏幕上可以水平滚动-->
+                <table class="table table-hover table-bordered">    <!--table-bordered：添加边框 table-hover：鼠标悬停时行高亮效果-->
+                    <thead class="table-light">       <!--浅灰色表头背景-->
+                        <tr>
+                            <th>入库单号</th>
+                            <th>供应商</th>
+                            <th>关联采购单</th>
+                            <th>入库日期</th>
+                            <th>入库总数量</th>
+                            <th>操作员</th>
+                            <th>状态</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
         </div>
     </div>

@@ -13,7 +13,7 @@
     <!--搜索表单-->
     <div class="card mb-4">
         <div class="card-body">
-            <form action="{{ url_for('product.list') }}" method="get" class="row g-3">  <!--row g-3：Bootstrap 栅格行 水平和垂直间隙为3-->
+            <form action="{{ url_for('product.list') }}" method="GET" class="row g-3">  <!--row g-3：Bootstrap 栅格行 水平和垂直间隙为3-->
                 <div class="col-md-3">      <!--中等屏幕占3列-->
                     <input type="text" name="keyword" class="form-control" placeholder="商品名称/编码" value="{{ keyword }}">
                 </div>
