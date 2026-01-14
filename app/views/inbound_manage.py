@@ -15,7 +15,7 @@ inbound_bp = Blueprint('inbound', __name__)
 @permission_required('inbound_manage')
 @login_required
 def list():
-    keyword = request.args.get('keyword', '')
+    keyword = request.args.get('keyword', '')     # 接收参数keyword supplier_id start_date end_date page
     supplier_id = request.args.get('supplier_id', '')
     start_date = request.args.get('start_date', '')
     end_date = request.args.get('end_date', '')

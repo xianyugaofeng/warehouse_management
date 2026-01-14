@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-｛% block title %}入库管理 - 仓库管理系统{% endblock %}
+{% block title %}入库管理 - 仓库管理系统{% endblock %}
 
 {% block content %}
     <div class="d-flex justify-content-between align-items-center mb-4">      <!--用于在主轴方向上均匀分配元素-->
@@ -20,7 +20,7 @@
                     <select name="supplier_id" class="form-select">       <!--Bootstrap 下拉选择框样式-->
                         <option value="">所有供应商</option>     <!--默认选项所有分类-->
                         {% for supplier in suppliers %}     <!--遍历 suppliers 变量生成供应商选项-->
-                            <option value="{{ supplier.id }}">{% if supplier_id == supplier.id|string %}selected{% endif %}
+                            <option value="{{ supplier.id }}" {% if supplier_id == supplier.id|string %}selected{% endif %}>
                                 {{ supplier.name }}
                             </option>
                         {% endfor %}
@@ -66,64 +66,150 @@
                     </thead>
                     <tbody>
                         {% for order in orders %}       <!--遍历 orders 变量中的每个入库单对象-->
-                        <tr>
-                            <td>{{ order.order_no }}</td>
-                            <td>{{ order.supplier.name if order.supplier else '-' }}</td>
-                            <td>{{ order.related_order or '-' }}</td>       <!--如果order.related_order存在：显示关联采购单号-->
-                            <td>{{ order.inbound_date.strftime('%Y-%m-%d') }}</td>      <!--格式化显示入库日期-->
-                            <td>{{ order.total_amount }}</td>
-                            <td>{{ order.operator.real_name or order.operator.username }}</td>      <!--优先显示操作员的真实姓名-->
-                            <td>        <!--显示入库单的核心信息-->
-                                {% if order.status == 'completed' %}
-                                    <span class="badge bg-success">已完成</span>      <!--绿色徽章样式-->
-                                {% elif order.status == 'draft' %}
-                                    <span class="badge bg-warning">草稿</span>        <!--黄色警告徽章样式-->
-                                {% else %}
-                                    <span class="badge bg-danger">已取消</span>        <!--红色危险徽章样式-->
-                                {% endif %}     <!--使用不同颜色的徽章直观显示入库单状态-->
-                            </td>
-                            <td>{{ order.create_time.strftime('%Y-%m-%d %H-%M') }}</td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#detailModal{{ order.id }}">
-                                    <!--Bootstrap 5模态框触发属性-->
-                                    <i class="fa fa-eye"></i>详情
-                                </button>       <!--提供查看详情的按钮，通过模态框展示更多信息-->
-                            </td>
-                        </tr>
+                            <tr>
+                                <td>{{ order.order_no }}</td>
+                                <td>{{ order.supplier.name if order.supplier else '-' }}</td>
+                                <td>{{ order.related_order or '-' }}</td>       <!--如果order.related_order存在：显示关联采购单号-->
+                                <td>{{ order.inbound_date.strftime('%Y-%m-%d') }}</td>      <!--格式化显示入库日期-->
+                                <td>{{ order.total_amount }}</td>
+                                <td>{{ order.operator.real_name or order.operator.username }}</td>      <!--优先显示操作员的真实姓名-->
+                                <td>        <!--显示入库单的核心信息-->
+                                    {% if order.status == 'completed' %}
+                                        <span class="badge bg-success">已完成</span>      <!--绿色徽章样式-->
+                                    {% elif order.status == 'draft' %}
+                                        <span class="badge bg-warning">草稿</span>        <!--黄色警告徽章样式-->
+                                    {% else %}
+                                        <span class="badge bg-danger">已取消</span>        <!--红色危险徽章样式-->
+                                    {% endif %}     <!--使用不同颜色的徽章直观显示入库单状态-->
+                                </td>
+                                <td>{{ order.create_time.strftime('%Y-%m-%d %H-%M') }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#detailModal{{ order.id }}">
+                                        <!--Bootstrap 5模态框触发属性-->
+                                        <i class="fa fa-eye"></i>详情
+                                    </button>       <!--提供查看详情的按钮，通过模态框展示更多信息-->
+                                </td>
+                            </tr>
 
-                        <!--入库单详情模态框-->
-                        <div class="modal fade" id="detailModal{{ order.id }}" tabindex="-1" aria-labelledby="detailModalLabel{{ order.id }}" aria-hidden="true">
-                            <!--初始时模态框隐藏 无障碍属性关联到模态框标题 Bootstrap模态框,带淡入动画-->
-                            <div class="modal-dialog modal-lg">     <!--modal-dialog：模态框对话框容器-->
-                                <div class="modal-content">     <!--模态框内容容器-->
-                                    <div class="modal-header">      <!--模态框头部-->
-                                        <h5 class="modal-title" id="detailModalLabel{{ order.id }}">入库单详情 - {{ order.order_no }}</h5>
-                                        <button type="button" class="btn-close" data-bs-miss="modal" aria-label="Close"></button>
-                                        <!--Bootstrap 5 关闭按钮样式 点击该元素将关闭当前的模态框-->
-                                    </div>
-                                    <div class="modal-body">      <!--模态框主体-->
-                                        <div class="row mb-3">      <!--Bootstrap 5 栅格行-->
-                                            <div class="col-md-6">
-                                                <p><strong>供应商:</strong>{{ order.supplier.name if order.supplier else '-' }}</p>
-                                                <p><strong>关联采购单:</strong>{{ order.related_order or '-' }}</p>
-                                                <p><strong>入库日期:</strong>{{ order.inbound_date.strftime('%Y-%m-%d') }}</p>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <p><strong>操作员:</strong>{{ order.operator.real_name or order.operator.username }}</p>
-                                                <p><strong>状态:</strong>
-                                                    {% if order.status == 'completed' %}
-                                                        <span class="badge bg-success">已完成</span>
-                                                    {% if order.status == 'draft' %}
-                                                        <span class="badge bg-warning">草稿</span>
-                                                </p>
-                                            </div>
+                            <!--入库单详情模态框-->
+                            <div class="modal fade" id="detailModal{{ order.id }}" tabindex="-1" aria-labelledby="detailModalLabel{{ order.id }}" aria-hidden="true">
+                                <!--初始时模态框隐藏 无障碍属性关联到模态框标题 Bootstrap模态框,带淡入动画-->
+                                <div class="modal-dialog modal-lg">     <!--modal-dialog：模态框对话框容器-->
+                                    <div class="modal-content">     <!--模态框内容容器-->
+                                        <div class="modal-header">      <!--模态框头部-->
+                                            <h5 class="modal-title" id="detailModalLabel{{ order.id }}">入库单详情 - {{ order.order_no }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            <!--Bootstrap 5 关闭按钮样式 点击该元素将关闭当前的模态框-->
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </tbody>
+                                        <div class="modal-body">      <!--模态框主体-->
+                                            <div class="row mb-3">      <!--Bootstrap 5 栅格行-->
+                                                <div class="col-md-6">
+                                                    <p><strong>供应商:</strong> {{ order.supplier.name if order.supplier else '-' }}</p>
+                                                    <p><strong>关联采购单:</strong> {{ order.related_order or '-' }}</p>
+                                                    <p><strong>入库日期:</strong> {{ order.inbound_date.strftime('%Y-%m-%d') }}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <p><strong>操作员:</strong> {{ order.operator.real_name or order.operator.username }}</p>
+                                                    <p><strong>状态:</strong>
+                                                        {% if order.status == 'completed' %}
+                                                            <span class="badge bg-success">已完成</span>
+                                                        {% elif order.status == 'draft' %}
+                                                            <span class="badge bg-warning">草稿</span>
+                                                        {% else %}
+                                                            <span class="badge bg-danger">已取消</span>
+                                                        {% endif %}
+                                                    </p>
+                                                    <p><strong>备注:</strong> {{ order.remark or '-' }}</p>
+                                                </div>
+                                            </div>
+                                            <hr>       <!--水平分隔线，分隔基本信息与明细数据-->
+                                            <h6>入库明细</h6>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-bordered">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>商品名称</th>
+                                                            <th>库位</th>
+                                                            <th>批次号</th>
+                                                            <th>数量</th>
+                                                            <th>生产日期</th>
+                                                            <th>过期日期</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for item in order.items %}     <!--遍历入库单的明细项列表order.items-->
+                                                            <tr>
+                                                                <td>{{ item.product.name }}({{ item.product.code }})</td>
+                                                                <td>{{ item.location.code }}</td>
+                                                                <td>{{ item.batch_no or '-' }}</td>
+                                                                <td>{{ item.quantity }}</td>
+                                                                <td>{{ item.production_date.strftime('%Y-%m-%d') if item.production_date else '-' }}</td>
+                                                                <td>{{ item.expire_date.strftime('%Y-%m-%d') if item.expire_date else '-' }}</td>
+                                                            </tr>
+                                                        {% else %}      <!--空明细处理-->
+                                                            <tr>    <!--当 order.items为空时显示-->
+                                                                <td colspan="6" class="text-center">暂无明细</td>       <!--colspan="6":合并6列 表格横跨6列-->
+                                                            </tr>
+                                                        {% endfor %}    <!--结束明细项的遍历-->
+                                                    </tbody>
+                                                </table>
+                                            </div>      <!--关闭表格相关标签-->
+                                        </div>      <!--关闭模态框主体-->
+                                        <div class="modal-footer">      <!--modal-footer：模态框底部区域-->
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                                            <!--data-bs-dismiss="modal"：点击关闭模态框-->
+                                        </div>
+                                    </div>      <!--关闭模态框内容容器-->
+                                </div>      <!--关闭模态框对话框-->
+                            </div>      <!--关闭模态框容器-->
+                        {% else %}      <!--当orders列表为空时执行-->
+                            <tr>
+                                <td colspan="9" class="text-center">暂无入库单数据</td>
+                            </tr>
+                        {% endfor %}      <!--结束订单列表的遍历循环-->
+                    </tbody>      <!--关闭表格体-->
                 </table>
-            </div>
+            </div>      <!--关闭表格和响应式表格容器-->
+
+            <!--分页-->
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">      <!--Bootstrap分页样式类-->
+                    {% if pagination.has_prev %}        <!--判断分页对象是否有上一页-->
+                        <li class="page-item">      <!--分页项容器-->
+                            <a class="page-link" href="{{ url_for('inbound.list', page=pagination.prev_num, keyword=keyword, supplier_id=supplier_id, start_date=start_date, end_date=end_date) }}">
+                                上一页
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">上一页</span></li>
+                    {% endif %}     <!--使用<span>代替<a>,因为不可点击-->
+                    <!--遍历分页对象生成的页码序列-->
+                    {% for page in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=3) %}
+                    <!--生成页码范围迭代器-->
+                        {% if page %}      <!--检查当前遍历的page是否为有效页码-->
+                            {% if pagination.page == page %}        <!--检查当前遍历的页码是否是当前所在页-->
+                                <li class="page-item active"><span class="page-link">{{ page }}</span></li>
+                            {% else %}      <!--当前遍历的page不是当前所在页  创造可点击的链接,包含所有搜索参数-->
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('inbound.list', page=page, keyword=keyword, supplier_id=supplier_id, start_date=start_date, end_date=end_date) }}">
+                                        {{ page }}
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>      <!--省略号，表示中间有页码被省略-->
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if pagination.has_next %}        <!--判断分页对象是否有下一页-->
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('inbound.list', page=pagination.next_num, keyword=keyword, supplier_id=supplier_id, start_date=start_date, end_date=end_date) }}">下一页</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">下一页</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
         </div>
     </div>
+{% endblock %}
