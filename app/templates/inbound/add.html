@@ -1,10 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}添加入库单 - 仓库管理系统{% block content %}
 
-</body>
-</html>
+{% block js %}      <!--JavaScript脚本 用于处理入库单表单的动态交互和验证-->
+<script>
+    <!--在 DOM 结构加载完成后立即执行代码的方法  不必等待图片,视频等资源完全加载-->
+    $(document).ready(function() {
+        //动态添加入库明细行
+        let rowIndex = 0;     //声明一个变量rowIndex记录当前行索引
+        $("#addItemBtn").click(function() {     //为ID为addItemBtn的元素绑定点击事件
+            //click()方法触发click事件
+            rowIndex++;             //每次点击添加按钮,行索引加1,确保每一行有唯一的ID
+            const newRow = `
+                <tr id="itemRow${rowIndex}">
+                    <td>
+                        <select class="form-select product-select" name="product_id[]" required>
+                            <option value="">请选择商品<option>
+            `
+        }
+    }
