@@ -1,10 +1,40 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}出库管理 - 仓库管理系统{% endblock %}
 
-</body>
-</html>
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">     <!--子元素水平排列 两端对齐 垂直居中-->
+        <h2>出库单列表</h2><!--使第一个元素贴近起点，最后一个元素贴近终点，中间元素间距相等-->
+        <a href="{{ url_for('outbound.add') }}" class="btn btn-primary">
+            <i class="fa fa-plus"></i>添加出库单
+        </a>
+    </div>
+
+    <!--搜索表单-->
+    <div class="card mb-4">
+        <div class="card-body">                                                               <!--页面刷新显示筛选结果-->
+            <form action="{{ url_for('outbound.list') }}" method="GET" class="row g-3">       <!--Bootstrap栅格行 水平和垂直间隙为3-->
+                <div class="col-md-3">
+                    <input type="text" name="keyword" class="form-control" placeholder="出库单号/关联销售单" value="{{ keyword }}">
+                </div>
+                <div class="col-md-3">
+                    <input type="text" name="deceiver" class="form-control" placeholder="领用人" value="{{ receiver }}">
+                </div>
+                <div class="col-md-3">      <!--HTML5 日期选择器-->
+                    <input type="date" name="start_date" class="form-control" placeholder="开始日期" value="{{ start_date }}">
+                </div>
+                <div class="col-md-3">
+                    <div class="row g-2">       <!--内部嵌套一个栅格行,列间距为 0.5rem-->
+                        <div class="col-6">
+                            <input type="date" name="end_date" class="form-control" placeholder="结束日期" value="{{ end_date }}">
+                            <!--显示传入的结束日期值-->
+                        </div>
+                        <div class="col-6">
+                            <button type="submit" class="btn btn-secondary w-100">       <!--Bootstrap 次要按钮样式（灰色）-->
+                                <i class="fa fa-search"></i>搜索
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>          <!--所有搜索条件都会保留在表单中（通过 value 属性）-->

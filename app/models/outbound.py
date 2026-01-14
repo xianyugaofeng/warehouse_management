@@ -19,7 +19,7 @@ class OutboundOrder(db.Model):
     update_time = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # 关联出库单明细
-    items = db.relationship('OutboundItem', backref='order', lazy='dynamic', cascade='all,delete-orphan')
+    items = db.relationship('OutboundItem', backref='order', lazy='dynamic', cascade='all, delete-orphan')
 
     # 关联操作员
     operator = db.relationship('User', backref='outbound_orders')
