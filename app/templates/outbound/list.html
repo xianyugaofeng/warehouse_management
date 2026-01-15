@@ -17,7 +17,7 @@
                     <input type="text" name="keyword" class="form-control" placeholder="出库单号/关联销售单" value="{{ keyword }}">
                 </div>
                 <div class="col-md-3">
-                    <input type="text" name="deceiver" class="form-control" placeholder="领用人" value="{{ receiver }}">
+                    <input type="text" name="receiver" class="form-control" placeholder="领用人" value="{{ receiver }}">
                 </div>
                 <div class="col-md-3">      <!--HTML5 日期选择器-->
                     <input type="date" name="start_date" class="form-control" placeholder="开始日期" value="{{ start_date }}">
@@ -43,7 +43,7 @@
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">          <!--使表格在小屏幕上可以水平滚动-->
-                <div class="table table-hover table-bordered">      <!--table-bordered：添加边框 table-hover：鼠标悬停时行高亮效果-->
+                <table class="table table-hover table-bordered">      <!--table-bordered：添加边框 table-hover：鼠标悬停时行高亮效果-->
                     <thead class="table-light">
                         <tr>
                             <th>出库单号</th>       <!--不需要放入模态框表格中-->
@@ -86,16 +86,16 @@
                                 </td>
                             </tr>
 
-                            <!--入库单详情模态框-->
+                            <!--出库单详情模态框-->
                             <div class="modal fade" id="detailModal{{ order.id }}" tabindex="-1" aria-labelledby="detailModalLabel{{ order.id }}" aria-hidden="true">
                                 <!--初始时模态框隐藏 无障碍属性关联到模态框标题 Bootstrap模态框,带淡入动画-->
-                                <div class="modal modal-dialog modal-lg">       <!--modal-dialog：模态框对话框容器-->
-                                    <div class="modal content">         <!--模态框内容容器-->
+                                <div class="modal-dialog modal-lg">       <!--modal-dialog：模态框对话框容器-->
+                                    <div class="modal-content">         <!--模态框内容容器-->
                                         <div class="modal-header">          <!--模态框头部-->
                                             <h5 class="modal-title" id="detailModalLabel{{ order.id }}">
                                                 出库单详情 - {{ order.order_no }}
                                             </h5>
-                                            <button type="button" class="btn close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                             <!--Bootstrap 5 关闭按钮样式 点击该元素将关闭当前的模态框-->
                                         </div>
                                         <div class="modal-body">        <!--模态框主体-->
@@ -104,18 +104,19 @@
                                                     <p><strong>关联销售单:</strong> {{ order.related_order or '-' }}</p>
                                                     <p><strong>领用人:</strong> {{ order.receiver }}</p>
                                                     <p><strong>领用人电话:</strong> {{ order.receive_phone or '-' }}</p>
-                                                    <p><strong>出库日期:</strong> {{ order.outbound_date }}</p>
+                                                    <p><strong>出库日期:</strong> {{ order.outbound_date.strftime('%Y-%m-%d') }}</p>
                                                 </div>
                                                 <div class="col-md-6">
                                                     <p><strong>领用用途:</strong> {{ order.purpose or '-' }}</p>
-                                                    <p><strong>操作员:</strong> {{ order.operator }}</p>
+                                                    <p><strong>操作员:</strong> {{ order.operator.real_name or order.operator.username }}</p>
                                                     <p><strong>状态:</strong>
-                                                        { % if order.status == 'completed' %}
+                                                        {% if order.status == 'completed' %}
                                                             <span class="badge bg-success">已完成</span>
-                                                        { % if order.status == 'draft' %}
+                                                        {% elif order.status == 'draft' %}
                                                             <span class="badge bg-warning">草稿</span>
-                                                        { % if order.status == 'canceled' %}
+                                                        {% else %}
                                                             <span class="badge bg-danger">已取消</span>
+                                                        {% endif %}
                                                     </p>
                                                     <p><strong>备注:</strong> {{ order.remark or '-' }}</p>
                                                 </div>
@@ -125,28 +126,85 @@
                                                 <table class="table table-sm table-bordered">
                                                     <thead>
                                                         <tr>
-                                                            <th>商品名称</th>
+                                                            <th>商品名称</th>          <!--定义表格中的表头单元格-->
                                                             <th>库位</th>
                                                             <th>批次号</th>
                                                             <th>数量</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        { % for item in order.items %}      <!--遍历出库单的明细项列表order.items-->
+                                                        {% for item in order.items %}      <!--遍历出库单的明细项列表order.items-->
                                                             <tr>
-                                                                <th>{{ item.product.name }} ({{ item.product.code }})</th>
+                                                                <td>{{ item.product.name }} ({{ item.product.code }})</td>
+                                                                <td>{{ item.location.code }}</td>
+                                                                <td>{{ item.batch_no or '-' }}</td>
+                                                                <td>{{ item.quantity }}</td>
                                                             </tr>
+                                                        {% else %}      <!--空明细处理-->
+                                                            <tr>        <!--当 order.items为空时显示-->
+                                                                <td colspan="4" class="text-center">暂无明细</td>
+                                                            </tr>
+                                                        {% endfor %}    <!--结束明细项的遍历-->
                                                     </tbody>
                                                 </table>
-                                            </div>
+                                            </div>      <!--关闭表格相关标签-->
+                                        </div>      <!--关闭模态框主体-->
+                                        <div class="modal-footer">        <!--modal-footer：模态框底部区域-->
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
+                                    </div>      <!--关闭模态框内容容器-->
+                                </div>      <!--关闭模态框对话框-->
+                            </div>      <!--关闭模态框容器-->
+                        {% else %}      <!--当orders列表为空时-->
+                            <tr>
+                                <td colspan="10" class="text-center">暂无出库单数据</td>
+                            </tr>
                         {% endfor %}
-                    </tbody>
-                </div>
+                    </tbody>        <!--关闭表格体-->
+                </table>       <!--关闭表格-->
             </div>
+
+            <!--分页-->
+            <nav aria-label="Page navigation">      <!--导航项-->
+                <ul class="pagination justify-content-center">      <!--Bootstrap分页样式类-->
+                    {% if pagination.has_prev %}            <!--判断分页对象是否有上一页-->
+                        <li class="page-item">          <!--分页项容器-->
+                            <a class="page-link" href="{{ url_for('outbound.list', page=pagination.prev_num, keyword=keyword, receiver=receiver, start_date=start_date, end_date=end_date) }}">
+                                上一页
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">上一页</span></li>
+                    {% endif %}
+                    <!--遍历分页对象生成的页码序列-->
+                    {% for page in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=3) %}
+                        {% if page %}       <!--检查当前遍历的page是否为有效页码-->
+                            {% if pagination.page == page %}        <!--检查当前遍历的页码是否是当前所在页-->
+                                <li class="page-item active"><span class="page-link">{{ page }}</span></li>
+                            {% else %}      <!--当前遍历的page不是当前所在页  创造可点击的链接,包含所有搜索参数-->
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('outbound.list', page=page, keyword=keyword, receiver=receiver, start_date=start_date, end_date=end_date) }}">
+                                        {{ page }}
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% else %}          <!--省略号，表示中间有页码被省略-->
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    <!--判断分页对象是否有下一页-->
+                    {% if pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('outbound.list', page=pagination.next_num, keyword=keyword, receiver=receiver, start_date=start_date, end_date=end_date) }}">
+                                下一页
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">下一页</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
         </div>
     </div>
+{% endblock %}
 
