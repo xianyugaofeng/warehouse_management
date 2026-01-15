@@ -23,7 +23,7 @@
                                     </option>
                                 {% endfor %}
                             </select>
-                        <td>
+                        </td>
                         <td>
                             <select class="form-select" name="location_id[]" required>
                                 <option value="">请选择库位</option>
@@ -36,23 +36,23 @@
                         </td>
                         <td>
                             <input type="text" class="form-control" name="batch_no[]" placeholder="批次号(选填)">
-                        <td>
+                        </td>
                         <td>
                             <input type="number" class="form-control quantity-input" name="quantity[]" min="1" required placeholder="数量">
-                        <td>
+                        </td>
                         <td>
                             <button type="button" class="btn btn-sm btn-danger remove-item" data-row="${rowIndex}">
                                 <i class="fa fa-trash"></i>
                             </button>
-                        <td>
-                    <tr>
+                        </td>
+                    </tr>
                 `;
                 $("#itemTableBody").append(newRow);
-            );
+            });
             //删除明细行
             $(document).on("click", ".remove-item", function() {
                 const rowId = $(this).data("row");
-                $('#itemRow{rowId}').remove();
+                $(`#itemRow${rowId}`).remove();
             });
             //表单提交验证
             $("form").submit(function() {
@@ -64,19 +64,19 @@
                 let isValid = true;
                 //验证数量输入
                 $(".quantity-input").each(function() {
-                    if ($(this).val() <= 0 || !(this).val()) {
+                    if ($(this).val() <= 0 || !$(this).val()) {
                         alert('数量必须大于0');
                         isValid = false;
                         return false;
                     }
-                )};
+                });
                 //验证领用人
                 if (!$("#receiver").val()) {      //检查ID为receiver的元素输入框的值是否为空
                     alert('请填写领用人');
                     isValid = false;
                 }
                 return isValid;         //如果所有验证都通过，则允许表单提交
-            )};
+            });
         });
     </script>
 {% endblock %}
@@ -104,16 +104,16 @@
                         <input type="text" id="related_order" class="form-control" name="related_order" placeholder="输入销售单号(选填)">
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label for="receiver" class="form-label">领用人</label>
+                        <label for="receiver" class="form-label">领用人<span class="text-danger">*</span></label>
                         <input type="text" id="receiver" class="form-control" name="receiver" required placeholder="请输入领用人姓名">
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="receive_phone" class="form-label">领用人电话</label>
-                        <input type="number" id="receive_phone" class="form-control" name="receive_phone" placeholder="请输入领用人电话(选填)">
+                        <input type="tel" id="receive_phone" class="form-control" name="receive_phone" placeholder="请输入领用人电话(选填)">
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label for="outbound_date" class="form-label">出库日期</label>
-                        <input type="date" id="outbound_date" class="form-control" name="outbound_date" value="{{ now().strftime('%Y-%m-%d') if now else '' }}" required>
+                        <label for="outbound_date" class="form-label">出库日期<span class="text-danger">*</span></label>
+                        <input type="date" id="outbound_date" class="form-control" name="outbound_date" value="{{ now.strftime('%Y-%m-%d') if now else '' }}" required>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="purpose" class="form-label">领用用途</label>
@@ -129,7 +129,7 @@
                 <div class="mb-4">      <!--下边距为1.5rem 容器包裹整个入库明细区域-->
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <!--子元素水平排列 两端对齐 垂直居中-->
-                        <h5>入库明细</h5>
+                        <h5>出库明细</h5>
                         <button type="button" id="addItemBtn" class="btn btn-sm btn-outline-primary">
                             <i class="fa fa-plus"></i>添加明细      <!--已为#addItemBtn按钮绑定click事件-->
                         </button>           <!--绑定事件:为表格添加明细行-->
@@ -163,7 +163,7 @@
                                             <option value="">请输入库位</option>
                                             {% for location in locations %}
                                                 <option value="{{ location.id }}">
-                                                    {{ location.id }} - {{ location.name }}
+                                                    {{ location.code }} - {{ location.name }}
                                                 </option>
                                             {% endfor %}
                                         </select>

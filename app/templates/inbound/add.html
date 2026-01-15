@@ -71,7 +71,7 @@
             $(document).on("click", ".remove-item", function() {
                 const rowId = $(this).data("row");      //获取当前jQuery对象上存储的名为row的数据值
                 //这个数据可以是通过HTML5的data-row属性设置的
-                $("#itemRow${rowId}").remove();     //当点击删除按钮时，获取该按钮的data-row属性值，然后移除对应ID的行
+                $(`#itemRow${rowId}`).remove();     //当点击删除按钮时，获取该按钮的data-row属性值，然后移除对应ID的行
             });
             //表单提交验证 该事件只适用于<form>元素
             $("form").submit(function() {       //为表单的提交事件绑定验证函数
@@ -184,7 +184,7 @@
                                             <option value="">请选择库位</option>
                                             {% for location in locations %}
                                                 <option value="{{ location.id }}">
-                                                    {{ location.id - location.name }}
+                                                    {{ location.code - location.name }}
                                                 </option>
                                             {% endfor %}
                                         </select>

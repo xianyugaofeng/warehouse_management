@@ -74,13 +74,15 @@ def add():
             flash('请添加至少一条入库明细', 'danger')
             return render_template('outbound/add.html',
                                    products=products,
-                                   locations=locations
+                                   locations=locations,
+                                   now=datetime.now()
             )
         if not receiver:
             flash('请填写领用人', 'danger')
             return render_template('outbound/add.html',
                                    products=products,
-                                   locations=locations
+                                   locations=locations,
+                                   now=datetime.now()
             )
 
         # 创建出库单
@@ -133,6 +135,7 @@ def add():
 
     return render_template('outbound/add.html',
                            products=products,
-                           locations=locations
+                           locations=locations,
+                           now=datetime.now()
     )
 
