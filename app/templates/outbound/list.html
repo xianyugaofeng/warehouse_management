@@ -38,3 +38,71 @@
             </form>
         </div>
     </div>          <!--所有搜索条件都会保留在表单中（通过 value 属性）-->
+
+    <!--出库单表格-->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">          <!--使表格在小屏幕上可以水平滚动-->
+                <div class="table table-hover table-bordered">
+                    <!--table-bordered：添加边框 table-hover：鼠标悬停时行高亮效果-->
+                    <thead class="table-light">
+                        <tr>
+                            <th>出库单号</th>
+                            <th>关联销售单</th>
+                            <th>领用人</th>
+                            <th>领用电话</th>
+                            <th>出库日期</th>
+                            <th>出库总数量</th>
+                            <th>领用用途</th>
+                            <th>操作员</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}          <!--遍历 orders 变量中的每个出库单对象-->
+                            <tr>
+                                <td>{{ order.order_no }}</td>
+                                <td>{{ order.related_order or '-' }}</td>
+                                <td>{{ order.receiver }}</td>
+                                <td>{{ order.receive_phone or '-' }}</td>
+                                <td>{{ order.outbound_date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ order.total_amount }}</td>
+                                <td>{{ order.purpose or '-' }}</td>
+                                <td>{{ order.operator.real_name or order.operator.username }}</td>
+                                <td>
+                                    {% if order.status == 'completed' %}
+                                        <span class="badge bg-success">已完成</span>
+                                    {% elif order.status == 'draft' %}
+                                        <span class="badge bg-warning">草稿</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">已取消</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#detailModal{{ order.id }}" aria-hidden="true">
+                                        <!--Bootstrap 5模态框触发属性-->
+                                        <i class="fa fa-eye"></i>详情
+                                    </button>       <!--提供查看详情的按钮，通过模态框展示更多信息-->
+                                </td>
+                            </tr>
+
+                            <!--入库单详情模态框-->
+                            <div class="modal fade" id="detailModal{{ order.id }}" tabindex="-1" aria-labelledby="detailModalLabel{{ order.id }}" aria-hidden="true">
+                                <!--初始时模态框隐藏 无障碍属性关联到模态框标题 Bootstrap模态框,带淡入动画-->
+                                <div class="modal modal-dialog modal-lg">       <!--modal-dialog：模态框对话框容器-->
+                                    <div class="modal content">         <!--模态框内容容器-->
+                                        <div class="modal-header">          <!--模态框头部-->
+                                            <h5 class="modal-title" id="detailModalLabel{{ order.id }}">
+                                                出库单详情 - {{ order.order_no }}
+                                            </h5>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </tbody>
+                </div>
+            </div>
+        </div>
+    </div>
