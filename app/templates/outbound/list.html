@@ -43,20 +43,19 @@
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">          <!--使表格在小屏幕上可以水平滚动-->
-                <div class="table table-hover table-bordered">
-                    <!--table-bordered：添加边框 table-hover：鼠标悬停时行高亮效果-->
+                <div class="table table-hover table-bordered">      <!--table-bordered：添加边框 table-hover：鼠标悬停时行高亮效果-->
                     <thead class="table-light">
                         <tr>
-                            <th>出库单号</th>
+                            <th>出库单号</th>       <!--不需要放入模态框表格中-->
                             <th>关联销售单</th>
                             <th>领用人</th>
                             <th>领用电话</th>
                             <th>出库日期</th>
-                            <th>出库总数量</th>
+                            <th>出库总数量</th>      <!--不需要放入模态框表格中-->
                             <th>领用用途</th>
                             <th>操作员</th>
                             <th>状态</th>
-                            <th>操作</th>
+                            <th>操作</th>         <!--不需要放入模态框表格中-->
                         </tr>
                     </thead>
                     <tbody>
@@ -96,6 +95,50 @@
                                             <h5 class="modal-title" id="detailModalLabel{{ order.id }}">
                                                 出库单详情 - {{ order.order_no }}
                                             </h5>
+                                            <button type="button" class="btn close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            <!--Bootstrap 5 关闭按钮样式 点击该元素将关闭当前的模态框-->
+                                        </div>
+                                        <div class="modal-body">        <!--模态框主体-->
+                                            <div class="row mb-3">         <!--Bootstrap 5 栅格行-->
+                                                <div class="col-md-6">
+                                                    <p><strong>关联销售单:</strong> {{ order.related_order or '-' }}</p>
+                                                    <p><strong>领用人:</strong> {{ order.receiver }}</p>
+                                                    <p><strong>领用人电话:</strong> {{ order.receive_phone or '-' }}</p>
+                                                    <p><strong>出库日期:</strong> {{ order.outbound_date }}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <p><strong>领用用途:</strong> {{ order.purpose or '-' }}</p>
+                                                    <p><strong>操作员:</strong> {{ order.operator }}</p>
+                                                    <p><strong>状态:</strong>
+                                                        { % if order.status == 'completed' %}
+                                                            <span class="badge bg-success">已完成</span>
+                                                        { % if order.status == 'draft' %}
+                                                            <span class="badge bg-warning">草稿</span>
+                                                        { % if order.status == 'canceled' %}
+                                                            <span class="badge bg-danger">已取消</span>
+                                                    </p>
+                                                    <p><strong>备注:</strong> {{ order.remark or '-' }}</p>
+                                                </div>
+                                            </div>
+                                            <hr>       <!--水平分隔线，分隔基本信息与明细数据-->
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-bordered">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>商品名称</th>
+                                                            <th>库位</th>
+                                                            <th>批次号</th>
+                                                            <th>数量</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        { % for item in order.items %}      <!--遍历出库单的明细项列表order.items-->
+                                                            <tr>
+                                                                <th>{{ item.product.name }} ({{ item.product.code }})</th>
+                                                            </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -106,3 +149,4 @@
             </div>
         </div>
     </div>
+
