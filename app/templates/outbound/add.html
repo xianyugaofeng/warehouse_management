@@ -1,10 +1,196 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}添加出库单 - 仓库管理系统{% endblock %}
 
-</body>
-</html>
+{% block js %}          <!--JavaScript脚本 用于处理出库单表单的动态交互和验证-->
+    <!--动态添加入库明细行-->
+    <!--删除指定的入库明细行-->
+    <!--在表单提交时进行验证,确保至少有一条明细,且所有数量都大于0-->
+    <script>
+        // 在DOM结构加载完成后立即执行代码的方法,不必等待图片,视频等资源完全加载
+        $(document).ready(function() {
+            let rowIndex = 0;
+            //动态添加明细行
+            $('#addItemBtn').click(function() {
+                rowIndex++;
+                const newRow = `
+                    <tr id="itemRow${rowIndex}">
+                        <td>
+                            <select class="form-select product-select" name="product_id[]" required>
+                                <option value="">请选择商品</option>
+                                {% for product in products %}
+                                    <option value="{{ product.id }}">
+                                        {{ product.name }} ({{ product.code }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        <td>
+                        <td>
+                            <select class="form-select" name="location_id[]" required>
+                                <option value="">请选择库位</option>
+                                {% for location in locations %}
+                                    <option value="{{ location.id }}">
+                                        {{ location.code }} - {{ location.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <input type="text" class="form-control" name="batch_no[]" placeholder="批次号(选填)">
+                        <td>
+                        <td>
+                            <input type="number" class="form-control quantity-input" name="quantity[]" min="1" required placeholder="数量">
+                        <td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-danger remove-item" data-row="${rowIndex}">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        <td>
+                    <tr>
+                `;
+                $("#itemTableBody").append(newRow);
+            );
+            //删除明细行
+            $(document).on("click", ".remove-item", function() {
+                const rowId = $(this).data("row");
+                $('#itemRow{rowId}').remove();
+            });
+            //表单提交验证
+            $("form").submit(function() {
+                const hasItems = $("#itemTableBody tr").length > 0
+                if (!hasItems) {
+                    alert('请至少添加一条出库明细!');
+                    return false;
+                }
+                let isValid = true;
+                //验证数量输入
+                $(".quantity-input").each(function() {
+                    if ($(this).val() <= 0 || !(this).val()) {
+                        alert('数量必须大于0');
+                        isValid = false;
+                        return false;
+                    }
+                )};
+                //验证领用人
+                if (!$("#receiver").val()) {      //检查ID为receiver的元素输入框的值是否为空
+                    alert('请填写领用人');
+                    isValid = false;
+                }
+                return isValid;         //如果所有验证都通过，则允许表单提交
+            )};
+        });
+    </script>
+{% endblock %}
+
+{% block content %}
+    <div class="row mb-4">
+        <div class="col">
+            <h2>添加出库单</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('outbound.list') }}">出库管理</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">添加出库单</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <form method="POST" action="{{ url_for('outbound.add') }}">
+                <!--出库单基本信息-->
+                <div class="row mb-4">          <!--Bootstrap栅格行 下边距1.5em-->
+                    <div class="col-md-6 mb-3">
+                        <label for="related_order" class="form-label">关联销售单</label>
+                        <input type="text" id="related_order" class="form-control" name="related_order" placeholder="输入销售单号(选填)">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="receiver" class="form-label">领用人</label>
+                        <input type="text" id="receiver" class="form-control" name="receiver" required placeholder="请输入领用人姓名">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="receive_phone" class="form-label">领用人电话</label>
+                        <input type="number" id="receive_phone" class="form-control" name="receive_phone" placeholder="请输入领用人电话(选填)">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="outbound_date" class="form-label">出库日期</label>
+                        <input type="date" id="outbound_date" class="form-control" name="outbound_date" value="{{ now().strftime('%Y-%m-%d') if now else '' }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="purpose" class="form-label">领用用途</label>
+                        <input type="text" id="purpose" class="form-control" name="purpose" placeholder="请输入领用用途(选填)">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="remark" class="form-label">备注</label>
+                        <input type="text" id="remark" class="form-control" name="remark" placeholder="输入备注信息(选填)">
+                    </div>
+                </div>
+
+                <!--出库明细-->
+                <div class="mb-4">      <!--下边距为1.5rem 容器包裹整个入库明细区域-->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <!--子元素水平排列 两端对齐 垂直居中-->
+                        <h5>入库明细</h5>
+                        <button type="button" id="addItemBtn" class="btn btn-sm btn-outline-primary">
+                            <i class="fa fa-plus"></i>添加明细      <!--已为#addItemBtn按钮绑定click事件-->
+                        </button>           <!--绑定事件:为表格添加明细行-->
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="25%">商品</th>
+                                    <th width="20%">库位</th>
+                                    <th width="20%">批次号</th>
+                                    <th width="15%">数量</th>
+                                    <th width="20%">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="itemTableBody">          <!--用于click事件动态添加表格明细行-->
+                                <!--初始空行-->
+                                <tr id="itemRow0">
+                                    <td>
+                                        <select class="form-select product-select" name="product_id[]" required>
+                                            <option value="">请输入商品</option>
+                                            {% for product in products %}
+                                                <option value="{{ product.id }}">
+                                                    {{ product.name }} ({{ product.code }})
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select class="form-select" name="location_id[]" required>
+                                            <option value="">请输入库位</option>
+                                            {% for location in locations %}
+                                                <option value="{{ location.id }}">
+                                                    {{ location.id }} - {{ location.name }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control" name="batch_no[]" placeholder="批次号(选填)">
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control quantity-input" name="quantity[]" min="1" required placeholder="数量">
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-danger remove-item" data-row="0" disabled>
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!--提交按钮-->
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">提交出库单</button>
+                    <a href="{{ url_for('outbound.list') }}" class="btn btn-outline-secondary">取消</a>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
