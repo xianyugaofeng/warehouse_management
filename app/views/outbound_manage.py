@@ -34,7 +34,7 @@ def list():
         query = query.filter(OutboundOrder.outbound_date <= end_date)
 
     page = request.args.get('page', 1, type=int)
-    pagination = query.order_by(OutboundOrder.create_time.desc()).paginate(page=page, perpage=10)
+    pagination = query.order_by(OutboundOrder.create_time.desc()).paginate(page=page, per_page=10)
     orders = pagination.items
 
     return render_template('outbound/list.html',

@@ -184,7 +184,7 @@
                                             <option value="">请选择库位</option>
                                             {% for location in locations %}
                                                 <option value="{{ location.id }}">
-                                                    {{ location.code - location.name }}
+                                                    {{ location.code }} - {{ location.name }}
                                                 </option>
                                             {% endfor %}
                                         </select>
