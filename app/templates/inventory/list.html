@@ -15,7 +15,7 @@
     <!--搜索表单-->
     <div class="card mb-4">
         <div class="card-body">
-            <form action="{{ url_for('inbound.list') }}" method="GET" class="row g-3">
+            <form action="{{ url_for('inventory.list') }}" method="GET" class="row g-3">
                 <div class="col-md-3">
                     <input type="text" name="keyword" class="form-control" placeholder="商品名称/编码" value="{{ keyword }}">
                 </div>
@@ -31,6 +31,7 @@
                 </div>
                 <div class="col-md-2">
                     <select name="location_id" class="form-select">
+                        <option value="">所有库位</option>
                         {% for location in locations %}
                             <option value="{{ location.id }}" {% if location_id == location.id|string %}selected{% endif %}>
                                 {{ location.name }}
@@ -81,7 +82,7 @@
                                 <td>{{ inventory.product.code }}</td>
                                 <td>{{ inventory.product.name }}</td>
                                 <td>{{ inventory.product.spec or '-' }}</td>
-                                <td>{{ inventory.location.code - inventory.location.name }}</td>
+                                <td>{{ inventory.location.code }} - {{ inventory.location.name }}</td>
                                 <td>{{ inventory.batch_no or '-'}}</td>
                                 <td>{{ inventory.quantity }}</td>
                                 <td>{{ inventory.product.warning_stock }}</td>
@@ -110,7 +111,7 @@
                 <ul class="pagination justify-content-center">
                     {% if pagination.has_prev %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('outbound.list', page=pagination.prev_num, keyword=keyword, category_id=category_id, location_id=location_id, warning_only=1 if warning_only else 0) }}">
+                            <a class="page-link" href="{{ url_for('inventory.list', page=pagination.prev_num, keyword=keyword, category_id=category_id, location_id=location_id, warning_only=1 if warning_only else 0) }}">
                                 上一页
                             </a>
                         </li>
@@ -134,7 +135,7 @@
                     {% endfor %}
                     {% if pagination.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('outbound.list', page=pagination.next_num, keyword=keyword, category_id=category_id, location_id=location_Id, warning_only=1 if warnIng_only else 0) }}">
+                            <a class="page-link" href="{{ url_for('inventory.list', page=pagination.next_num, keyword=keyword, category_id=category_id, location_id=location_id, warning_only=1 if warning_only else 0) }}">
                                 下一页
                             </a>
                         </li>
