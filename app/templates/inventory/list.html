@@ -1,10 +1,148 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}库存管理 - 仓库管理系统{% endblock %}
 
-</body>
-</html>
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <!--子元素水平排列 两端对齐 垂直居中-->
+        <h2>库存列表</h2>
+        <div>
+            <a href="{{ url_for('inventory.list', warning_only=1) }}" class="btn btn-sm {% if warning_only %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                <i class="fa fa-exclamation-triangle"></i>仅看预警库存
+            </a>
+        </div>
+    </div>
+
+    <!--搜索表单-->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form action="{{ url_for('inbound.list') }}" method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <input type="text" name="keyword" class="form-control" placeholder="商品名称/编码" value="{{ keyword }}">
+                </div>
+                <div class="col-md-2">
+                    <select name="category_id" class="form-select">
+                        <option value="">所有分类</option>
+                        {% for category in categories %}
+                            <option value="{{ category.id }}" {% if category_id == category.id|string %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="location_id" class="form-select">
+                        {% for location in locations %}
+                            <option value="{{ location.id }}" {% if location_id == location.id|string %}selected{% endif %}>
+                                {{ location.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <!--align-middle：使元素中心对齐-->
+                    <div class="form-check align-middle">
+                        <input type="checkbox" class="form-check-input" id="warning_only" name="warning_only" value="1" {% if warning_only %}checked{% endif %}>         <!--创建复选框-->
+                        <!--checked：布尔属性，设置复选框默认被选中-->
+                        <label for="warning_only" class="form-check-label">仅预警库存</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-secondary w-100">
+                        <i class="fa fa-search"></i>搜索
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!--库存表格-->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>商品编码</th>
+                            <th>商品名称</th>
+                            <th>规格</th>
+                            <th>库位</th>
+                            <th>批次号</th>
+                            <th>库存数量</th>
+                            <th>预警阈值</th>
+                            <th>库存状态</th>
+                            <th>生产日期</th>
+                            <th>过期日期</th>
+                            <th>最后更新时间</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inventory in inventories %}
+                            <tr {% if inventory.is_warning() %}class="table-danger"{% endif %}>
+                                <td>{{ inventory.product.code }}</td>
+                                <td>{{ inventory.product.name }}</td>
+                                <td>{{ inventory.product.spec or '-' }}</td>
+                                <td>{{ inventory.location.code - inventory.location.name }}</td>
+                                <td>{{ inventory.batch_no or '-'}}</td>
+                                <td>{{ inventory.quantity }}</td>
+                                <td>{{ inventory.product.warning_stock }}</td>
+                                <td>
+                                    {% if inventory.is_warning() %}
+                                        <span class="badge bg-danger">库存预警</span>
+                                    {% else %}
+                                        <span class="badge bg-success">库存正常</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ inventory.production_date.strftime('%Y-%m-%d') if inventory.production_date else '-' }}</td>
+                                <td>{{ inventory.expire_date.strftime('%Y-%m-%d') if inventory.expire_date else '-' }}</td>
+                                <td>{{ inventory.update_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="11" class="text-center">暂无库存数据</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!--分页-->
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('outbound.list', page=pagination.prev_num, keyword=keyword, category_id=category_id, location_id=location_id, warning_only=1 if warning_only else 0) }}">
+                                上一页
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">上一页</span></li>
+                    {% endif %}
+                    {% for page in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=3) %}
+                        {% if page %}           <!--检查当前遍历的page是否为有效页码-->
+                            {% if pagination.page == page %}            <!--检查当前遍历的页码是否是当前所在页-->
+                                <li class="page-item active"><span class="page-link">{{ page }}</span></li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('inventory.list', page=page, keyword=keyword, category_id=category_id, location_id=location_id, warning_only=1 if warning_only else 0) }}">
+                                        {{ page }}
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    {% if pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('outbound.list', page=pagination.next_num, keyword=keyword, category_id=category_id, location_id=location_Id, warning_only=1 if warnIng_only else 0) }}">
+                                下一页
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">下一页</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+{% endblock %}

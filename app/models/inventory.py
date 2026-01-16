@@ -13,7 +13,7 @@ class WarehouseLocation(db.Model):
     inventories = db.relationship('Inventory', backref='location', lazy='dynamic')  # 关联库存
 
     # 通过warehouselocation.inventories获取该位置的所有库存(动态加载)
-    # 通过inventory.locations获取属于该库存的所有位置(立即加载)
+    # 通过inventory.location获取属于该库存的所有位置(立即加载)
 
     def __repr__(self):
         return f'<WarehouseLocation {self.code}>'
