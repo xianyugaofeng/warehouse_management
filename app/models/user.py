@@ -62,7 +62,7 @@ class User(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(32), unique=True, nullable=False)  # 用户名
-    password_hash = db.Column(db.String(128), nullable=False)  # 密码哈希
+    password_hash = db.Column(db.String(256), nullable=False)  # 密码哈希
     real_name = db.Column(db.String(32))  # 真实姓名
     phone = db.Column(db.String(16))  # 手机号
     email = db.Column(db.String(64))  # 邮箱

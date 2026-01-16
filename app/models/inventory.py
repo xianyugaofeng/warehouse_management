@@ -7,7 +7,7 @@ class WarehouseLocation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(32), unique=True, nullable=False)  # 库位编码(如A1-01-02)
     name = db.Column(db.String(64), nullable=False)  # 库位名称
-    area = db.Column(db.String(32))  # 所属区域(如A区/B区)
+    area = db.Column(db.String(32))  # 所属区域
     status = db.Column(db.Boolean, default=True)  # 状态(启用/禁用)
     remark = db.Column(db.String(256))  # 备注
     inventories = db.relationship('Inventory', backref='location', lazy='dynamic')  # 关联库存
