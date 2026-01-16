@@ -78,7 +78,8 @@ def add():
             return render_template('inbound/add.html',
                                    products=products,
                                    suppliers=suppliers,
-                                   location=locations
+                                   location=locations,
+                                   now=datetime.now()
             )
 
         # 创建入库单
@@ -136,5 +137,6 @@ def add():
     return render_template('inbound/add.html',
                            products=products,
                            suppliers=suppliers,
-                           locations=locations
+                           locations=locations,
+                           now=datetime.now()
     )  # GET请求或POST请求添加入库单失败
