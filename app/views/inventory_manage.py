@@ -37,7 +37,7 @@ def list():
 
     # 下拉框数据
     categories = Category.query.all()
-    locations = WarehouseLocation.query.filter(status=True).all()
+    locations = WarehouseLocation.query.filter_by(status=True).all()
 
     return render_template('inventory/list.html',
                            inventories=inventories,
