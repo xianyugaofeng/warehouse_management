@@ -8,6 +8,7 @@ PERMISSIONS = {
     'product_manage': '商品管理',
     'inbound_manage': '入库管理',
     'outbound_manage': '出库管理',
+    'inventory_manage': '库存管理',
     'report_view': '报表查看'
 }
 
