@@ -1,0 +1,208 @@
+{% extends "base.html %}
+{% block title %}报表统计 - 仓库管理系统{% endblock %}
+
+{% block js %}
+<!--EChart图片库-->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<script>
+    //确保 DOM 完全加载后再执行内部代码，避免因元素未渲染而无法获取图表容器
+    $(document).ready(function() {
+        //初始化近30天出入库趋势图表
+        const trendChart = echarts.init(document.getElementById('trendChart'));
+        //通过ID找到页面中的trendChart元素，将其作为图表的挂载点，并创建一个 ECharts 实例
+        //图表配置项
+        const trendOption = {
+            title: {
+                text: '近30天出入库趋势分析‘。
+                left: 'center',
+                textStyle: {
+                    fontSize: 16,
+                    fontWeight: 'bold'
+                }
+            },
+            tooltip: {
+                trigger: 'axis',
+                //表示提示框触发方式为坐标轴触发
+                axisPointer: { type:'shadow" }
+                //配置坐标轴指示器的样式为阴影 自动为当前轴所在的数据点显示一个阴影区域
+                formatter: function(params) {
+                //自定义提示框中显示的内容
+                //params是一个数组，包含了当前触发位置所有系列的数据信息
+                    let res = `$(params[0].name)</br>`;
+                    //获取x轴当前点的值（如日期字符串）作为标题 用<br/>换行
+                    params.forEach(item => {
+                        res += `${item.seriesName}:{item.value}件<br/>`;
+                    });
+                    return res;
+                }
+            },
+            legend: {
+                //显示“入库数量”和“出库数量”两个系列的名称，位于图表底部中央
+                data: ['入库数量', '出库数量'],
+                bottom: 0,
+                textStyle: {
+                    fontSize: 12
+                }
+            },
+            grid: {
+                //控制图表绘制区域的位置，左侧留 3%、右侧 4%、底部留 15% 空间给坐标轴标签和图例，并保证标签完整显示
+                left: '3%',
+                right: '4%',
+                bottom: '15%',
+                containLabel: true
+            },
+            xAxis: {
+                //数据通过 Django 模板变量 {{ dates|tojson }} 动态传入
+                //轴标签旋转 45 度，字体 10px，防止重叠
+                type: 'category',
+                boundaryGap: false,
+                data: {{ dates|tojson }},
+                axisLabel: {
+                    rotate: 45,
+                    fontSize: 10
+                }
+            },
+            yAxis: {
+                //数值轴，最小值从 0 开始，轴名称为“数量（件）”，字体大小 12px，刻度标签 10px
+                type: 'value',
+                min: 0,
+                name: '数量(件)',
+                nameTextStyle: {
+                    fontSize: 12
+                },
+                axisLabel: {
+                    fontSize: 10
+                }
+            },
+            series: [
+                //定义两条折线
+                {
+                    //绿色 (#28a745)，数据来自 {{ inbound_data|tojson }}，线条平滑 (smooth: true)，线宽 2
+                    //下方有从绿色渐变到透明的区域填充，并标记最大值和最小值点 (markPoint)
+                    name: '入库数量',
+                    type: 'line',
+                    data: {{ inbound_data|tojson }},
+                    smooth: true,
+                    itemStyle: { color: '#28a745' }.
+                    lineStyle: { width: 2 },
+                    //areaStyle 是用于折线图的区域填充样式，对应“入库数量”系列，颜色从绿色半透明渐变到完全透明
+                    areaStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: 'rbga(40, 167, 69, 0.3)' },
+                            { offset: 1, color: 'rbga(40, 167, 69, 0)' }
+                        ])
+                    },
+                    markpoint: {
+                        //标记最大值最小值
+                        data: [
+                            { type: 'max', name: '最大值' },
+                            { type: 'min', name: '最小值' }
+                        ]
+                    }
+                },
+                {
+                    //红色 (#dc3545)，数据来自 {{ outbound_data|tojson }}，同样平滑、有渐变区域填充，并标记最大最小值
+                    name: '出库数量',
+                    type: 'line',
+                    data: {{ outbound_data|tojson }},
+                    smooth: true,
+                    itemStyle: { color: '#dc3545' },
+                    lineStyle: { width: 2 },
+                    areaStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: 'rbga(220, 53, 69, 0.3)' },
+                            { offset: 1, color: 'rbga(220, 53, 69, 0)' }
+                        ])
+                    },
+                    markpoint: {
+                        //标记最大值最小值
+                        data: [
+                            { type: 'max', name: '最大值' },
+                            { type: 'min', name: '最小值' }
+                        ]
+                    }
+                }
+            ]
+        };
+        //trendChart.setOption(trendOption) 将配置项应用到 ECharts 实例，最终渲染出图表
+        trendChart.setOption(trendOption);
+
+        //初始化库存Top10商品柱状图（补充图表展示）
+        const top10Chart = echarts.init(document.getElementById('top10Chart');
+        //处理Top10数据（提取商品名称和库存数量）
+        //将后端传递的商品列表拆分为两个独立的 JavaScript 数组，分别用于图表 x 轴的商品名称和 y 轴的库存数量
+        const top10Names = {{ top_products|map(attribute='name')|tojson }};
+        const top10Quantities = {{ top_products|map(attribute='total_quantity')|tojson }};
+
+        const top10Option = {
+            title: {
+                text: '库存top10商品',
+                left: 'center',
+                textStyle: {
+                    fontSize: 14,
+                    fontWeight: 'bold'
+                }
+            },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'shadow'
+                },
+                formatter: function(params) {
+                    return `${params[0].name}<br/>库存数量: &{params[0].value} 件`;
+                }
+            },
+            grid: {
+                left: '5%',
+                right: '5%',
+                bottom: '5%',
+                containLabel: true
+            },
+            xAxis: {
+                type: 'category',
+                data: top10Names,
+                axisLabel: {
+                    rotate: 45,
+                    fontSize: 10
+                }
+            },
+            yAxis: {
+                type: 'value',
+                name: '库存数量(件)',
+                nameTextStyle: {
+                    fontSize: 12
+                }
+            },
+            series: [
+                //系列类型为柱状图/条形图（bar），适合展示分类数据的数量对比
+                {
+                    name: '库存数量',
+                    type: 'bar',
+                    data: top10Quantities,
+                    itemStyle: {
+                        color: function(params) {
+                        // 渐变颜色（从蓝色到紫色）
+                            const colorList = ['#007bff', '#6610f2', '#6f42c1', '#e83e8c', '#dc3545',
+                                         '#fd7e14', '#ffc107', '#28a745', '#20c997', '#17a2b8'];
+                            return colorList[params.dataIndex];
+                        }
+                    },
+                    label: {
+                        show: true,
+                        //将标签放置在柱子的顶部外侧
+                        position: 'top',
+                        fontSize: 10
+                    }
+                }
+            ]
+        };
+        top10Chart.setOption(top10Option);
+
+        //回调函数内调用 trendChart.resize() 和 top10Chart.resize()
+        //resize() 是 ECharts 实例提供的方法，它会重新计算图表的尺寸，并根据当前容器（即挂载图表的 <div>）的新宽高重新渲染图表
+        window.addEventListener('resize', function() {
+            trendChart.resize();
+            top10Chart.resize();
+        });
+    });
+</script>
