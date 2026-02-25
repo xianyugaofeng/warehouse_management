@@ -59,8 +59,14 @@ def index():
         if 0 <= idx < 31:
             outbound_data[idx] == item.total
 
+    inventories = Inventory.query.join(Product).filter(Inventory.quantity > 0).all()
+
     return render_template('report/index.html',
                            top_products=top_products,
                            dates=dates,
                            inbound_data=inbound_data,
-                           outbound_data=outbound_data)
+                           outbound_data=outbound_data,
+                           inventories=inventories,
+                           start_date=start_date,
+                           end_date=end_date
+    )

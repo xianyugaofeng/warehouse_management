@@ -284,7 +284,7 @@
             <div class='card-header bg-primary text-white d-flex justify-content-between align-items-center'>
                 <h5 class="mb-0">近30天出入库趋势</h5>
                 <span class="badge bg-light text-primary">
-                    {{ (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d') }} 至 {{ datetime.now().strftime('%Y-%m-%d') }}
+                    {{ start_date }} 至 {{ end_date }}
                 </span>
             </div>
             <div class="card-body">
@@ -390,7 +390,7 @@
                                     </li>
                                 {% endif %}
                                 {% if top_products and top_products[0].total_quantity / top_products|sum(attribute='total_quantity') > 0.4 %}
-                                    <Li class="mb-1">
+                                    <li class="mb-1">
                                         <i class="fa fa-info-circle text-primary"></i>单商品库存占比过高，建议优化库存结构
                                     </li>
                                 {% endif %}
@@ -403,3 +403,4 @@
         </div>
     </div>
 </div>
+{% endblock %}
