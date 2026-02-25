@@ -23,15 +23,17 @@
             tooltip: {
                 trigger: 'axis',
                 //表示提示框触发方式为坐标轴触发
-                axisPointer: { type:'shadow" },
+                axisPointer: { 
+                    type:'shadow' 
+                },
                 //配置坐标轴指示器的样式为阴影 自动为当前轴所在的数据点显示一个阴影区域
                 formatter: function(params) {
                 //自定义提示框中显示的内容
                 //params是一个数组，包含了当前触发位置所有系列的数据信息
-                    let res = `$(params[0].name)</br>`;
+                    let res = `${params[0].name}</br>`;
                     //获取x轴当前点的值（如日期字符串）作为标题 用<br/>换行
                     params.forEach(item => {
-                        res += `${item.seriesName}:{item.value}件<br/>`;
+                        res += `${item.seriesName}:${item.value}件<br/>`;
                     });
                     return res;
                 }
@@ -83,16 +85,16 @@
                     type: 'line',
                     data: {{ inbound_data|tojson }},
                     smooth: true,
-                    itemStyle: { color: '#28a745' }.
+                    itemStyle: { color: '#28a745' },
                     lineStyle: { width: 2 },
                     //areaStyle 是用于折线图的区域填充样式，对应“入库数量”系列，颜色从绿色半透明渐变到完全透明
                     areaStyle: {
                         color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                            { offset: 0, color: 'rbga(40, 167, 69, 0.3)' },
-                            { offset: 1, color: 'rbga(40, 167, 69, 0)' }
+                            { offset: 0, color: 'rgba(40, 167, 69, 0.3)' },
+                            { offset: 1, color: 'rgba(40, 167, 69, 0)' }
                         ])
                     },
-                    markpoint: {
+                    markPoint: {
                         //标记最大值最小值
                         data: [
                             { type: 'max', name: '最大值' },
@@ -110,11 +112,11 @@
                     lineStyle: { width: 2 },
                     areaStyle: {
                         color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                            { offset: 0, color: 'rbga(220, 53, 69, 0.3)' },
-                            { offset: 1, color: 'rbga(220, 53, 69, 0)' }
+                            { offset: 0, color: 'rgba(220, 53, 69, 0.3)' },
+                            { offset: 1, color: 'rgba(220, 53, 69, 0)' }
                         ])
                     },
-                    markpoint: {
+                    markPoint: {
                         //标记最大值最小值
                         data: [
                             { type: 'max', name: '最大值' },
@@ -128,7 +130,7 @@
         trendChart.setOption(trendOption);
 
         //初始化库存Top10商品柱状图（补充图表展示）
-        const top10Chart = echarts.init(document.getElementById('top10Chart');
+        const top10Chart = echarts.init(document.getElementById('top10Chart'));
         //处理Top10数据（提取商品名称和库存数量）
         //将后端传递的商品列表拆分为两个独立的 JavaScript 数组，分别用于图表 x 轴的商品名称和 y 轴的库存数量
         const top10Names = {{ top_products|map(attribute='name')|tojson }};
@@ -149,7 +151,7 @@
                     type: 'shadow'
                 },
                 formatter: function(params) {
-                    return `${params[0].name}<br/>库存数量: &{params[0].value} 件`;
+                    return `${params[0].name}<br/>库存数量: ${params[0].value} 件`;
                 }
             },
             grid: {
@@ -206,3 +208,194 @@
         });
     });
 </script>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>报表统计中心</h2>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item active" aria-current="page">库存与出入库分析</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!--报表统计卡片区域(响应式布局)-->
+<div class="row gap-4">
+    <!--库存Top10商品卡片(左侧)-->
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">库存Top10商品</h5>
+                <span class="badge bg-light text-primary">实时统计</span>
+            </div>
+            <div class="card-body">
+                <!--Top10商品图表-->
+                <div id="top10Chart" style="width: 100%; height: 300px; margin-bottom: 20px;"></div>
+
+                <!--Top10商品详情表格-->
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered table-sm">
+                        <!--Bootstrap 的悬停效果、边框和紧凑样式-->
+                        <thead class="table-light">
+                            <tr>
+                                <th width="10%">排名</th>
+                                <th width="30%">商品名称</th>
+                                <th width="20%">商品编码</th>
+                                <th width="20%">库存总量(件)</th>
+                                <th width="20%">占总库存占比</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if top_products %}
+                                {% set total_stock = top_products|sum(attribute='total_quantity') %}
+                                <!--通过 top_products 列表（后端传入）计算所有商品的总库存 total_stock（使用 sum 过滤器）-->
+                                {% for idx, item in top_products|enumerate(start=1) %}
+                                    <!--使用 enumerate 从1开始生成排名，遍历每个商品，显示名称、编码、库存量并计算该商品库存占总库存的百分比（保留两位小数）-->
+                                    <tr>
+                                        <td>{{ idx }}</td>
+                                        <td>{{ item.name }}</td>
+                                        <td>{{ item.code }}</td>
+                                        <td>{{ item.total_quantity }}</td>
+                                        <td>{{ "%.2f%%"|format((item.total_quantity / total_stock) * 100) }}</td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>        <!--text-muted一种文本颜色-->
+                                    <td colspan="5" class="text-center text-muted">暂无库存数据，请先录入商品与库存信息</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--近30天出入库趋势卡片(右侧)-->
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class='card-header bg-primary text-white d-flex justify-content-between align-items-center'>
+                <h5 class="mb-0">近30天出入库趋势</h5>
+                <span class="badge bg-light text-primary">
+                    {{ (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d') }} 至 {{ datetime.now().strftime('%Y-%m-%d') }}
+                </span>
+            </div>
+            <div class="card-body">
+                <!--出入库趋势图表-->
+                <div id="trendChart" style="width: 100%; height: 380px;"></div>
+
+                <!--趋势统计摘要-->
+                <div class="mt-3 p-3 bg-light rounded">
+                    <h6 class="fw-bold">统计摘要</h6>    <!--fw-bold使文本变粗-->
+                    <div class="row text-sm">
+                        <div class="col-6">
+                            <p class="mb-1">30天总入库: <span class="text-success fw-bold">{{ inbound_data|sum }} 件</span></p>
+                            <p class="mb-1">日均入库: <span class="text-success">{{ "%.1f"|format(inbound_data|sum / 30) }}</span></p>
+                        </div>
+                        <div class="col-6">
+                            <p class="mb-1">30天总出库: <span class="text-danger fw-bold">{{ outbound_data|sum }} 件</span></p>
+                            <p calss="mb-1">日均出库: <span class="text-success">{{ "%.1f"|format(outbound_data|sum / 30) }}</span></p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!--库存健康度分析卡片(下方通栏)-->
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">库存健康度分析</h5>
+            </div>
+            <div class="card-body">
+                <div class="row gap-4">
+                    <!--库存基础统计-->
+                    <div class="col-md-3">
+                        <div class="bg-light p-3 rounded h-100">
+                            <h6 class="fw-bold text-center mb-3">基础统计</h6>
+                            {% if top_products %}
+                                {% set total_stock = top_products|sum(attribute="total_quantity") %}
+                                    <p class="mb-1">总库存商品数: <span class="fw-bold">{{ top_products|length }}</span></p>
+                                    <p class="mb-1">总库存数量: <span class="fw-bold">{{ total_quantity %}}</span></p>
+                                    <p class="mb-1">平均每种库存: <span class="fw-bold">{{ "%.1f"|format((total_stock / total_quantity)|length) }}</span></p>
+                            {% else %}
+                                <p class="text-center text-muted">暂无数据</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!--库存预警统计(关联Inventory模型预警)-->
+                    <div class="col-md-3">
+                        <div class="bg-light p-3 rounded h-100">
+                            <h6 class="fw-bold text-center mb-3">库存预警</h6>
+                            {% set warning_count = inventories|selectattr('is_warning')|list|length %}
+                            {% set total_inventory = inventories|length %}
+                            {% if total_inventory > 0 %}
+                                <p class="mb-1">预警库存记录: <span class="text-danger fw-bold">{{ warning_count }} 条</span></p>
+                                <p class="mb-1">总库存记录: <span class="text-danger fw-bold">{{ total_inventory }} 条</span></p>
+                                <p class="mb-1">预警占比: <span class="text-danger fw-bold">{{ "%.2f%%"format((warning_count / total_inventory) * 100) }}</span></p>
+                            {% else %}
+                                <p class="text-center text-muted">暂无库存记录</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!--出入库平衡分析-->
+                    <div class="col-md-3">
+                        <div class="bg-light p-3 rounded h-100">
+                            <h6 class="fw-bold text-center mb-3">出入库平衡</h6> 
+                            {% set total_inbound = inbound_data|sum %}
+                            {% set total_outbound = outbound_data|sum %}
+                            {% set balance = total_inbound - total_outbound %}
+                            <p class="mb-1">30天总入库: <span class="text-success fw-bold">{{ total_inbound }} 件</span></p>
+                            <p class="mb-1">30天总出库: <span class="text-success fw-bold">{{ total_outbound }} 件</span></p>
+                            <p class="mb-1">库存变化:
+                                {% if balance > 0 %}
+                                    <span class="text-success fw-bold">+{{ balance }}件（增加）</span>
+                                {% elif balance < 0 %}
+                                    <span class="text-danger fw-bold">-{{ balance }}件（减少）</span>
+                                {% else %}
+                                    <span class="text-secondary fw-bold">0 件（平衡）</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!--操作建议-->
+                    <div class="col-md-3">
+                        <div class="bg-light p-3 rounded h-100">
+                            <h6 class="fw-bold text-center mb-3">操作建议</h6>
+                            <ul class="list-unstyled text-sm"> <!--使用 list-unstyled 的列表移除了所有默认样式-->
+                                {% if warning_count %}
+                                    <li class="mb-1">
+                                        <i class="fa fa-exclamation-circle text-danger"></i>有 {{ warning_count }} 条库存预警，建议及时补货
+                                    </li>
+                                {% endif %}
+                                {% if balance > total_inbound * 0.3 %}
+                                    <li class="mb-1">
+                                        <i class="fa fa-info-circle text-primary"></i>入库远超出库，注意库存积压风险
+                                    </li>
+                                {% elif balance < total_outbound * 0.3 %}
+                                    <li class="mb-1">
+                                        <i class="fa fa-info-circle text-primary"></i>出库远超入库，注意缺货风险
+                                    </li>
+                                {% endif %}
+                                {% if top_products and top_products[0].total_quantity / top_products|sum(attribute='total_quantity') > 0.4 %}
+                                    <Li class="mb-1">
+                                        <i class="fa fa-info-circle text-primary"></i>单商品库存占比过高，建议优化库存结构
+                                    </Li>
+                                {% endif %}
+                                <li class="mb-1"><i class="fa fa-check-circle text-success"></i>定期盘点确保库存准确率</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

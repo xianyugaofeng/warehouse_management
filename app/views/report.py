@@ -21,6 +21,7 @@ def index():
         Product.name, Product.code, db.func.sum(Inventory.quantity)
     ).join(Inventory).group_by(Product.id).order_by(db.func.sum(Inventory.quantity).desc()).limit(10).all()
     # 查询会返回一个包含元组的列表，每个元组包含产品名称、产品代码和该产品的总库存量
+    # (name, code, total_quantity)
 
     # 2. 近30天出入库趋势（按日期分组）
     end_date = datetime.now()
