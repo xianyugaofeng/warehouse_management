@@ -133,8 +133,8 @@
         const top10Chart = echarts.init(document.getElementById('top10Chart'));
         //处理Top10数据（提取商品名称和库存数量）
         //将后端传递的商品列表拆分为两个独立的 JavaScript 数组，分别用于图表 x 轴的商品名称和 y 轴的库存数量
-        const top10Names = {{ top_products|map(attribute='name')|tojson }};
-        const top10Quantities = {{ top_products|map(attribute='total_quantity')|tojson }};
+        const top10Names = {{ top_products|map(attribute='name')|list|tojson }};
+        const top10Quantities = {{ top_products|map(attribute='total_quantity')|list|tojson }};
 
         const top10Option = {
             title: {
