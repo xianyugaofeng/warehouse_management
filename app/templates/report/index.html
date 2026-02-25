@@ -1,4 +1,4 @@
-{% extends "base.html %}
+{% extends "base.html" %}
 {% block title %}报表统计 - 仓库管理系统{% endblock %}
 
 {% block js %}
@@ -203,8 +203,12 @@
         //回调函数内调用 trendChart.resize() 和 top10Chart.resize()
         //resize() 是 ECharts 实例提供的方法，它会重新计算图表的尺寸，并根据当前容器（即挂载图表的 <div>）的新宽高重新渲染图表
         window.addEventListener('resize', function() {
-            trendChart.resize();
-            top10Chart.resize();
+            if(trendChart) {
+                trendChart.resize();
+            }
+            if(top10Chart) {
+                top10Chart.resize();
+            }
         });
     });
 </script>
@@ -297,7 +301,7 @@
                         </div>
                         <div class="col-6">
                             <p class="mb-1">30天总出库: <span class="text-danger fw-bold">{{ outbound_data|sum }} 件</span></p>
-                            <p calss="mb-1">日均出库: <span class="text-success">{{ "%.1f"|format(outbound_data|sum / 30) }}</span></p>
+                            <p class="mb-1">日均出库: <span class="text-success">{{ "%.1f"|format(outbound_data|sum / 30) }}</span></p>
                         </div>
                     </div>
                 </div>
@@ -319,10 +323,10 @@
                         <div class="bg-light p-3 rounded h-100">
                             <h6 class="fw-bold text-center mb-3">基础统计</h6>
                             {% if top_products %}
-                                {% set total_stock = top_products|sum(attribute="total_quantity") %}
+                                {% set total_stock = top_products|sum(attribute='total_quantity') %}
                                     <p class="mb-1">总库存商品数: <span class="fw-bold">{{ top_products|length }}</span></p>
-                                    <p class="mb-1">总库存数量: <span class="fw-bold">{{ total_quantity %}}</span></p>
-                                    <p class="mb-1">平均每种库存: <span class="fw-bold">{{ "%.1f"|format((total_stock / total_quantity)|length) }}</span></p>
+                                    <p class="mb-1">总库存数量: <span class="fw-bold">{{ total_quantity }}</span></p>
+                                    <p class="mb-1">平均每种库存: <span class="fw-bold">{{ "%.1f"|format(total_stock / total_products|length) }}</span></p>
                             {% else %}
                                 <p class="text-center text-muted">暂无数据</p>
                             {% endif %}
@@ -338,7 +342,7 @@
                             {% if total_inventory > 0 %}
                                 <p class="mb-1">预警库存记录: <span class="text-danger fw-bold">{{ warning_count }} 条</span></p>
                                 <p class="mb-1">总库存记录: <span class="text-danger fw-bold">{{ total_inventory }} 条</span></p>
-                                <p class="mb-1">预警占比: <span class="text-danger fw-bold">{{ "%.2f%%"format((warning_count / total_inventory) * 100) }}</span></p>
+                                <p class="mb-1">预警占比: <span class="text-danger fw-bold">{{ "%.2f%%"|format((warning_count / total_inventory) * 100) }}</span></p>
                             {% else %}
                                 <p class="text-center text-muted">暂无库存记录</p>
                             {% endif %}
@@ -388,7 +392,7 @@
                                 {% if top_products and top_products[0].total_quantity / top_products|sum(attribute='total_quantity') > 0.4 %}
                                     <Li class="mb-1">
                                         <i class="fa fa-info-circle text-primary"></i>单商品库存占比过高，建议优化库存结构
-                                    </Li>
+                                    </li>
                                 {% endif %}
                                 <li class="mb-1"><i class="fa fa-check-circle text-success"></i>定期盘点确保库存准确率</li>
                             </ul>
