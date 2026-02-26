@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container-fluid">
+        <h1 class="mt-4">供应商管理</h1>
+        <ol class="breadcrumb mb-4">
+            <li class="breadcrumb-item active">供应商列表</li>
+        </ol>
+    </div>
+
+    <!--搜索表单-->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form action="{{ url_for('supplier.list') }}" method="GET" class="form-inline">
+                <div class="form-group mr-3">
+                    <input type="text" name="keyword" class="form-control" placeholder="搜索供应商名称、联系刃或电话" value="{{ keyword }}">
+                </div>
+                <button type="submit" class="btn btn-primary">搜索</button>
+                <a href="{{ url_for('supplier.edit', id=0) }}" class="btn btn-success ml-3">添加供应商</a> 
+            </form>
+        </div>
+    </div>
+
+    <!--供应商列表-->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-table mr-1"></i>供应商列表
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <!--cellspacing="0" 表示单元格之间没有间距-->
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>供应商名称</th>
+                            <th>联系人</th>
+                            <th>联系电话</th>
+                            <th>地址</th>
+                            <th>邮箱</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for supplier in suppliers %}
+                            <tr>
+                                <td>{{ supplier.id }}</td>
+                                <td>{{ supplier.name }}</td>
+                                <td>{{ supplier.contact_person }}</td>
+                                <td>{{ supplier.phone }}</td>
+                                <td>{{ supplier.email }}</td>
+                                <td>{{ supplier.create_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                <td>
+                                    <a href="{{ url_for('supplier.edit', id=supplier.id) }}" class="btn btn-sm btn-primary">编辑</a>
+                                    <a href="{{ url_for('supplier.delete', id=supplier.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('确定要删除这个供应商吗?')">
+                                        删除
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!--分页-->
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('supplier.list', page=pagination.prev_num, keyword=keyword) }}">
+                                上一页
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">上一页</span>
+                        </li>
+                    {% endif %}
+                    <!--遍历分页对象生成的页码序列-->
+                    {% for page in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
+                        {% if page %}
+                            {% if pagination.page == page %}   <!--检查当前遍历的页码是否是当前所在页-->
+                                <li class="page-item active"><span class="page-link">{{ page }}</span></li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('supplier,list', page=page, keyword=keyword) }}">
+                                        {{ page }}
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('supplier.list', page=pagination.next_num, keyword=keyword) }}">
+                                下一页
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">下一页</span>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+{% endblock %}

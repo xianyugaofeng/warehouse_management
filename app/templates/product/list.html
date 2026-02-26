@@ -103,9 +103,9 @@
                             </a>    <!--生成分页链接，保留上一页的页码，搜索关键词，分类筛选，供应商筛选-->
                         </li>
                     {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link">上一页</span>   <!--禁用的分页项通常使用<span>-->
-                    </li>
+                        <li class="page-item disabled">
+                            <span class="page-link">上一页</span>   <!--禁用的分页项通常使用<span>-->
+                        </li>
                     {% endif %}
                     <!--遍历分页对象生成的页码序列-->
                     {% for page in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
