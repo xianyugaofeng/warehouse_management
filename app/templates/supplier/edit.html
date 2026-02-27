@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}{% if supplier.id %}编辑供应商{% else %}添加供应商{% endif %} - 仓库管理系统{% endblock %}
+
+{% block content %}
+    <div class="row mb-4">
+        <div class="col">
+            <h2>{% if supplier.id %}编辑供应商{% else %}添加供应商{% endif %}</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('supplier.list') }}">供应商管理</a></li>
+                    <Li class="breadcrumb-item active" aria-current="page">{% if supplier.id %}编辑供应商{% else %}添加供应商{% endif %}</Li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            {% if product.id %}
+                <h2>编辑供应商</h2>
+                <form method = "POST" action = "{{ url_for('supplier.edit', id=supplier.id) }}">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">供应商名称<span class="text-danger">*/span></label>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ supplier.name }}" required placeholder="请输入供应商名称">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="contact_person" class="form-label">联系人</label>
+                            <input type="text" class="form-control" id="contact_person" name="contact_person" value="{{ supplier.contact_person }}" placeholder="请输入联系人">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="phone" class="form-label">联系电话</label>
+                            <input type="text" class="form-label" id="phone" name="phone" value="{{ supplier.phone }}" placeholder="请输入联系电话">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="email" class="form-label">邮箱</label>
+                            <input type="text" class="form-control" id="email" name="email" value="{{ supplier.email }}" placeholder="请输入邮箱">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="address" class="form-label">地址</label>
+                        <input type="text" class="form-label" id="address" name="address" value="{{ supplier.address }}" placeholder="请输入地址">
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">保存</button>
+                        <a href="{{ url_for('supplier.list') }}" class="btn btn-outline-secondary">取消</a>
+                    </div>
+                </form>
+            {% else %}
+                <!--创建模式-->
+                <h2>创建新供应商</h2>
+                <form method="POST" action="{{ url_for('supplier.edit', id=0) }}">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">供应商名称<span class="text-danger">*/span></label>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ supplier.name }}" required placeholder="请输入供应商名称">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="contact_person" class="form-label">联系人</label>
+                            <input type="text" class="form-control" id="contact_person" name="contact_person" value="{{ supplier.contact_person }}" placeholder="请输入联系人">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="phone" class="form-label">联系电话</label>
+                            <input type="text" class="form-label" id="phone" name="phone" value="{{ supplier.phone }}" placeholder="请输入联系电话">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="email" class="form-label">邮箱</label>
+                            <input type="text" class="form-control" id="email" name="email" value="{{ supplier.email }}" placeholder="请输入邮箱">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="address" class="form-label">地址</label>
+                        <input type="text" class="form-label" id="address" name="address" value="{{ supplier.address }}" placeholder="请输入地址">
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">保存</button>
+                        <a href="{{ url_for('supplier.list') }}" class="btn btn-outline-secondary">取消</a>
+                    </div>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
