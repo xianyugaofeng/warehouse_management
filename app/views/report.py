@@ -18,14 +18,14 @@ report_bp = Blueprint('report', __name__)
 def index():
     # 1. 库存Top10商品(按数量排序)
     top_products = db.session.query(
-        Product.name, Product.code, db.func.sum(Inventory.quantity)
+        Product.name, Product.code, db.func.sum(Inventory.quantity).label('total_quantity')
     ).join(Inventory).group_by(Product.id).order_by(db.func.sum(Inventory.quantity).desc()).limit(10).all()
     # 查询会返回一个包含元组的列表，每个元组包含产品名称、产品代码和该产品的总库存量
     # (name, code, total_quantity)
 
     # 2. 近30天出入库趋势（按日期分组）
-    end_date = datetime.now()
-    start_date = datetime.now() - timedelta(days=30)
+    end_date = datetime.now().date()
+    start_date = (datetime.now() - timedelta(days=30)).date()
 
     # 入库趋势
     inbound_trend = db.session.query(
@@ -52,12 +52,12 @@ def index():
     for item in inbound_trend:
         idx = (item.date - start_date).days
         if 0 <= idx < 31:
-            inbound_data[idx] == item.total
+            inbound_data[idx] = item.total
 
     for item in outbound_trend:
         idx = (item.date - start_date).days
         if 0 <= idx < 31:
-            outbound_data[idx] == item.total
+            outbound_data[idx] = item.total
 
     inventories = Inventory.query.join(Product).filter(Inventory.quantity > 0).all()
 

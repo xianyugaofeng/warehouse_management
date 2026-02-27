@@ -256,10 +256,10 @@
                             {% if top_products %}
                                 {% set total_stock = top_products|sum(attribute='total_quantity') %}
                                 <!--通过 top_products 列表（后端传入）计算所有商品的总库存 total_stock（使用 sum 过滤器）-->
-                                {% for idx, item in top_products|enumerate(start=1) %}
+                                {% for item in top_products %}
                                     <!--使用 enumerate 从1开始生成排名，遍历每个商品，显示名称、编码、库存量并计算该商品库存占总库存的百分比（保留两位小数）-->
                                     <tr>
-                                        <td>{{ idx }}</td>
+                                        <td>{{ loop.index }}</td>
                                         <td>{{ item.name }}</td>
                                         <td>{{ item.code }}</td>
                                         <td>{{ item.total_quantity }}</td>
@@ -324,9 +324,12 @@
                             <h6 class="fw-bold text-center mb-3">基础统计</h6>
                             {% if top_products %}
                                 {% set total_stock = top_products|sum(attribute='total_quantity') %}
-                                    <p class="mb-1">总库存商品数: <span class="fw-bold">{{ top_products|length }}</span></p>
-                                    <p class="mb-1">总库存数量: <span class="fw-bold">{{ total_quantity }}</span></p>
-                                    <p class="mb-1">平均每种库存: <span class="fw-bold">{{ "%.1f"|format(total_stock / total_products|length) }}</span></p>
+                                {% set total_product = top_products|length %}
+                                {% if top_product %}
+                                    <p class="mb-1">总库存商品数: <span class="fw-bold">{{ total_product }}</span></p>
+                                    <p class="mb-1">总库存数量: <span class="fw-bold">{{ total_stock }}</span></p>
+                                    <p class="mb-1">平均每种库存: <span class="fw-bold">{{ "%.1f"|format(total_stock / total_product) }}</span></p>
+                                {% endif %}    
                             {% else %}
                                 <p class="text-center text-muted">暂无数据</p>
                             {% endif %}
@@ -353,8 +356,8 @@
                     <div class="col-md-3">
                         <div class="bg-light p-3 rounded h-100">
                             <h6 class="fw-bold text-center mb-3">出入库平衡</h6> 
-                            {% set total_inbound = inbound_data|sum %}
-                            {% set total_outbound = outbound_data|sum %}
+                            {% set total_inbound = inbound_data|sum|float %}
+                            {% set total_outbound = outbound_data|sum|float %}
                             {% set balance = total_inbound - total_outbound %}
                             <p class="mb-1">30天总入库: <span class="text-success fw-bold">{{ total_inbound }} 件</span></p>
                             <p class="mb-1">30天总出库: <span class="text-success fw-bold">{{ total_outbound }} 件</span></p>
@@ -389,7 +392,7 @@
                                         <i class="fa fa-info-circle text-primary"></i>出库远超入库，注意缺货风险
                                     </li>
                                 {% endif %}
-                                {% if top_products and top_products[0].total_quantity / top_products|sum(attribute='total_quantity') > 0.4 %}
+                                {% if top_products and top_products[0].total_quantity|float / top_products|sum(attribute='total_quantity')|float > 0.4 %}
                                     <li class="mb-1">
                                         <i class="fa fa-info-circle text-primary"></i>单商品库存占比过高，建议优化库存结构
                                     </li>

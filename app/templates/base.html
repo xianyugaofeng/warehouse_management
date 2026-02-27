@@ -76,6 +76,9 @@
                     {% if current_user.has_permission('report_view') %}
                         <a href="{{ url_for('report.index') }}" class="list-group-item list-group-item-action">报表统计</a>
                     {% endif %}
+                    {% if current_user.has_permission('product_manage') %}
+                        <a href="{{ url_for('supplier.list') }}" class="list-group-item list-group-item-action">供应商管理</a>
+                    {% endif %}
                 </div>
             </div>
             {% endif %}
