@@ -14,7 +14,7 @@
         <div class="card-body">
             <form action="{{ url_for('supplier.list') }}" method="GET" class="form-inline">
                 <div class="form-group mr-3">
-                    <input type="text" name="keyword" class="form-control" placeholder="搜索供应商名称、联系刃或电话" value="{{ keyword }}">
+                    <input type="text" name="keyword" class="form-control" placeholder="搜索供应商名称、联系人或电话" value="{{ keyword }}">
                 </div>
                 <button type="submit" class="btn btn-primary">搜索</button>
                 <a href="{{ url_for('supplier.edit', id=0) }}" class="btn btn-success ml-3">添加供应商</a> 
@@ -50,6 +50,7 @@
                                 <td>{{ supplier.name }}</td>
                                 <td>{{ supplier.contact_person }}</td>
                                 <td>{{ supplier.phone }}</td>
+                                <td>{{ supplier.address }}</td>
                                 <td>{{ supplier.email }}</td>
                                 <td>{{ supplier.create_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                                 <td>
@@ -85,7 +86,7 @@
                                 <li class="page-item active"><span class="page-link">{{ page }}</span></li>
                             {% else %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('supplier,list', page=page, keyword=keyword) }}">
+                                    <a class="page-link" href="{{ url_for('supplier.list', page=page, keyword=keyword) }}">
                                         {{ page }}
                                     </a>
                                 </li>

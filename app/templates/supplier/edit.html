@@ -16,12 +16,12 @@
 
     <div class="card shadow-sm">
         <div class="card-body p-4">
-            {% if product.id %}
+            {% if supplier.id %}
                 <h2>编辑供应商</h2>
                 <form method = "POST" action = "{{ url_for('supplier.edit', id=supplier.id) }}">
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="name" class="form-label">供应商名称<span class="text-danger">*/span></label>
+                            <label for="name" class="form-label">供应商名称<span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="name" name="name" value="{{ supplier.name }}" required placeholder="请输入供应商名称">
                         </div>
                         <div class="col-md-6">
@@ -32,7 +32,7 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="phone" class="form-label">联系电话</label>
-                            <input type="text" class="form-label" id="phone" name="phone" value="{{ supplier.phone }}" placeholder="请输入联系电话">
+                            <input type="text" class="form-control" id="phone" name="phone" value="{{ supplier.phone }}" placeholder="请输入联系电话">
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -43,7 +43,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="address" class="form-label">地址</label>
-                        <input type="text" class="form-label" id="address" name="address" value="{{ supplier.address }}" placeholder="请输入地址">
+                        <input type="text" class="form-control" id="address" name="address" value="{{ supplier.address }}" placeholder="请输入地址">
                     </div>
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">保存</button>
@@ -56,7 +56,7 @@
                 <form method="POST" action="{{ url_for('supplier.edit', id=0) }}">
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="name" class="form-label">供应商名称<span class="text-danger">*/span></label>
+                            <label for="name" class="form-label">供应商名称<span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="name" name="name" value="{{ supplier.name }}" required placeholder="请输入供应商名称">
                         </div>
                         <div class="col-md-6">
@@ -67,7 +67,7 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="phone" class="form-label">联系电话</label>
-                            <input type="text" class="form-label" id="phone" name="phone" value="{{ supplier.phone }}" placeholder="请输入联系电话">
+                            <input type="text" class="form-control" id="phone" name="phone" value="{{ supplier.phone }}" placeholder="请输入联系电话">
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -78,7 +78,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="address" class="form-label">地址</label>
-                        <input type="text" class="form-label" id="address" name="address" value="{{ supplier.address }}" placeholder="请输入地址">
+                        <input type="text" class="form-control" id="address" name="address" value="{{ supplier.address }}" placeholder="请输入地址">
                     </div>
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">保存</button>

@@ -17,9 +17,9 @@ def list():
     query = Supplier.query
 
     if keyword:
-        query = query.filter(Supplier.name.ilike(f'%{keyword}%')) | 
-                             Supplier.contact_person.ilike(f'%{keyword}%') | 
-                             Supplier.phone.ilike(f'%{keyword}%')
+        query = query.filter(Supplier.name.ilike(f'%{keyword}%') |
+                             Supplier.contact_person.ilike(f'%{keyword}%') |
+                             Supplier.phone.ilike(f'%{keyword}%'))
     
     # 分页
     page = request.args.get('page', 1, type=int)
@@ -27,9 +27,9 @@ def list():
     pagination = query.order_by(Supplier.create_time.desc()).paginate(page=page, per_page=per_page)
     suppliers = pagination.items
 
-    return render_template('supploer/list.html',
-                            supppliers=suppliers,
-                            papgination=pagination,
+    return render_template('supplier/list.html',
+                            suppliers=suppliers,
+                            pagination=pagination,
                             keyword=keyword
     )
 
