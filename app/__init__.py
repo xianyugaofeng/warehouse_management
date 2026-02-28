@@ -28,6 +28,7 @@ def create_app(config_name='default'):
     from app.views.inventory_manage import inventory_bp
     from app.views.product_manage import product_bp
     from app.views.supplier_manage import supplier_bp
+    from app.views.inventory_count_manage import inventory_count_bp
     from app.views.report import report_bp
     # 注册蓝图（这会注册所有蓝图中的路由）
     app.register_blueprint(user_bp, url_prefix='/user')
@@ -38,7 +39,8 @@ def create_app(config_name='default'):
     app.register_blueprint(product_bp, url_prefix='/product')
     app.register_blueprint(supplier_bp, url_prefix='/supplier')
     app.register_blueprint(report_bp, url_prefix='/report')
-
+    app.register_blueprint(inventory_count_bp, url_prefix='/inventory_count')
+    
     # 注册根路由
     @app.route('/')
     def index():
