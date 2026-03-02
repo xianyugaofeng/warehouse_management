@@ -40,14 +40,16 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="area" class="form-label">盘点区域</label>
-                        <option value="">请选择盘点区域</option>
-                        {% set areas = [] %}
-                        {% for location in locations %}
-                            {% if location.area and location.area not in areas %}
-                                {% set areas = areas + [location.area] %}
-                                <option value="{{ location.area }}">{{ location.area }}</option>
-                            {% endif %}
-                        {% endfor %}
+                        <select class="form-select" id="area" name="area">
+                            <option value="">请选择盘点区域</option>
+                            {% set areas = [] %}
+                            {% for location in locations %}
+                                {% if location.area and location.area not in areas %}
+                                    {% set areas = areas + [location.area] %}
+                                    <option value="{{ location.area }}">{{ location.area }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
                     </div>
                     <div class="col-md-6">
                         <label for="supplier_id" class="form-label">供应商</label>
