@@ -15,7 +15,18 @@ def generate_outbound_no():
     random_str = str(random.randint(100, 999))
     return f'OUT{date_str}{random_str}'
 
+# 生成盘点任务单号(COUNT+日期+3位随机数)
+def generate_inventory_count_task_no():
+    date_str = datetime.now().strftime('%Y%m%d')
+    random_str = str(random.randint(100, 999))
+    return f'COUNT{date_str}{random_str}'
 
+# 生成库存调整单号(ADJ+日期+3位随机数)
+def generate_inventory_adjustment_no():
+    date_str = datetime.now().strftime('%Y%m%d')
+    random_str = str(random.randint(100, 999))
+    return f'ADJ{date_str}{random_str}'
+    
 # 库存更新函数(入库时增加, 出库时减少)
 def update_inventory(product_id, location_id, batch_no, quantity, is_bound=True):
     from app import db
