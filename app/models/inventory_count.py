@@ -26,7 +26,16 @@ class InventoryCountTask(db.Model):
     results = db.relationship('InventoryCountResult', backref='task', lazy='dynamic', cascade='all, delete-orphan')
     # 父对象的一切操作都会影响子对象（保存、合并、删除等）
     # 当子对象被解除与父对象的关联时，它也会被自动删除
+    # cascade='all, delete-orphan' 
+    # 表示当删除InventoryCountTask时，会自动删除与之关联的所有InventoryCountResult
+    # 当 InventoryCountResult 与 InventoryCountTask 解除关联时，也会被自动删除
 
+    # 正向关联: 通过 backref 参数，SQLAlchemy 在关联的另一端自动创建反向引用
+    # 反向关联: backref='task' 会在 InventoryCountResult 中自动生成 task 属性，指向关联的 InventoryCountTask 实例
+
+    # 查询时的自动处理
+    # 延迟加载: 默认情况下，关联数据会在首次访问时才从数据库加载（懒加载）
+    # 生成查询: 自动构建并执行 SQL 查询，获取关联数据
     def __repr__(self):
         return f'<InventoryCountTask {self.task_no} - {self.name}>'
     
@@ -35,6 +44,16 @@ class InventoryCountResult(db.Model):
     __tablename__ = 'inventory_count_results'
     id = db.Column(db.Integer, primary_key=True)
     task_id = db.Column(db.Integer, db.ForeignKey('inventory_count_tasks.id'), nullable=False) # 关联盘点任务
+    # - InventoryCountResult 表中有一个 task_id 外键，指向 InventoryCountTask 表的 id
+    # 这是物理上的关联，存储在数据库中
+    # - SQLAlchemy 通过 relationship 和 backref 在 ORM 层面建立双向引用
+    # 当查询时，SQLAlchemy 会自动处理这些关联，使得可以通过属性访问关联对象
+
+    # SQLAlchemy 的关联基于数据库外键实现
+    # 识别外键: 自动查找关联模型中的外键字段InventoryCountResult.task_id
+    # 建立映射: 将外键与主键关联，形成逻辑上的父子关系
+
+    
     inventory_id = db.Column(db.Integer, db.ForeignKey('inventories.id'), nullable=False) # 关联库存
     expected_quantity = db.Column(db.Integer, nullable=False) # 系统预期数量
     actual_quantity = db.Column(db.Integer, nullable=False) # 实际盘点数量

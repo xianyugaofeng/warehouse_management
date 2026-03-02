@@ -1,4 +1,4 @@
-from app.models import inventory
+from venv import create
 from flask import Blueprint, render_template, request, url_for, flash, redirect
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta
@@ -6,8 +6,8 @@ from app import db
 from app.models.inventory_count import InventoryCountTask, InventoryCountResult, InventoryAdjustment, VirtualInventory, InventoryAccuracy
 from app.models.inventory import Inventory, WarehouseLocation
 from app.models.product import Product, Supplier
-from app.utils.auth import perission_required, permission_required
-from app.utils.helps import generate_inventory_count_task_no, generate_inventory_adjustment_no
+from app.utils.auth import permission_required
+from app.utils.helpers import generate_inventory_count_task_no, generate_inventory_adjustment_no
 
 inventory_count_bp = Blueprint('inventory_count', __name__)
 
@@ -33,7 +33,7 @@ def task_list():
     
     page = request.args.get('page', 1, type=int)
     per_page = 10
-    pagination = query.order_by(InventoryCountTask.create_time.desc().paginate(page=page, per_page=per_page))
+    pagination = query.order_by(InventoryCountTask.create_time.desc()).paginate(page=page, per_page=per_page)
     tasks = pagination.items
 
     return render_template('inventory_count/task_list.html',
@@ -94,7 +94,7 @@ def task_create():
 
 # 执行盘点任务
 @inventory_count_bp.route('/task/execute/<int:task_id>', methods=['GET', 'POST'])
-@permission_required
+@permission_required('inventory_manage')
 @login_required
 def task_execute(task_id):
     task = InventoryCountTask.query.get_or_404(task_id)
@@ -110,7 +110,7 @@ def task_execute(task_id):
         # 如果盘点任务指定了区域（area）则通过 join 关联 WarehouseLocation（仓库位置）表
         # 并筛选出该区域下的库存记录（WarehouseLocation.area == task.area）
     if task.supplier_id:
-        query = query.join(Product).filter(Product.supplier_id == task.suppplier_id)
+        query = query.join(Product).filter(Product.supplier_id == task.supplier_id)
         # 如果任务指定了供应商 ID（supplier_id）则通过 join 关联 Product（产品）表
         # 并筛选出属于该供应商的产品库存（Product.supplier_id == task.supplier_id）
     
@@ -128,7 +128,7 @@ def task_execute(task_id):
             actual_quantity = request.form.get(f'actual_quantity_{inventory.id}', type=int)
             if actual_quantity is not None:
                 expected_quantity = inventory.quantity
-                difference = actual_quantity - excepted_quantity
+                difference = actual_quantity - expected_quantity
 
                 # 创建盘点结果 
                 result = InventoryCountResult(
@@ -160,13 +160,12 @@ def task_execute(task_id):
 @login_required
 def task_detail(task_id):
     task = InventoryCountTask.query.get_or_404(task_id)
-    results = task.results.all()    
-    # 特别标注：无法得知task是如何与results建立对应引用的
+    results = task.results.all()
 
     # 计算准确率
     total_items = len(results)
     accurate_items = sum(1 for r in results if r.difference == 0) 
-    accuracy_rate = (accurate_items / total_items * 100) if total_items > 0 else 100
+    accuracy_rate = round((accurate_items / total_items * 100), 2) if total_items > 0 else 100
     return render_template('inventory_count/task_detail.html',
                            task=task, 
                            results=results,
@@ -196,7 +195,7 @@ def process_result(result_id):
                 inventory_id = inventory.id,
                 before_quantity=inventory.quantity,
                 after_quantity=result.actual_quantity,
-                adjustment_quantiy=result.difference,
+                adjustment_quantity=result.difference,
                 type='count_adjustment',
                 reason=reason or '盘点调整',
                 operator_id=current_user.id,
@@ -217,7 +216,7 @@ def process_result(result_id):
             flash('差异处理完成', 'success')
         else:
             # 标记已处理但不调整
-            result.status = 'processed' + (reason or '差异在容差范围内')
+            result.status = 'processed' 
             result.processor_id = current_user.id
             result.process_time = datetime.now()
 
@@ -240,4 +239,98 @@ def adjustment_list():
     start_date = request.args.get('start_date', '')
     end_date = request.args.get('end_date', '')
 
+    query = InventoryAdjustment.query
+    if keyword:
+        query = query.join(Inventory).join(Product).filter(Product.name.ilike(f'%{keyword}%') |
+                                                           Product.code.ilike(f'%{keyword}%') |
+                                                           InventoryAdjustment.adjustment_no.ilike(f'%{keyword}%')
+        )
     
+    if start_date:
+        try:
+            start_datetime = datetime.strptime(start_date, '%Y-%m-%d')
+            query = query.filter(InventoryAdjustment.create_time >= start_datetime)
+        except ValueError:
+            pass
+    
+    if end_date:
+        try:
+            end_datetime = datetime.strptime(end_date, '%Y-%m-%d')
+            end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
+            query = query.filter(InventoryAdjustment.create_time <= end_datetime)
+        except ValueError:
+            pass
+
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    pagination = query.order_by(InventoryAdjustment.create_time.desc()).paginate(page=page, per_page=per_page)
+    adjustments = pagination.items
+
+    return render_template('inventory_count/adjustment_list.html',
+                            adjustments=adjustments,
+                            pagination=pagination,
+                            keyword=keyword,
+                            start_date=start_date,
+                            end_date=end_date 
+    )
+
+# 虚拟库存管理
+@inventory_count_bp.route('/virtual/list')
+@permission_required('inventory_manage')
+@login_required
+def virtual_inventory_list():
+    keyword = request.args.get('keyword', '')
+    location_id = request.args.get('location_id', '')
+
+    query = VirtualInventory.query.join(Product).join(WarehouseLocation)
+    if keyword:
+        query = query.filter(Product.name.ilike(f'%{keyword}%') | 
+                             Product.code.ilike(f'%{keyword}%')
+        )
+    
+    if location_id:
+        query = query.filter(VirtualInventory.location_id == location_id)
+    
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    pagination = query.order_by(VirtualInventory.update_time.desc()).paginate(page=page, per_page=per_page)
+    virtual_inventories = pagination.items
+
+    locations = WarehouseLocation.query.filter_by(status=True).all()
+
+    return render_template('inventory_count/virtual_inventory_list.html',
+                           virtual_inventories=virtual_inventories,
+                           pagination=pagination,
+                           keyword=keyword,
+                           location_id=location_id,
+                           locations=locations
+    )
+
+# 库存准确率报表
+@inventory_count_bp.route('/accuracy/report')
+@permission_required('inventory_manage')
+@login_required
+def accuracy_report():
+    # 获取近30天的准确率数据
+    end_date = datetime.now().date()
+    start_date = end_date - timedelta(days=30)
+
+    accuracies = InventoryAccuracy.query.filter(
+        InventoryAccuracy.date >= start_date,
+        InventoryAccuracy.date <= end_date
+    ).order_by(InventoryAccuracy.date).all()
+
+    # 格式化数据
+    dates = []
+    rates = []
+    for acc in accuracies:
+        dates.append(acc.date.strftime('%Y-%m-%d'))
+        rates.append(acc.accuracy_rate)
+    
+    return render_template('inventory_count/accuracy_report.html',
+                           accuracies=accuracies,
+                           dates=dates,
+                           rates=rates,
+                           start_date=start_date,
+                           end_date=end_date
+    )
