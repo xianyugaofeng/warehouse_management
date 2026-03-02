@@ -55,7 +55,6 @@
                             <th>任务类型</th>
                             <th>状态</th>
                             <th>盘点区域</th>
-                            <th>库位</th>
                             <th>供应商</th>
                             <th>创建时间</th>
                             <th>操作</th>
@@ -88,9 +87,6 @@
                                 </td>
                                 <td>
                                     {{ task.area or '-' }}
-                                </td>
-                                <td>
-                                    {{ task.location.name if task.location else '-' }}
                                 </td>
                                 <td>
                                     {{ task.supplier.name if task.supplier else '-' }}

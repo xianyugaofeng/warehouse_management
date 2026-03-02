@@ -57,7 +57,6 @@ def task_create():
         task_type = request.form.get('type')
         area = request.form.get('area')
         supplier_id = request.form.get('supplier_id')
-        location_id = request.form.get('location_id')
         cycle_days = request.form.get('cycle_days', type=int)
         threshold = request.form.get('threshold', type=int)
         remark = request.form.get('remark')
@@ -78,7 +77,6 @@ def task_create():
             type=task_type,
             area=area,
             supplier_id=supplier_id,
-            location_id=location_id,
             cycle_days=cycle_days,
             threshold=threshold,
             remark=remark
