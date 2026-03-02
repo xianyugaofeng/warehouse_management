@@ -3,9 +3,9 @@
 {% block content %}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="mt-4">库存盘点管理</h1>
-        <ol class="breadcrumb mb-4">
-            <li class="breadcrumb-item active">盘点任务列表</li>
-        </ol>
+        <a href="{{ url_for('inventory_count.task_create') }}" class="btn btn-primary">
+            <i class="fa fa-plus"></i>创建盘点任务
+        </a>
     </div>
 
     <!--搜索表单-->
@@ -32,10 +32,10 @@
                         <option value="threshold" {% if task_type == 'threshold' %}selected{% endif %}>阈值触发</option>
                     </select>
                 </div>
-                <button type="submit" class="btn btn-primary">搜索</button>
-                <a href="{{ url_for('inventory_count.task_create') }}" class="btn btn-success ml-3">
-                    创建盘点任务
-                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa fa-search"></i>搜索
+                </button>
+                
             </form>
         </div>
     </div>
@@ -55,6 +55,7 @@
                             <th>任务类型</th>
                             <th>状态</th>
                             <th>盘点区域</th>
+                            <th>库位</th>
                             <th>供应商</th>
                             <th>创建时间</th>
                             <th>操作</th>
@@ -87,6 +88,9 @@
                                 </td>
                                 <td>
                                     {{ task.area or '-' }}
+                                </td>
+                                <td>
+                                    {{ task.location.name if task.location else '-' }}
                                 </td>
                                 <td>
                                     {{ task.supplier.name if task.supplier else '-' }}

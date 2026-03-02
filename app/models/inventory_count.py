@@ -14,6 +14,7 @@ class InventoryCountTask(db.Model):
     operator_id = db.Column(db.Integer, db.ForeignKey('users.id')) # 执行人员
     area = db.Column(db.String(32)) # 盘点区域
     supplier_id = db.Column(db.Integer, db.ForeignKey('suppliers.id')) # 供应商
+    location_id = db.Column(db.Integer, db.ForeignKey('warehouse_locations.id')) # 关联库位
     cycle_days = db.Column(db.Integer) # 周期天数
     threshold = db.Column(db.Integer) # 阈值
     remark = db.Column(db.String(256)) # 备注
@@ -23,6 +24,7 @@ class InventoryCountTask(db.Model):
     # 关联
     operator = db.relationship('User', backref='inventory_count_tasks')
     supplier = db.relationship('Supplier')
+    location = db.relationship('WarehouseLocation')
     results = db.relationship('InventoryCountResult', backref='task', lazy='dynamic', cascade='all, delete-orphan')
     # 父对象的一切操作都会影响子对象（保存、合并、删除等）
     # 当子对象被解除与父对象的关联时，它也会被自动删除
