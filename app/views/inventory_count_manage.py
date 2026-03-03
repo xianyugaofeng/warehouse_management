@@ -1,4 +1,4 @@
-from scheduler import logger
+from app.utils.scheduler import logger
 from flask import Blueprint, render_template, request, url_for, flash, redirect
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta
