@@ -129,9 +129,7 @@
                                 </td>
                                 <td>
                                     {% if result.status == 'pending' %}
-                                        <a href="{{ url_for('inventory_count.process_result', result_id=result.id) }}" class="btn btn-sm btn-primary">
-                                            处理
-                                        </a>
+                                        <span class="text-muted">自动处理中</span>
                                     {% endif %}
                                 </td>
                             </tr>

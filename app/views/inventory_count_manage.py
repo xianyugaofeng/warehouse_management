@@ -137,10 +137,33 @@ def task_execute(task_id):
                     expected_quantity = expected_quantity,
                     actual_quantity = actual_quantity,
                     difference = difference,
-                    status = 'pending'
+                    status = 'auto_adjusted'
                 )
                 db.session.add(result)
-        
+
+                # 自动处理差异
+                if difference != 0:
+                    # 创建库存调整 
+                    adjustment_no = generate_inventory_adjustment_no()
+                    adjustment = InventoryAdjustment(
+                        adjustment_no = adjustment_no,
+                        inventory_id = inventory.id,
+                        before_quantity = inventory.quantity,
+                        after_quantity = actual_quantity,
+                        adjustment_quantity = difference,
+                        type='count_adjustment',
+                        reason=f'{task.type}触发的盘点调整',
+                        operator_id = current_user.id,
+                        count_task_id=task.id
+                    )
+
+                    # 更新库存数量
+                    reasult.adjust_reason = f'{task.type}触发的盘点调整'
+                    result.processor_id = current_user.id
+                    result.process_time = datetime.now()
+
+                    db.session.add(adjustment)
+                    
         # 完成任务
         task.status = 'completed'
         task.end_time = datetime.now()
@@ -172,62 +195,6 @@ def task_detail(task_id):
                            total_items=total_items,
                            accurate_items=accurate_items,
                            accuracy_rate=accuracy_rate
-    )
-
-# 处理盘点差异
-# 对InventoryCountResult进行处理
-@inventory_count_bp.route('/result/process/<int:result_id>', methods=['GET', 'POST'])
-@permission_required('inventory_manage')
-@login_required
-def process_result(result_id):
-    result = InventoryCountResult.query.get_or_404(result_id)
-    inventory = result.inventory
-
-    if request.method == 'POST':
-        adjust = request.form.get('adjust') == '1'
-        reason = request.form.get('reason')
-
-        if adjust:
-            # 创建库存调整
-            adjustment_no = generate_inventory_adjustment_no()
-            adjustment = InventoryAdjustment(
-                adjustment_no = adjustment_no,
-                inventory_id = inventory.id,
-                before_quantity=inventory.quantity,
-                after_quantity=result.actual_quantity,
-                adjustment_quantity=result.difference,
-                type='count_adjustment',
-                reason=reason or '盘点调整',
-                operator_id=current_user.id,
-                count_task_id=result.task_id
-            )
-
-            # 更新库存数量
-            inventory.quantity = result.actual_quantity
-            
-            # 更新盘点结果状态
-            result.status = 'processed'
-            result.adjust_reason = reason
-            result.processor_id = current_user.id
-            result.process_time = datetime.now()
-
-            db.session.add(adjustment)
-            db.session.commit()
-            flash('差异处理完成', 'success')
-        else:
-            # 标记已处理但不调整
-            result.status = 'processed' 
-            result.processor_id = current_user.id
-            result.process_time = datetime.now()
-
-            db.session.commit()
-            flash('差异已标记为处理', 'success')
-
-        return redirect(url_for('inventory_count.task_detail', task_id=result.task_id))
-
-    return render_template('inventory_count/process_result.html',
-                            result=result,
-                            inventory=inventory
     )
 
 # 库存调整历史
