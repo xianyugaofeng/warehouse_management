@@ -1,4 +1,4 @@
-from scheduler import logger
+from app.utils.scheduler import logger
 from flask import Blueprint, render_template, request, url_for, flash, redirect
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta
@@ -242,6 +242,30 @@ def task_detail(task_id):
     total_items = len(results)
     accurate_items = sum(1 for r in results if r.difference == 0) 
     accuracy_rate = round((accurate_items / total_items * 100), 2) if total_items > 0 else 100
+    
+    # 创建库存准确率记录
+    if total_items > 0:
+        # 检查是否已有当天的准确率记录
+        today = datetime.now().date()
+        existing_accuracy = InventoryAccuracy.query.filter_by(date=today).first()
+        
+        if existing_accuracy:
+            # 更新现有记录
+            existing_accuracy.total_items = total_items
+            existing_accuracy.accurate_items = accurate_items
+            existing_accuracy.accuracy_rate = accuracy_rate
+        else:
+            # 创建新记录
+            accuracy = InventoryAccuracy(
+                date=today,
+                total_items=total_items,
+                accurate_items=accurate_items,
+                accuracy_rate=accuracy_rate
+            )
+            db.session.add(accuracy)
+        
+        db.session.commit()
+    
     return render_template('inventory_count/task_detail.html',
                            task=task, 
                            results=results,
