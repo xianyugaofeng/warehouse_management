@@ -7,7 +7,7 @@ from app.models.inventory_count import InventoryCountTask, InventoryCountResult,
 from app.models.inventory import Inventory, WarehouseLocation
 from app.models.product import Product, Supplier
 from app.utils.auth import permission_required
-from app.utils.helpers import generate_inventory_count_task_no, generate_inventory_adjustment_no
+from app.utils.helpers import generate_inventory_count_task_no, generate_inventory_adjustment_no, validate_virtual_inventory
 from app.utils.scheduler import add_schedule
 
 inventory_count_bp = Blueprint('inventory_count', __name__)
@@ -164,8 +164,19 @@ def task_execute(task_id):
                         count_task_id=task.id
                     )
 
-                    # 更新库存数量
-                    reasult.adjust_reason = f'{task.type}触发的盘点调整'
+                    # 更新实物库存
+                    inventory.quantity = expected_quantity
+                    
+                    # 同步更新虚拟库存的实物库存部分
+                    if virtual_inventory:
+                        virtual_inventory.physical_quantity = actual_quantity
+                        # 验证虚拟库存
+                        is_valid, message = validate_virtual_inventory(virtual_inventory)
+                        if not is_valid:
+                            flash(f'虚拟库存验证失败: {message}', 'warning')
+                    
+                    # 更新盘点结果状态
+                    result.adjust_reason = f'{task.type}触发的盘点调整'
                     result.processor_id = current_user.id
                     result.process_time = datetime.now()
 
@@ -464,3 +475,71 @@ def task_start_schedule(task_id):
 
     return render_template('inventory_count/task_start_schedule.html',
                            task=task)
+
+
+# 同步虚拟库存
+@inventory_count_bp.route('/virtual/sync', methods=['POST'])
+@permission_required('inventory_manage')
+@login_required
+def virtual_inventory_sync():
+    """同步虚拟库存与实物库存"""
+    from app.utils.helpers import sync_virtual_inventory
+    from app.models.inventory import Inventory
+    
+    try:
+        # 获取所有实物库存
+        inventories = Inventory.query.all()
+        synced_count = 0
+        error_count = 0
+        
+        for inventory in inventories:
+            try:
+                sync_virtual_inventory(
+                    inventory.product_id,
+                    inventory.location_id,
+                    inventory.batch_no
+                )
+                synced_count += 1
+            except Exception as e:
+                error_count += 1
+                logger.error(f'同步虚拟库存失败: {str(e)}')
+        
+        flash(f'虚拟库存同步完成: 成功{synced_count}条, 失败{error_count}条', 'success')
+    except Exception as e:
+        flash(f'虚拟库存同步失败: {str(e)}', 'danger')
+    
+    return redirect(url_for('inventory_count.virtual_inventory_list'))
+
+
+# 验证虚拟库存
+@inventory_count_bp.route('/virtual/validate', methods=['POST'])
+@permission_required('inventory_manage')
+@login_required
+def virtual_inventory_validate():
+    """验证虚拟库存数据"""
+    from app.utils.helpers import validate_virtual_inventory
+    
+    try:
+        virtual_inventories = VirtualInventory.query.all()
+        valid_count = 0
+        invalid_count = 0
+        errors = []
+        
+        for vi in virtual_inventories:
+            is_valid, message = validate_virtual_inventory(vi)
+            if is_valid:
+                valid_count += 1
+            else:
+                invalid_count += 1
+                errors.append(f'{vi.product.name if vi.product else vi.product_id} - {vi.location.code if vi.location else vi.location_id}: {message}')
+        
+        flash(f'虚拟库存验证完成: 有效{valid_count}条, 无效{invalid_count}条', 'success' if invalid_count == 0 else 'warning')
+        
+        if errors:
+            for error in errors[:10]:  # 只显示前10个错误
+                flash(error, 'danger')
+                
+    except Exception as e:
+        flash(f'虚拟库存验证失败: {str(e)}', 'danger')
+    
+    return redirect(url_for('inventory_count.virtual_inventory_list'))

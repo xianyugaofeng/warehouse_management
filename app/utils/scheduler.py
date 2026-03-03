@@ -7,7 +7,7 @@ from app.models.inventory_count import InventoryCountTask, InventoryCountTaskSch
 from app.models.inventory import Inventory
 from app.models.product import Product
 from app.models.inventory import WarehouseLocation
-from app.utils.helpers import generate_inventory_adjustment_no
+from app.utils.helpers import generate_inventory_adjustment_no, validate_virtual_inventory
 from flask_login import current_user
 # 配置日志
 logging.basicConfig(level=logging.INFO,
@@ -58,19 +58,27 @@ def run_inventory_count_task(task_id, schedule_id=None):
         
         # 处理盘点结果
         for inventory in inventories:
-            # 这里简化处理，使用当前库存作为实际盘点数量
-            # 实际应用中可能需要从其他系统或设备获取实际盘点数量
+            # 从虚拟库存获取预期数量
+            from app.models.inventory_count import VirtualInventory
+            virtual_inventory = VirtualInventory.query.filter_by(
+                product_id=inventory.product_id,
+                location_id=inventory.location_id,
+                batch_no=inventory.batch_no
+            ).first()
+            expected_quantity = virtual_inventory.virtual_quantity if virtual_inventory else inventory.quantity
+            
+            # 实际盘点数量（当前库存）
             actual_quantity = inventory.quantity
             
             # 计算差异
-            difference = actual_quantity - inventory.quantity
+            difference = actual_quantity - expected_quantity
             
             # 创建盘点结果
             from app.models.inventory_count import InventoryCountResult
             result = InventoryCountResult(
                 task_id=task.id,
                 inventory_id=inventory.id,
-                expected_quantity=inventory.quantity,
+                expected_quantity=expected_quantity,
                 actual_quantity=actual_quantity,
                 difference=difference,
                 status='auto_adjusted'
@@ -96,7 +104,15 @@ def run_inventory_count_task(task_id, schedule_id=None):
                 db.session.add(adjustment)
                 
                 # 更新库存数量
-                inventory.quantity = actual_quantity
+                inventory.quantity = expected_quantity
+                
+                # 同步更新虚拟库存的实物库存部分
+                if virtual_inventory:
+                    virtual_inventory.physical_quantity = actual_quantity
+                    # 验证虚拟库存
+                    is_valid, message = validate_virtual_inventory(virtual_inventory)
+                    if not is_valid:
+                        logger.warning(f'虚拟库存验证失败: {message}')
                 
                 # 更新盘点结果状态
                 result.adjust_reason = '自动周期盘点调整'

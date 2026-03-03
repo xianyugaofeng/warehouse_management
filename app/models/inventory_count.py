@@ -104,8 +104,8 @@ class VirtualInventory(db.Model):
     batch_no = db.Column(db.String(32)) # 批次号
     physical_quantity = db.Column(db.Integer, default=0) # 实物库存
     in_transit_quantity = db.Column(db.Integer, default=0) # 在途库存
-    allocate_quantity = db.Column(db.Integer, default=0) # 已分配库存
-    virtual_quantity = db.Column(db.Integer, default=0) # 虚拟库存 = 实物库存 + 在途库存 - 已分配库存
+    allocated_quantity = db.Column(db.Integer, default=0) # 已分配库存
+    # 虚拟库存通过计算属性实现，不存储在数据库中
     update_time = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow) # 更新时间
 
     # 联合唯一约束
@@ -116,6 +116,16 @@ class VirtualInventory(db.Model):
     # 关联 
     product = db.relationship('Product')
     location = db.relationship('WarehouseLocation')
+
+    @property
+    def virtual_quantity(self):
+        """虚拟库存 = 实物库存 + 在途库存 - 已分配库存"""
+        return self.physical_quantity + self.in_transit_quantity - self.allocated_quantity
+
+    @property
+    def is_virtual_quantity_valid(self):
+        """验证虚拟库存是否有效"""
+        return self.virtual_quantity >= 0
 
     def __repr__(self):
         return f'<VirtualInventory {self.product_id} - {self.location_id} - {self.virtual_quantity}>'
