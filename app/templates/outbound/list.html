@@ -87,84 +87,87 @@
                                 </td>
                                 <td>
                                     <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#detailModal{{ order.id }}">
-                                        <!--Bootstrap 5模态框触发属性-->
                                         <i class="fa fa-eye"></i>详情
-                                    </button>       <!--提供查看详情的按钮，通过模态框展示更多信息-->
+                                    </button>
                                 </td>
                             </tr>
-
-                            <!--出库单详情模态框-->
-                            <div class="modal" id="detailModal{{ order.id }}" tabindex="-1" role="dialog" aria-labelledby="detailModalLabel{{ order.id }}" aria-hidden="true">
-                                <div class="modal-dialog modal-lg" role="document">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="detailModalLabel{{ order.id }}">出库单详情 - {{ order.order_no }}</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <div class="row mb-3">
-                                                <div class="col-md-6">
-                                                    <p><strong>关联销售单:</strong> {{ order.related_order or '-' }}</p>
-                                                    <p><strong>领用人:</strong> {{ order.receiver }}</p>
-                                                    <p><strong>领用人电话:</strong> {{ order.receive_phone or '-' }}</p>
-                                                    <p><strong>出库日期:</strong> {{ order.outbound_date.strftime('%Y-%m-%d') }}</p>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <p><strong>领用用途:</strong> {{ order.purpose or '-' }}</p>
-                                                    <p><strong>操作员:</strong> {{ order.operator.real_name or order.operator.username }}</p>
-                                                    <p><strong>状态:</strong>
-                                                        {% if order.status == 'completed' %}
-                                                            <span class="badge bg-success">已完成</span>
-                                                        {% elif order.status == 'draft' %}
-                                                            <span class="badge bg-warning">草稿</span>
-                                                        {% else %}
-                                                            <span class="badge bg-danger">已取消</span>
-                                                        {% endif %}
-                                                    </p>
-                                                    <p><strong>备注:</strong> {{ order.remark or '-' }}</p>
-                                                </div>
-                                            </div>
-                                            <hr>
-                                            <h6>出库明细</h6>
-                                            <div class="table-responsive">
-                                                <table class="table table-sm table-bordered">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>商品名称</th>
-                                                            <th>库位</th>
-                                                            <th>批次号</th>
-                                                            <th>数量</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {% for item in order.items %}
-                                                            <tr>
-                                                                <td>{{ item.product.name }} ({{ item.product.code }})</td>
-                                                                <td>{{ item.location.code }}</td>
-                                                                <td>{{ item.batch_no or '-' }}</td>
-                                                                <td>{{ item.quantity }}</td>
-                                                            </tr>
-                                                        {% else %}
-                                                            <tr>
-                                                                <td colspan="4" class="text-center">暂无明细</td>
-                                                            </tr>
-                                                        {% endfor %}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {% else %}      <!--当orders列表为空时-->
+                        {% else %}
                             <tr>
                                 <td colspan="10" class="text-center">暂无出库单数据</td>
                             </tr>
                         {% endfor %}
-                    </tbody>        <!--关闭表格体-->
+                    </tbody>
+                </table>
+            </div>
+
+            <!--出库单详情模态框区域 - 移出表格结构-->
+            {% for order in orders %}
+                <div class="modal fade" id="detailModal{{ order.id }}" tabindex="-1" aria-labelledby="detailModalLabel{{ order.id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="detailModalLabel{{ order.id }}">出库单详情 - {{ order.order_no }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <p><strong>关联销售单:</strong> {{ order.related_order or '-' }}</p>
+                                        <p><strong>领用人:</strong> {{ order.receiver }}</p>
+                                        <p><strong>领用人电话:</strong> {{ order.receive_phone or '-' }}</p>
+                                        <p><strong>出库日期:</strong> {{ order.outbound_date.strftime('%Y-%m-%d') }}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>领用用途:</strong> {{ order.purpose or '-' }}</p>
+                                        <p><strong>操作员:</strong> {{ order.operator.real_name or order.operator.username }}</p>
+                                        <p><strong>状态:</strong>
+                                            {% if order.status == 'completed' %}
+                                                <span class="badge bg-success">已完成</span>
+                                            {% elif order.status == 'draft' %}
+                                                <span class="badge bg-warning">草稿</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">已取消</span>
+                                            {% endif %}
+                                        </p>
+                                        <p><strong>备注:</strong> {{ order.remark or '-' }}</p>
+                                    </div>
+                                </div>
+                                <hr>
+                                <h6>出库明细</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>商品名称</th>
+                                                <th>库位</th>
+                                                <th>批次号</th>
+                                                <th>数量</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for item in order.items %}
+                                                <tr>
+                                                    <td>{{ item.product.name }} ({{ item.product.code }})</td>
+                                                    <td>{{ item.location.code }}</td>
+                                                    <td>{{ item.batch_no or '-' }}</td>
+                                                    <td>{{ item.quantity }}</td>
+                                                </tr>
+                                            {% else %}
+                                                <tr>
+                                                    <td colspan="4" class="text-center">暂无明细</td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
                 </table>       <!--关闭表格-->
             </div>
 
