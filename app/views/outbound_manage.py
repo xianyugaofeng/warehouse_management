@@ -37,11 +37,16 @@ def list():
     pagination = query.order_by(OutboundOrder.create_time.desc()).paginate(page=page, per_page=10)
     orders = pagination.items
 
+    # 获取所有领用人列表
+    receivers = db.session.query(OutboundOrder.receiver).distinct().all()
+    receiver_list = [r[0] for r in receivers if r[0]]
+
     return render_template('outbound/list.html',
                            orders=orders,
                            pagination=pagination,
                            keyword=keyword,
                            receiver=receiver,
+                           receiver_list=receiver_list,
                            start_date=start_date,
                            end_date=end_date
     )

@@ -25,7 +25,11 @@ def list():
         query = query.filter(InboundOrder.order_no.ilike(f'%{keyword}%') |
                              InboundOrder.related_order.ilike(f'%{keyword}%'))
     if supplier_id:
-        query = query.filter_by(supplier_id=supplier_id)
+        try:
+            supplier_id_int = int(supplier_id)
+            query = query.filter_by(supplier_id=supplier_id_int)
+        except ValueError:
+            pass
     if start_date:
         query = query.filter(InboundOrder.inbound_date >= start_date)
     if end_date:

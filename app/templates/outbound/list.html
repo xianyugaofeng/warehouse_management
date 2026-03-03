@@ -17,7 +17,14 @@
                     <input type="text" name="keyword" class="form-control" placeholder="出库单号/关联销售单" value="{{ keyword }}">
                 </div>
                 <div class="col-md-3">
-                    <input type="text" name="receiver" class="form-control" placeholder="领用人" value="{{ receiver }}">
+                    <select name="receiver" class="form-select">
+                        <option value="">所有领用人</option>
+                        {% for r in receiver_list %}
+                            <option value="{{ r }}" {% if receiver == r %}selected{% endif %}>
+                                {{ r }}
+                            </option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div class="col-md-3">      <!--HTML5 日期选择器-->
                     <input type="date" name="start_date" class="form-control" placeholder="开始日期" value="{{ start_date }}">
@@ -79,7 +86,7 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#detailModal{{ order.id }}" aria-hidden="true">
+                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#detailModal{{ order.id }}">
                                         <!--Bootstrap 5模态框触发属性-->
                                         <i class="fa fa-eye"></i>详情
                                     </button>       <!--提供查看详情的按钮，通过模态框展示更多信息-->
@@ -87,19 +94,15 @@
                             </tr>
 
                             <!--出库单详情模态框-->
-                            <div class="modal fade" id="detailModal{{ order.id }}" tabindex="-1" aria-labelledby="detailModalLabel{{ order.id }}" aria-hidden="true">
-                                <!--初始时模态框隐藏 无障碍属性关联到模态框标题 Bootstrap模态框,带淡入动画-->
-                                <div class="modal-dialog modal-lg">       <!--modal-dialog：模态框对话框容器-->
-                                    <div class="modal-content">         <!--模态框内容容器-->
-                                        <div class="modal-header">          <!--模态框头部-->
-                                            <h5 class="modal-title" id="detailModalLabel{{ order.id }}">
-                                                出库单详情 - {{ order.order_no }}
-                                            </h5>
+                            <div class="modal" id="detailModal{{ order.id }}" tabindex="-1" role="dialog" aria-labelledby="detailModalLabel{{ order.id }}" aria-hidden="true">
+                                <div class="modal-dialog modal-lg" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="detailModalLabel{{ order.id }}">出库单详情 - {{ order.order_no }}</h5>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                            <!--Bootstrap 5 关闭按钮样式 点击该元素将关闭当前的模态框-->
                                         </div>
-                                        <div class="modal-body">        <!--模态框主体-->
-                                            <div class="row mb-3">         <!--Bootstrap 5 栅格行-->
+                                        <div class="modal-body">
+                                            <div class="row mb-3">
                                                 <div class="col-md-6">
                                                     <p><strong>关联销售单:</strong> {{ order.related_order or '-' }}</p>
                                                     <p><strong>领用人:</strong> {{ order.receiver }}</p>
@@ -121,40 +124,41 @@
                                                     <p><strong>备注:</strong> {{ order.remark or '-' }}</p>
                                                 </div>
                                             </div>
-                                            <hr>       <!--水平分隔线，分隔基本信息与明细数据-->
+                                            <hr>
+                                            <h6>出库明细</h6>
                                             <div class="table-responsive">
                                                 <table class="table table-sm table-bordered">
                                                     <thead>
                                                         <tr>
-                                                            <th>商品名称</th>          <!--定义表格中的表头单元格-->
+                                                            <th>商品名称</th>
                                                             <th>库位</th>
                                                             <th>批次号</th>
                                                             <th>数量</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {% for item in order.items %}      <!--遍历出库单的明细项列表order.items-->
+                                                        {% for item in order.items %}
                                                             <tr>
                                                                 <td>{{ item.product.name }} ({{ item.product.code }})</td>
                                                                 <td>{{ item.location.code }}</td>
                                                                 <td>{{ item.batch_no or '-' }}</td>
                                                                 <td>{{ item.quantity }}</td>
                                                             </tr>
-                                                        {% else %}      <!--空明细处理-->
-                                                            <tr>        <!--当 order.items为空时显示-->
+                                                        {% else %}
+                                                            <tr>
                                                                 <td colspan="4" class="text-center">暂无明细</td>
                                                             </tr>
-                                                        {% endfor %}    <!--结束明细项的遍历-->
+                                                        {% endfor %}
                                                     </tbody>
                                                 </table>
-                                            </div>      <!--关闭表格相关标签-->
-                                        </div>      <!--关闭模态框主体-->
-                                        <div class="modal-footer">        <!--modal-footer：模态框底部区域-->
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
                                         </div>
-                                    </div>      <!--关闭模态框内容容器-->
-                                </div>      <!--关闭模态框对话框-->
-                            </div>      <!--关闭模态框容器-->
+                                    </div>
+                                </div>
+                            </div>
                         {% else %}      <!--当orders列表为空时-->
                             <tr>
                                 <td colspan="10" class="text-center">暂无出库单数据</td>

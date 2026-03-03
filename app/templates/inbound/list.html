@@ -20,7 +20,7 @@
                     <select name="supplier_id" class="form-select">       <!--Bootstrap 下拉选择框样式-->
                         <option value="">所有供应商</option>     <!--默认选项所有分类-->
                         {% for supplier in suppliers %}     <!--遍历 suppliers 变量生成供应商选项-->
-                            <option value="{{ supplier.id }}" {% if supplier_id == supplier.id|string %}selected{% endif %}>
+                            <option value="{{ supplier.id }}" {% if supplier_id and supplier_id|string == supplier.id|string %}selected{% endif %}>
                                 {{ supplier.name }}
                             </option>
                         {% endfor %}
@@ -84,8 +84,7 @@
                                 </td>
                                 <td>{{ order.create_time.strftime('%Y-%m-%d %H-%M') }}</td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#detailModal{{ order.id }}">
-                                        <!--Bootstrap 5模态框触发属性-->
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#detailModal{{ order.id }}">
                                         <i class="fa fa-eye"></i>详情
                                     </button>       <!--提供查看详情的按钮，通过模态框展示更多信息-->
                                 </td>
