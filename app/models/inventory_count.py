@@ -132,3 +132,47 @@ class InventoryAccuracy(db.Model):
 
     def __repr__(self):
         return f'<InventoryAccuracy {self.date} - {self.accuracy_rate:.2f}%>'
+
+
+class InventoryCountTaskSchedule(db.Model):
+    """盘点任务调度"""
+    __tablename__ = 'inventory_count_task_schedules'
+    id = db.Column(db.Integer, primary_key=True)
+    task_id = db.Column(db.Integer, db.ForeignKey('inventory_count_tasks.id'), nullable=False) # 关联盘点任务
+    interval_hours = db.Column(db.Integer, default=24) # 运行间隔（小时）
+    max_executions = db.Column(db.Integer, default=0) # 最大执行次数，0表示无限
+    execution_count = db.Column(db.Integer, default=0) # 当前执行次数
+    last_execution_time = db.Column(db.DateTime) # 上次执行时间
+    next_execution_time = db.Column(db.DateTime) # 下次执行时间
+    status = db.Column(db.String(16), default='active', nullable=False) # 状态：active(活跃), paused(暂停), stopped(停止)
+    create_time = db.Column(db.DateTime, default=datetime.utcnow) # 创建时间
+    update_time = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow) # 更新时间
+
+    # 关联
+    task = db.relationship('InventoryCountTask', backref='schedules')
+
+    def __repr__(self):
+        return f'<InventoryCountTaskSchedule {self.task_id} - {self.status}>'
+
+
+class InventoryCountTaskLog(db.Model):
+    """盘点任务执行日志"""
+    __tablename__ = 'inventory_count_task_logs'
+    id = db.Column(db.Integer, primary_key=True)
+    task_id = db.Column(db.Integer, db.ForeignKey('inventory_count_tasks.id'), nullable=False) # 关联盘点任务
+    schedule_id = db.Column(db.Integer, db.ForeignKey('inventory_count_task_schedules.id')) # 关联调度
+    start_time = db.Column(db.DateTime, nullable=False) # 开始时间
+    end_time = db.Column(db.DateTime) # 结束时间
+    status = db.Column(db.String(16), nullable=False) # 状态：success(成功), failed(失败)
+    error_message = db.Column(db.Text) # 错误信息
+    execution_type = db.Column(db.String(16), nullable=False) # 执行类型：manual(手动), automatic(自动)
+    operator_id = db.Column(db.Integer, db.ForeignKey('users.id')) # 操作人
+    create_time = db.Column(db.DateTime, default=datetime.utcnow) # 创建时间
+
+    # 关联
+    task = db.relationship('InventoryCountTask')
+    schedule = db.relationship('InventoryCountTaskSchedule')
+    operator = db.relationship('User')
+
+    def __repr__(self):
+        return f'<InventoryCountTaskLog {self.task_id} - {self.status}>'

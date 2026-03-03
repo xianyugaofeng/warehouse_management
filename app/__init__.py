@@ -4,12 +4,16 @@ from flask_login import LoginManager
 from flask_migrate import Migrate
 from app.config import config
 from flask import url_for, redirect
+import atexit
 
 # 初始化扩展
 db = SQLAlchemy()
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'  # 登录跳转视图
 migrate = Migrate()
+
+# 导入调度器
+from app.utils.scheduler import start_scheduler, stop_scheduler
 
 
 def create_app(config_name='default'):
@@ -50,4 +54,12 @@ def create_app(config_name='default'):
     @app.route('/index')
     def next_page():
         return render_template('base.html')
+
+    # 启动调度器
+    with app.app_context():
+        start_scheduler()
+
+    # 注册应用关闭时的清理函数
+    atexit.register(stop_scheduler)
+
     return app

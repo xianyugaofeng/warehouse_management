@@ -13,7 +13,10 @@ class Config:
     PER_PAGE = 10
 
     # 库存预警阈值
-    DEFAULT_WARNING_STOCK = 10
+    DEFAULT_WARNING_STOCK = 100
+
+    # 盘点任务
+    INVENTORY_COUNT_CHECK_INTERVAL = 1
 
 class DevelopmentConfig(Config):
     DEBUG = True

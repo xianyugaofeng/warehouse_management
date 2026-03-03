@@ -3,11 +3,12 @@ from flask import Blueprint, render_template, request, url_for, flash, redirect
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta
 from app import db
-from app.models.inventory_count import InventoryCountTask, InventoryCountResult, InventoryAdjustment, VirtualInventory, InventoryAccuracy
+from app.models.inventory_count import InventoryCountTask, InventoryCountResult, InventoryAdjustment, VirtualInventory, InventoryAccuracy, InventoryCountTaskSchedule, InventoryCountTaskLog
 from app.models.inventory import Inventory, WarehouseLocation
 from app.models.product import Product, Supplier
 from app.utils.auth import permission_required
 from app.utils.helpers import generate_inventory_count_task_no, generate_inventory_adjustment_no
+from app.utils.scheduler import add_schedule
 
 inventory_count_bp = Blueprint('inventory_count', __name__)
 
@@ -174,8 +175,37 @@ def task_execute(task_id):
         task.status = 'completed'
         task.end_time = datetime.now()
 
+        # 创建执行日志
+        log = InventoryCountTaskLog(
+            task_id=task.id,
+            start_time=task.start_time,
+            end_time=task.end_time,
+            status='success',
+            execution_type='manual',
+            operator_id=current_user.id
+        )
+        db.session.add(log)
+
+        # 检查是否需要自动启动周期运行
+        if task.cycle_days and task.cycle_days > 0:
+            # 检查是否已有调度
+            existing_schedule = InventoryCountTaskSchedule.query.filter_by(
+                task_id=task.id,
+                status='active'
+            ).first()
+            
+            if not existing_schedule:
+                # 计算间隔小时数
+                interval_hours = task.cycle_days * 24
+                # 添加调度任务
+                add_schedule(task.id, interval_hours=interval_hours)
+                flash('盘点任务执行完成，已自动启动周期运行', 'success')
+            else:
+                flash('盘点任务执行完成', 'success')
+        else:
+            flash('盘点任务执行完成', 'success')
+
         db.session.commit()
-        flash('盘点任务执行完成', 'success')
         return redirect(url_for('inventory_count.task_detail', task_id=task.id))
 
     # 获取虚拟库存数据
@@ -303,7 +333,7 @@ def accuracy_report():
     for acc in accuracies:
         dates.append(acc.date.strftime('%Y-%m-%d'))
         rates.append(acc.accuracy_rate)
-    
+
     return render_template('inventory_count/accuracy_report.html',
                            accuracies=accuracies,
                            dates=dates,
@@ -311,3 +341,126 @@ def accuracy_report():
                            start_date=start_date,
                            end_date=end_date
     )
+
+
+# 调度管理
+@inventory_count_bp.route('/schedule/list')
+@permission_required('inventory_manage')
+@login_required
+def schedule_list():
+    schedules = InventoryCountTaskSchedule.query.all()
+    return render_template('inventory_count/schedule_list.html',
+                           schedules=schedules)
+
+
+# 暂停调度
+@inventory_count_bp.route('/schedule/pause/<int:schedule_id>')
+@permission_required('inventory_manage')
+@login_required
+def schedule_pause(schedule_id):
+    from app.utils.scheduler import pause_schedule
+    if pause_schedule(schedule_id):
+        flash('调度已暂停', 'success')
+    else:
+        flash('调度暂停失败', 'danger')
+    return redirect(url_for('inventory_count.schedule_list'))
+
+
+# 恢复调度
+@inventory_count_bp.route('/schedule/resume/<int:schedule_id>')
+@permission_required('inventory_manage')
+@login_required
+def schedule_resume(schedule_id):
+    from app.utils.scheduler import resume_schedule
+    if resume_schedule(schedule_id):
+        flash('调度已恢复', 'success')
+    else:
+        flash('调度恢复失败', 'danger')
+    return redirect(url_for('inventory_count.schedule_list'))
+
+
+# 停止调度
+@inventory_count_bp.route('/schedule/stop/<int:schedule_id>')
+@permission_required('inventory_manage')
+@login_required
+def schedule_stop(schedule_id):
+    from app.utils.scheduler import remove_schedule
+    if remove_schedule(schedule_id):
+        flash('调度已停止', 'success')
+    else:
+        flash('调度停止失败', 'danger')
+    return redirect(url_for('inventory_count.schedule_list'))
+
+
+# 执行日志
+@inventory_count_bp.route('/log/list')
+@permission_required('inventory_manage')
+@login_required
+def log_list():
+    keyword = request.args.get('keyword', '')
+    start_date = request.args.get('start_date', '')
+    end_date = request.args.get('end_date', '')
+
+    query = InventoryCountTaskLog.query
+    if keyword:
+        query = query.join(InventoryCountTask).filter(
+            InventoryCountTask.task_no.ilike(f'%{keyword}%') |
+            InventoryCountTask.name.ilike(f'%{keyword}%')
+        )
+
+    if start_date:
+        try:
+            start_datetime = datetime.strptime(start_date, '%Y-%m-%d')
+            query = query.filter(InventoryCountTaskLog.start_time >= start_datetime)
+        except ValueError:
+            pass
+
+    if end_date:
+        try:
+            end_datetime = datetime.strptime(end_date, '%Y-%m-%d')
+            end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
+            query = query.filter(InventoryCountTaskLog.start_time <= end_datetime)
+        except ValueError:
+            pass
+
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    pagination = query.order_by(InventoryCountTaskLog.start_time.desc()).paginate(page=page, per_page=per_page)
+    logs = pagination.items
+
+    return render_template('inventory_count/log_list.html',
+                           logs=logs,
+                           pagination=pagination,
+                           keyword=keyword,
+                           start_date=start_date,
+                           end_date=end_date)
+
+
+# 手动启动周期运行
+@inventory_count_bp.route('/task/start_schedule/<int:task_id>', methods=['GET', 'POST'])
+@permission_required('inventory_manage')
+@login_required
+def task_start_schedule(task_id):
+    task = InventoryCountTask.query.get_or_404(task_id)
+
+    if request.method == 'POST':
+        interval_hours = request.form.get('interval_hours', type=int, default=24)
+        max_executions = request.form.get('max_executions', type=int, default=0)
+
+        # 检查是否已有调度
+        existing_schedule = InventoryCountTaskSchedule.query.filter_by(
+            task_id=task.id,
+            status='active'
+        ).first()
+
+        if existing_schedule:
+            flash('该任务已有活跃的调度', 'danger')
+            return redirect(url_for('inventory_count.task_detail', task_id=task.id))
+
+        # 添加调度
+        add_schedule(task_id, interval_hours=interval_hours, max_executions=max_executions)
+        flash('周期运行已启动', 'success')
+        return redirect(url_for('inventory_count.task_detail', task_id=task.id))
+
+    return render_template('inventory_count/task_start_schedule.html',
+                           task=task)
