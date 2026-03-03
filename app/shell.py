@@ -332,6 +332,7 @@ db.session.commit()
 
 # 创建盘点任务样例
 # 第一个盘点任务：时间触发的月度盘点
+from datetime import timedelta
 task_no1 = generate_inventory_count_task_no()
 task1 = InventoryCountTask(
     task_no=task_no1,

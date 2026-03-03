@@ -7,6 +7,7 @@ from app.models.outbound import OutboundOrder, OutboundItem
 from app.models.inventory import Inventory
 from app.models.product import Product
 from app.utils.auth import permission_required
+from sqlalchemy.orm import joinedload
 
 
 report_bp = Blueprint('report', __name__)
@@ -59,7 +60,7 @@ def index():
         if 0 <= idx < 31:
             outbound_data[idx] = item.total
 
-    inventories = Inventory.query.join(Product).filter(Inventory.quantity > 0).all()
+    inventories = Inventory.query.options(joinedload(Inventory.product)).join(Product).filter(Inventory.quantity > 0).all()
 
     return render_template('report/index.html',
                            top_products=top_products,
