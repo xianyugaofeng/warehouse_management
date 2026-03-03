@@ -1,4 +1,4 @@
-from venv import create
+from scheduler import logger
 from flask import Blueprint, render_template, request, url_for, flash, redirect
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta
@@ -156,20 +156,22 @@ def task_execute(task_id):
                         adjustment_no = adjustment_no,
                         inventory_id = inventory.id,
                         before_quantity = inventory.quantity,
-                        after_quantity = actual_quantity,
-                        adjustment_quantity = difference,
+                        after_quantity = expected_quantity,
+                        adjustment_quantity = expected_quantity - inventory.quantity,
                         type='count_adjustment',
                         reason=f'{task.type}触发的盘点调整',
                         operator_id = current_user.id,
                         count_task_id=task.id
                     )
 
-                    # 更新实物库存
+                    # 更新实物库存为期望库存数量
                     inventory.quantity = expected_quantity
                     
-                    # 同步更新虚拟库存的实物库存部分
+                    # 同步更新虚拟库存的实物库存部分，使其等于库存数量
                     if virtual_inventory:
-                        virtual_inventory.physical_quantity = actual_quantity
+                        virtual_inventory.physical_quantity = expected_quantity
+                        virtual_inventory.in_transit_quantity = 0
+                        virtual_inventory.allocated_quantity = 0
                         # 验证虚拟库存
                         is_valid, message = validate_virtual_inventory(virtual_inventory)
                         if not is_valid:

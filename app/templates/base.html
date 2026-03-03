@@ -72,6 +72,9 @@
                     {% endif %}
                     {% if current_user.has_permission('inventory_manage') %}
                         <a href="{{ url_for('inventory.list') }}" class="list-group-item list-group-item-action">库存管理</a>
+                        <a href="{{ url_for('inventory_count.task_list') }}" class="list-group-item list-group-item-action">盘点任务管理</a>
+                        <a href="{{ url_for('inventory_count.schedule_list') }}" class="list-group-item list-group-item-action">调度管理</a>
+                        <a href="{{ url_for('inventory_count.virtual_inventory_list') }}" class="list-group-item list-group-item-action">虚拟库存管理</a>
                     {% endif %}
                     {% if current_user.has_permission('report_view') %}
                         <a href="{{ url_for('report.index') }}" class="list-group-item list-group-item-action">报表统计</a>
