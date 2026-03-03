@@ -127,7 +127,13 @@ def task_execute(task_id):
         for inventory in inventories:
             actual_quantity = request.form.get(f'actual_quantity_{inventory.id}', type=int)
             if actual_quantity is not None:
-                expected_quantity = inventory.quantity
+                # 从虚拟库存获取预期数量
+                virtual_inventory = VirtualInventory.query.filter_by(
+                    product_id=inventory.product_id,
+                    location_id=inventory.location_id,
+                    batch_no=inventory.batch_no
+                ).first()
+                expected_quantity = virtual_inventory.virtual_quantity if virtual_inventory else inventory.quantity
                 difference = actual_quantity - expected_quantity
 
                 # 创建盘点结果 
@@ -172,9 +178,13 @@ def task_execute(task_id):
         flash('盘点任务执行完成', 'success')
         return redirect(url_for('inventory_count.task_detail', task_id=task.id))
 
+    # 获取虚拟库存数据
+    virtual_inventories = VirtualInventory.query.all()
+    
     return render_template('inventory_count/task_execute.html',
                            task=task,
-                           inventories=inventories
+                           inventories=inventories,
+                           virtual_inventories=virtual_inventories
     )        
 
 # 盘点任务详情
