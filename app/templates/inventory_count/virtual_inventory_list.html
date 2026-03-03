@@ -17,7 +17,7 @@
                     <select name="location_id" class="form-select">
                         <option value="">所有库位</option>
                         {% for location in locations %}
-                            <option value="{{ location_id }}" {% if location_id == location.id|string %}selected{% endif %}>
+                            <option value="{{ location.id }}" {% if location_id == location.id|string %}selected{% endif %}>
                                 {{ location.code }} - {{ location.name }}
                             </option>
                         {% endfor %}
@@ -25,7 +25,7 @@
                 </div>
                 <div class="col-md-2">
                     <button type="submit" class="btn btn-secondary w-100">
-                        <i class="fa fa-search">搜索</i>
+                        <i class="fa fa-search"></i>搜索
                     </button>
                 </div>
             </form>
@@ -59,7 +59,8 @@
                                 <td>{{ vi.batch_no or '-' }}</td>
                                 <td>{{ vi.physical_quantity }}</td>
                                 <td>{{ vi.in_transit_quantity }}</td>
-                                <td>{{ vi.aloocated_quantity }}</td>
+                                <td>{{ vi.allocated_quantity }}</td>
+                                <td>{{ vi.virtual_quantity }}</td>
                                 <td>{{ vi.update_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                             </tr>
                         {% else %}
@@ -104,7 +105,7 @@
 
                     {% if pagination.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('inventory_count.virtual_inventory_list', page=page, keyword=keyword, location_id=location_id) }}">
+                            <a class="page-link" href="{{ url_for('inventory_count.virtual_inventory_list', page=pagination.next_num, keyword=keyword, location_id=location_id) }}">
                                 下一页
                             </a>
                         </li>
