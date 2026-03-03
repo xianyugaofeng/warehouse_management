@@ -110,7 +110,7 @@ class VirtualInventory(db.Model):
 
     # 联合唯一约束
     __table_args__ = (
-        db.UniqueConstraint('product_id', 'location_id', 'batch_no', name='_virtual_product_location_batch_uc')
+        db.UniqueConstraint('product_id', 'location_id', 'batch_no', name='_virtual_product_location_batch_uc'),
     )
 
     # 关联 

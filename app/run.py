@@ -2,8 +2,9 @@ from app import create_app, db
 from app.models import User, Role, Permission
 from app.models import Product, Category, Supplier
 from app.models import Inventory, WarehouseLocation
-from app.models import InboundOrder, OutboundOrder
-
+from app.models import InboundItem, InboundOrder
+from app.models import OutboundItem, OutboundOrder
+from app.models import InventoryCountTask, InventoryCountResult, InventoryAdjustment, VirtualInventory, InventoryAccuracy, InventoryCountTaskSchedule, InventoryCountTaskLog
 app = create_app()
 
 # 命令行处理器（用于数据库初始化）
@@ -15,7 +16,11 @@ def make_shell_context():   # 在命令行使用flask shell命令启动Flask交�
         db=db, User=User, Role=Role, Permission=Permission,
         Product=Product, Category=Category, Supplier=Supplier,
         Inventory=Inventory, WarehouseLocation=WarehouseLocation,
-        InboundOrder=InboundOrder, OutboundOrder=OutboundOrder
+        InboundItem=InboundItem, InboundOrder=InboundOrder,
+        OutboundItem=OutboundItem, OutboundOrder=OutboundOrder, 
+        InventoryCountTask=InventoryCountTask, InventoryCountResult=InventoryCountResult,
+        InventoryAdjustment=InventoryAdjustment, VirtualInventory=VirtualInventory, InventoryAccuracy=InventoryAccuracy,
+        InventoryCountTaskSchedule=InventoryCountTaskSchedule, InventoryCountTaskLog=InventoryCountTaskLog
     )
 
 if __name__ == '__main__':
