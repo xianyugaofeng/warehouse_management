@@ -25,11 +25,17 @@ class DevelopmentConfig(Config):
 class ProductionConfig(Config):
     DEBUG = False
 
+class TestingConfig(Config):
+    DEBUG = True
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:123456@localhost/warehouse_db_test'
+    # 使用测试数据库
 
 config = {
     'default': Config,
     'development': DevelopmentConfig,
     'production': ProductionConfig,
+    'testing': TestingConfig,  # 添加测试配置
     # 配置安全会话
     'SESSION_COOKIE_SECURE': True,  # 仅HTTPS
     'SESSION_COOKIE_HTTPONLY': True,  # 防止JavaScript访问

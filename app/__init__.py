@@ -55,10 +55,10 @@ def create_app(config_name='default'):
     # 导入调度器（移到这里避免循环导入）
     from app.utils.scheduler import start_scheduler, stop_scheduler
     
-    # 只有当不是在执行 Flask 命令时才启动调度器
-    # 这样在运行数据库迁移命令时就不会尝试访问不存在的表
+    # 只有当不是在执行 Flask 命令且不是在测试模式时才启动调度器
+    # 这样在运行数据库迁移命令或测试时就不会尝试访问不存在的表
     import sys
-    if 'flask' not in sys.argv[0] and 'db' not in sys.argv:
+    if 'flask' not in sys.argv[0] and 'db' not in sys.argv and not app.config.get('TESTING', False):
         # 启动调度器
         with app.app_context():
             start_scheduler()

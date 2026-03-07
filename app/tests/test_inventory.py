@@ -13,6 +13,9 @@ class TestInventoryManagement(unittest.TestCase):
         self.app_context = self.app.app_context()
         self.app_context.push()
         
+        # 创建所有表结构
+        db.create_all()
+        
         # 创建测试数据
         self.create_test_data()
     
@@ -26,6 +29,7 @@ class TestInventoryManagement(unittest.TestCase):
         # 创建分类
         category = Category(name='测试分类')
         db.session.add(category)
+        db.session.flush()  # 刷新会话，获取分类的 id
         
         # 创建产品
         self.product = Product(
@@ -36,6 +40,7 @@ class TestInventoryManagement(unittest.TestCase):
             category_id=category.id
         )
         db.session.add(self.product)
+        db.session.flush()  # 刷新会话，获取产品的 id
         
         # 创建库位
         self.location = WarehouseLocation(
@@ -45,6 +50,7 @@ class TestInventoryManagement(unittest.TestCase):
             status=True
         )
         db.session.add(self.location)
+        db.session.flush()  # 刷新会话，获取库位的 id
         
         # 创建初始库存
         self.inventory = Inventory(

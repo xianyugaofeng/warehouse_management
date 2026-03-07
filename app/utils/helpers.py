@@ -55,8 +55,23 @@ def update_inventory(product_id, location_id, batch_no, quantity, is_bound=True)
         update_virtual_inventory(product_id, location_id, batch_no, in_transit_change=quantity)
     else:
         # 出库操作：增加已分配库存
-        if not inventory or inventory.quantity < quantity:
+        if not inventory:
             raise ValueError(f'<库存不足:商品ID{product_id},  库位ID{location_id}, 批次{batch_no}')
+        
+        # 检查虚拟库存是否足够（实物库存 + 在途库存 - 已分配库存 >= 出库数量）
+        from app.models.inventory_count import VirtualInventory
+        virtual_inventory = VirtualInventory.query.filter_by(
+            product_id=product_id,
+            location_id=location_id,
+            batch_no=batch_no
+        ).first()
+        
+        if not virtual_inventory:
+            raise ValueError(f'<虚拟库存不存在:商品ID{product_id},  库位ID{location_id}, 批次{batch_no}')
+        
+        if virtual_inventory.virtual_quantity < quantity:
+            raise ValueError(f'<库存不足:商品ID{product_id},  库位ID{location_id}, 批次{batch_no}')
+        
         # 增加虚拟库存的已分配库存
         update_virtual_inventory(product_id, location_id, batch_no, allocated_change=quantity)
 
