@@ -27,59 +27,38 @@ def generate_inventory_adjustment_no():
     random_str = str(random.randint(100, 999))
     return f'ADJ{date_str}{random_str}'
     
-# 库存更新函数(入库时增加, 出库时减少)
+# 库存更新函数(入库时增加在途库存, 出库时增加已分配库存)
 def update_inventory(product_id, location_id, batch_no, quantity, is_bound=True):
     from app import db
     from app.models.inventory import Inventory
-    from app.models.inventory_count import VirtualInventory
-
+    
     # 查询是否存在该商品-库位-批次的库存记录
     inventory = Inventory.query.filter_by(
         product_id=product_id,
         location_id=location_id,
         batch_no=batch_no
     ).first()   # 返回一个inventory对象
-
+    
+    # 入库操作：增加在途库存
     if is_bound:
-        if inventory:
-            inventory.quantity += quantity
-        else:
+        # 入库时不再直接更新实物库存，而是通过盘点任务同步
+        # 只创建库存记录（如果不存在），但数量保持为0
+        if not inventory:
             inventory = Inventory(
                 product_id=product_id,
                 location_id=location_id,
                 batch_no=batch_no,
-                quantity=quantity
+                quantity=0  # 初始数量为0
             )
             db.session.add(inventory)
+        # 增加虚拟库存的在途库存
+        update_virtual_inventory(product_id, location_id, batch_no, in_transit_change=quantity)
     else:
+        # 出库操作：增加已分配库存
         if not inventory or inventory.quantity < quantity:
             raise ValueError(f'<库存不足:商品ID{product_id},  库位ID{location_id}, 批次{batch_no}')
-        inventory.quantity -= quantity
-        # 库存为0时是否删除记录
-        if inventory.quantity == 0:
-            db.session.delete(inventory)
-
-    # 同步更新虚拟库存
-    virtual_inventory = VirtualInventory.query.filter_by(
-        product_id=product_id,
-        location_id=location_id,
-        batch_no=batch_no
-    ).first()
-
-    if not virtual_inventory:
-        # 创建新的虚拟库存记录
-        virtual_inventory = VirtualInventory(
-            product_id=product_id,
-            location_id=location_id,
-            batch_no=batch_no,
-            physical_quantity=inventory.quantity if inventory else 0,
-            in_transit_quantity=0,
-            allocated_quantity=0
-        )
-        db.session.add(virtual_inventory)
-    else:
-        # 更新现有虚拟库存的实物库存部分
-        virtual_inventory.physical_quantity = inventory.quantity if inventory else 0
+        # 增加虚拟库存的已分配库存
+        update_virtual_inventory(product_id, location_id, batch_no, allocated_change=quantity)
 
     db.session.commit()
     return inventory

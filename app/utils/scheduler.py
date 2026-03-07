@@ -69,11 +69,11 @@ def run_inventory_count_task(task_id, schedule_id=None):
             ).first()
             expected_quantity = virtual_inventory.virtual_quantity if virtual_inventory else inventory.quantity
             
-            # 实际盘点数量（当前库存）
-            actual_quantity = inventory.quantity
+            # 实际盘点数量为虚拟库存的总数量
+            actual_quantity = expected_quantity
             
             # 计算差异
-            difference = actual_quantity - expected_quantity
+            difference = actual_quantity - inventory.quantity
             
             # 创建盘点结果
             from app.models.inventory_count import InventoryCountResult
@@ -106,10 +106,10 @@ def run_inventory_count_task(task_id, schedule_id=None):
                 )
                 db.session.add(adjustment)
                 
-                # 更新实物库存为期望库存数量
+                # 更新实物库存为期望库存数量（虚拟库存的总数量）
                 inventory.quantity = expected_quantity
                 
-                # 同步更新虚拟库存的实物库存部分，使其等于库存数量
+                # 同步更新虚拟库存：实物库存等于inventory.quantity，在途和已分配库存清零
                 if virtual_inventory:
                     virtual_inventory.physical_quantity = expected_quantity
                     virtual_inventory.in_transit_quantity = 0
