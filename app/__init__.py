@@ -64,6 +64,7 @@ def create_app(config_name='default'):
             start_scheduler()
 
         # 注册应用关闭时的清理函数
+        # atexit.register(stop_scheduler) 确保在应用关闭时调用
         atexit.register(stop_scheduler)
 
     return app

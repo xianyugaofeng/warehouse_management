@@ -196,8 +196,21 @@ def start_scheduler():
 
 
 def stop_scheduler():
-    """停止调度器"""
+    """停止调度器并删除所有调度任务"""
     logger.info('停止盘点任务调度器')
+    
+    # 删除所有调度任务
+    try:
+        jobs = scheduler.get_jobs()
+        # scheduler.get_jobs()获取调度器中的所有任务
+        for job in jobs:
+            scheduler.remove_job(job.id)
+        logger.info(f'删除了 {len(jobs)} 个调度任务')
+    except Exception as e:
+        # 避免删除任务失败时影响调度器停止
+        logger.warning(f'删除调度任务失败: {e}')
+    
+    # 停止调度器
     if scheduler.running:
         scheduler.shutdown()
         logger.info('调度器停止成功')
