@@ -61,7 +61,7 @@ def index():
             outbound_data[idx] = item.total
 
     inventories = Inventory.query.options(joinedload(Inventory.product)).join(Product).filter(Inventory.quantity > 0).all()
-
+    # 关键修改 - 使用 SQLAlchemy 的 joinedload 预加载 Inventory 模型的 product 关联
     return render_template('report/index.html',
                            top_products=top_products,
                            dates=dates,

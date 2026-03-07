@@ -340,7 +340,12 @@
                     <div class="col-md-3">
                         <div class="bg-light p-3 rounded h-100">
                             <h6 class="fw-bold text-center mb-3">库存预警</h6>
-                            {% set warning_count = inventories|selectattr('is_warning')|list|length %}
+                            {% set warning_count = 0 %}
+                            {% for inventory in inventories %}
+                                {% if inventory.is_warning() %}
+                                    {% set warning_count = warning_count + 1 %}
+                                {% endif %}
+                            {% endfor %}
                             {% set total_inventory = inventories|length %}
                             {% if total_inventory > 0 %}
                                 <p class="mb-1">预警库存记录: <span class="text-danger fw-bold">{{ warning_count }} 条</span></p>
@@ -378,6 +383,12 @@
                         <div class="bg-light p-3 rounded h-100">
                             <h6 class="fw-bold text-center mb-3">操作建议</h6>
                             <ul class="list-unstyled text-sm"> <!--使用 list-unstyled 的列表移除了所有默认样式-->
+                                {% set warning_count = 0 %}
+                                {% for inventory in inventories %}
+                                    {% if inventory.is_warning() %}
+                                        {% set warning_count = warning_count + 1 %}
+                                    {% endif %}
+                                {% endfor %}
                                 {% if warning_count %}
                                     <li class="mb-1">
                                         <i class="fa fa-exclamation-circle text-danger"></i>有 {{ warning_count }} 条库存预警，建议及时补货
