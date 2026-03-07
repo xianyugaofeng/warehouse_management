@@ -117,6 +117,7 @@ db.session.commit()
 
 from app.models import Product, Inventory, InboundOrder, InboundItem, OutboundOrder, OutboundItem, InventoryCountTask
 from app.utils.helpers import generate_inbound_no, generate_outbound_no, update_inventory, generate_inventory_count_task_no
+from datetime import datetime, timedelta
 
 # 创建商品样例
 # 原材料
@@ -261,7 +262,7 @@ db.session.commit()
 # 创建出库单样例
 # 第一个出库单
 order_no3 = generate_outbound_no()
-total_qty3 = 10 + 100  # 10台智能手机 + 100个手机充电器
+total_qty3 = 10 + 30  # 10台智能手机 + 30个手机充电器
 outbound_order1 = OutboundOrder(
     order_no=order_no3,
     related_order="SO-20260301-001",
@@ -292,15 +293,15 @@ outbound_item2 = OutboundItem(
     order_id=outbound_order1.id,
     product_id=accessory1.id,
     location_id=location3.id,
-    quantity=100,
+    quantity=30,
     batch_no="AC-20260301"
 )
 db.session.add(outbound_item2)
-update_inventory(accessory1.id, location3.id, "AC-20260301", 100, is_bound=False)
+update_inventory(accessory1.id, location3.id, "AC-20260301", 30, is_bound=False)
 
 # 第二个出库单
 order_no4 = generate_outbound_no()
-total_qty4 = 5  # 5台笔记本电脑
+total_qty4 = 50  # 50kg塑料颗粒
 outbound_order2 = OutboundOrder(
     order_no=order_no4,
     related_order="SO-20260302-001",
@@ -308,10 +309,10 @@ outbound_order2 = OutboundOrder(
     receive_phone="13900139001",
     operator_id=admin.id,  # 使用管理员用户作为操作员
     outbound_date=datetime.now().date(),
-    purpose="销售出库",
+    purpose="生产领用",
     total_amount=total_qty4,
     status="completed",
-    remark="客户B订单"
+    remark="生产线B使用"
 )
 db.session.add(outbound_order2)
 db.session.flush()  # 刷新获取order_id
@@ -319,13 +320,13 @@ db.session.flush()  # 刷新获取order_id
 # 创建出库项并更新库存
 outbound_item3 = OutboundItem(
     order_id=outbound_order2.id,
-    product_id=finished_product2.id,
-    location_id=location2.id,
-    quantity=5,
-    batch_no="FP-20260302"
+    product_id=raw_material2.id,
+    location_id=location1.id,
+    quantity=50,
+    batch_no="RM-20260302"
 )
 db.session.add(outbound_item3)
-update_inventory(finished_product2.id, location2.id, "FP-20260302", 5, is_bound=False)
+update_inventory(raw_material2.id, location1.id, "RM-20260302", 50, is_bound=False)
 
 # 提交出库单和出库项
 db.session.commit()

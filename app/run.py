@@ -5,7 +5,16 @@ from app.models import Inventory, WarehouseLocation
 from app.models import InboundItem, InboundOrder
 from app.models import OutboundItem, OutboundOrder
 from app.models import InventoryCountTask, InventoryCountResult, InventoryAdjustment, VirtualInventory, InventoryAccuracy, InventoryCountTaskSchedule, InventoryCountTaskLog
+
 app = create_app()
+
+# 确保数据库表已经创建
+with app.app_context():
+    try:
+        db.create_all()
+        print('数据库表结构检查完成')
+    except Exception as e:
+        print(f'数据库表结构检查失败: {e}')
 
 # 命令行处理器（用于数据库初始化）
 @app.shell_context_processor    # 它将其下方的函数 make_shell_context 注册为 Flask 的 Shell 上下文处理器

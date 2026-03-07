@@ -114,8 +114,14 @@ def sync_virtual_inventory(product_id, location_id, batch_no):
         db.session.add(virtual_inventory)
     else:
         # 更新虚拟库存的实物库存部分
-        virtual_inventory.physical_quantity = inventory.quantity if inventory else 0
-
+        inventory.quantity = (virtual_inventory.physical_quantity + 
+                              virtual_inventory.in_transit_quantity -
+                              virtual_inventory.allocated_quantity)
+        virtual_inventory.physical_quantity = inventory.quantity
+        virtual_inventory.in_transit_quantity = 0
+        virtual_inventory.allocated_quantity = 0
+                             
+        
     db.session.commit()
     return virtual_inventory
 
