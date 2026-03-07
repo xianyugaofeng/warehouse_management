@@ -336,27 +336,6 @@
                         </div>
                     </div>
 
-                    <!--库存预警统计(关联Inventory模型预警)-->
-                    <div class="col-md-3">
-                        <div class="bg-light p-3 rounded h-100">
-                            <h6 class="fw-bold text-center mb-3">库存预警</h6>
-                            {% set warning_count = 0 %}
-                            {% for inventory in inventories %}
-                                {% if inventory.is_warning() %}
-                                    {% set warning_count = warning_count + 1 %}
-                                {% endif %}
-                            {% endfor %}
-                            {% set total_inventory = inventories|length %}
-                            {% if total_inventory > 0 %}
-                                <p class="mb-1">预警库存记录: <span class="text-danger fw-bold">{{ warning_count }} 条</span></p>
-                                <p class="mb-1">总库存记录: <span class="text-danger fw-bold">{{ total_inventory }} 条</span></p>
-                                <p class="mb-1">预警占比: <span class="text-danger fw-bold">{{ "%.2f%%"|format((warning_count / total_inventory) * 100) }}</span></p>
-                            {% else %}
-                                <p class="text-center text-muted">暂无库存记录</p>
-                            {% endif %}
-                        </div>
-                    </div>
-
                     <!--出入库平衡分析-->
                     <div class="col-md-3">
                         <div class="bg-light p-3 rounded h-100">
