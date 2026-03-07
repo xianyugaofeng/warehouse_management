@@ -17,6 +17,8 @@ logger = logging.getLogger('inventory_count_scheduler')
 # 创建调度器
 scheduler = BackgroundScheduler()
 
+# 使用系统用户ID或从配置中获取
+SYSTEM_USER_ID = 1  # 假设系统用户ID为1
 
 def run_inventory_count_task(task_id, schedule_id=None):
     """执行盘点任务"""
@@ -98,7 +100,8 @@ def run_inventory_count_task(task_id, schedule_id=None):
                     adjustment_quantity=expected_quantity - inventory.quantity,
                     type='count_adjustment',
                     reason=f'自动周期盘点调整',
-                    operator_id=current_user.id,  # 系统用户
+                    # 在 adjustment 和 result 中使用 SYSTEM_USER_ID
+                    operator_id=SYSTEM_USER_ID, # 系统用户
                     count_task_id=task.id
                 )
                 db.session.add(adjustment)
@@ -118,7 +121,7 @@ def run_inventory_count_task(task_id, schedule_id=None):
                 
                 # 更新盘点结果状态
                 result.adjust_reason = '自动周期盘点调整'
-                result.processor_id = current_user.id  # 系统用户
+                result.processor_id = SYSTEM_USER_ID  # 系统用户
                 result.process_time = datetime.now()
         
         # 完成任务
@@ -175,6 +178,7 @@ def start_scheduler():
         # 添加调度任务
         job_id = f'inventory_count_task_{schedule.task_id}_{schedule.id}'
         if not scheduler.get_job(job_id):
+            # 盘点任务调度器创建调度任务
             scheduler.add_job(
                 run_inventory_count_task,
                 trigger=IntervalTrigger(hours=schedule.interval_hours),

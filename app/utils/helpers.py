@@ -31,6 +31,7 @@ def generate_inventory_adjustment_no():
 def update_inventory(product_id, location_id, batch_no, quantity, is_bound=True):
     from app import db
     from app.models.inventory import Inventory
+    from app.models.inventory_count import VirtualInventory
 
     # 查询是否存在该商品-库位-批次的库存记录
     inventory = Inventory.query.filter_by(
@@ -58,12 +59,35 @@ def update_inventory(product_id, location_id, batch_no, quantity, is_bound=True)
         if inventory.quantity == 0:
             db.session.delete(inventory)
 
+    # 同步更新虚拟库存
+    virtual_inventory = VirtualInventory.query.filter_by(
+        product_id=product_id,
+        location_id=location_id,
+        batch_no=batch_no
+    ).first()
+
+    if not virtual_inventory:
+        # 创建新的虚拟库存记录
+        virtual_inventory = VirtualInventory(
+            product_id=product_id,
+            location_id=location_id,
+            batch_no=batch_no,
+            physical_quantity=inventory.quantity if inventory else 0,
+            in_transit_quantity=0,
+            allocated_quantity=0
+        )
+        db.session.add(virtual_inventory)
+    else:
+        # 更新现有虚拟库存的实物库存部分
+        virtual_inventory.physical_quantity = inventory.quantity if inventory else 0
+
     db.session.commit()
     return inventory
 
 
 def sync_virtual_inventory(product_id, location_id, batch_no):
-    """同步虚拟库存与实物库存
+    """
+    同步虚拟库存与实物库存
     确保虚拟库存的实物库存部分与实物库存表保持一致
     """
     from app import db
@@ -77,26 +101,34 @@ def sync_virtual_inventory(product_id, location_id, batch_no):
         batch_no=batch_no
     ).first()
     
-    # 获取虚拟库存
+    # 获取或创建虚拟库存
     virtual_inventory = VirtualInventory.query.filter_by(
         product_id=product_id,
         location_id=location_id,
         batch_no=batch_no
     ).first()
     
-    if virtual_inventory:
+    if not virtual_inventory:
+        virtual_inventory = VirtualInventory(
+            product_id=product_id,
+            location_id=location_id,
+            batch_no=batch_no,
+            physical_quantity=inventory.quantity if inventory else 0,
+            in_transit_quantity=0,
+            allocated_quantity=0
+        )
+        db.session.add(virtual_inventory)
+    else:
         # 更新虚拟库存的实物库存部分
-        if inventory:
-            virtual_inventory.physical_quantity = inventory.quantity
-        else:
-            virtual_inventory.physical_quantity = 0
-        db.session.commit()
-    
+        virtual_inventory.physical_quantity = inventory.quantity if inventory else 0
+
+    db.session.commit()
     return virtual_inventory
 
 
 def update_virtual_inventory(product_id, location_id, batch_no, physical_change=0, in_transit_change=0, allocated_change=0):
-    """更新虚拟库存
+    """
+    更新虚拟库存
     参数:
         physical_change: 实物库存变化量（正数增加，负数减少）
         in_transit_change: 在途库存变化量（正数增加，负数减少）
@@ -137,7 +169,8 @@ def update_virtual_inventory(product_id, location_id, batch_no, physical_change=
 
 
 def validate_virtual_inventory(virtual_inventory, tolerance=0):
-    """验证虚拟库存是否有效
+    """
+    验证虚拟库存是否有效
     参数:
         virtual_inventory: 虚拟库存对象
         tolerance: 允许的误差范围
