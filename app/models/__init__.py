@@ -9,3 +9,4 @@ from .inbound import InboundItem, InboundOrder
 from .outbound import OutboundItem, OutboundOrder
 from .inventory_count import InventoryCountTask, InventoryCountResult, InventoryAdjustment, BookInventory, InventoryAccuracy
 from .inventory_count import InventoryCountTaskSchedule, InventoryCountTaskLog
+from .express import Waybill, ScanRecord, InventoryStatus

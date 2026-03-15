@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block title %}日终盘点 - 快递站管理{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>日终盘点</h2>
+        <a href="{{ url_for('express.dashboard') }}" class="btn btn-secondary">
+            <i class="fa fa-arrow-left"></i> 返回
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="alert alert-info">
+                <i class="fa fa-info-circle"></i> 日终盘点用于校正库存数据，确保账实一致。
+            </div>
+            <form id="inventoryForm" class="row g-3">
+                <div class="col-md-6">
+                    <label for="location_id" class="form-label">库位</label>
+                    <select class="form-select" id="location_id" name="location_id" required>
+                        <option value="">请选择库位</option>
+                        {% for location in locations %}
+                        <option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label for="inventory_data" class="form-label">盘点数据（格式：运单号=数量，每行一个）</label>
+                    <textarea class="form-control" id="inventory_data" name="inventory_data" rows="15" required placeholder="例如：
+1234567890=1
+9876543210=2"></textarea>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-clipboard"></i> 提交盘点
+                    </button>
+                    <button type="reset" class="btn btn-secondary">
+                        <i class="fa fa-undo"></i> 重置
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 盘点结果 -->
+    <div class="card" id="resultCard" style="display: none;">
+        <div class="card-body">
+            <h5 class="card-header bg-success text-white mb-3">盘点结果</h5>
+            <div id="inventoryResult" class="alert" style="display: none;"></div>
+            <div id="inventoryInfo" style="display: none;">
+                <table class="table table-bordered">
+                    <tr>
+                        <th width="50%">处理状态</th>
+                        <td id="resultStatus"></td>
+                    </tr>
+                    <tr>
+                        <th>调整数量</th>
+                        <td id="resultCount"></td>
+                    </tr>
+                    <tr>
+                        <th>处理时间</th>
+                        <td id="resultTime"></td>
+                    </tr>
+                </table>
+            </div>
+            <div id="adjustmentDetails" style="display: none;">
+                <h6>调整详情：</h6>
+                <ul id="adjustmentList"></ul>
+            </div>
+        </div>
+    </div>
+
+<script>
+document.getElementById('inventoryForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const location_id = document.getElementById('location_id').value;
+    const inventory_data_text = document.getElementById('inventory_data').value;
+    
+    if (!location_id || !inventory_data_text.trim()) {
+        alert('请选择库位并输入盘点数据');
+        return;
+    }
+    
+    // 解析盘点数据
+    const actual_quantities = {};
+    const lines = inventory_data_text.trim().split('\n');
+    
+    for (const line of lines) {
+        const trimmed_line = line.trim();
+        if (trimmed_line === '') continue;
+        
+        const parts = trimmed_line.split('=');
+        if (parts.length !== 2) {
+            alert(`格式错误：${trimmed_line}，请使用“运单号=数量”的格式`);
+            return;
+        }
+        
+        const waybill_no = parts[0].trim();
+        const quantity = parseInt(parts[1].trim());
+        
+        if (isNaN(quantity) || quantity <= 0) {
+            alert(`数量错误：${trimmed_line}，数量必须大于0`);
+            return;
+        }
+        
+        actual_quantities[waybill_no] = quantity;
+    }
+    
+    if (Object.keys(actual_quantities).length === 0) {
+        alert('请输入至少一条盘点数据');
+        return;
+    }
+    
+    fetch('/express/daily/inventory', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            location_id: parseInt(location_id),
+            actual_quantities: actual_quantities
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        const resultDiv = document.getElementById('inventoryResult');
+        const inventoryInfoDiv = document.getElementById('inventoryInfo');
+        const adjustmentDetailsDiv = document.getElementById('adjustmentDetails');
+        const resultCard = document.getElementById('resultCard');
+        
+        resultCard.style.display = 'block';
+        
+        if (data.success) {
+            resultDiv.className = 'alert alert-success';
+            resultDiv.textContent = data.message;
+            resultDiv.style.display = 'block';
+            
+            // 显示盘点信息
+            inventoryInfoDiv.style.display = 'block';
+            document.getElementById('resultStatus').textContent = '成功';
+            document.getElementById('resultTime').textContent = new Date().toLocaleString('zh-CN');
+            
+            // 从消息中提取调整数量
+            const match = data.message.match(/调整了(\d+)件/);
+            if (match) {
+                document.getElementById('resultCount').textContent = match[1] + '件';
+            } else {
+                document.getElementById('resultCount').textContent = '0件';
+            }
+            
+            // 显示调整详情
+            if (data.details && data.details.length > 0) {
+                adjustmentDetailsDiv.style.display = 'block';
+                const adjustmentList = document.getElementById('adjustmentList');
+                adjustmentList.innerHTML = '';
+                
+                data.details.forEach(detail => {
+                    const li = document.createElement('li');
+                    li.textContent = detail;
+                    adjustmentList.appendChild(li);
+                });
+            } else {
+                adjustmentDetailsDiv.style.display = 'none';
+            }
+        } else {
+            resultDiv.className = 'alert alert-danger';
+            resultDiv.textContent = data.message;
+            resultDiv.style.display = 'block';
+            inventoryInfoDiv.style.display = 'none';
+            adjustmentDetailsDiv.style.display = 'none';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        const resultDiv = document.getElementById('inventoryResult');
+        const resultCard = document.getElementById('resultCard');
+        resultCard.style.display = 'block';
+        resultDiv.className = 'alert alert-danger';
+        resultDiv.textContent = '盘点失败，请重试';
+        resultDiv.style.display = 'block';
+        document.getElementById('inventoryInfo').style.display = 'none';
+        document.getElementById('adjustmentDetails').style.display = 'none';
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}无单出库 - 快递站管理{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>无单出库</h2>
+        <a href="{{ url_for('express.dashboard') }}" class="btn btn-secondary">
+            <i class="fa fa-arrow-left"></i> 返回
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="alert alert-warning">
+                <i class="fa fa-exclamation-triangle"></i> 无单出库用于处理"已取件未扫描"等特殊情况，请谨慎使用。
+            </div>
+            <form id="outboundForm" class="row g-3">
+                <div class="col-md-6">
+                    <label for="product_id" class="form-label">商品</label>
+                    <select class="form-select" id="product_id" name="product_id" required>
+                        <option value="">请选择商品</option>
+                        {% for product in products %}
+                        <option value="{{ product.id }}">{{ product.code }} - {{ product.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="location_id" class="form-label">库位</label>
+                    <select class="form-select" id="location_id" name="location_id" required>
+                        <option value="">请选择库位</option>
+                        {% for location in locations %}
+                        <option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="quantity" class="form-label">出库数量</label>
+                    <input type="number" class="form-control" id="quantity" name="quantity" min="1" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="remark" class="form-label">备注</label>
+                    <input type="text" class="form-control" id="remark" name="remark">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fa fa-minus-circle"></i> 无单出库
+                    </button>
+                    <button type="reset" class="btn btn-secondary">
+                        <i class="fa fa-undo"></i> 重置
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 出库结果 -->
+    <div class="card" id="resultCard" style="display: none;">
+        <div class="card-body">
+            <h5 class="card-header bg-danger text-white mb-3">出库结果</h5>
+            <div id="outboundResult" class="alert" style="display: none;"></div>
+            <div id="outboundInfo" style="display: none;">
+                <table class="table table-bordered">
+                    <tr>
+                        <th width="50%">处理状态</th>
+                        <td id="resultStatus"></td>
+                    </tr>
+                    <tr>
+                        <th>出库数量</th>
+                        <td id="resultQuantity"></td>
+                    </tr>
+                    <tr>
+                        <th>处理时间</th>
+                        <td id="resultTime"></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+<script>
+document.getElementById('outboundForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const product_id = document.getElementById('product_id').value;
+    const location_id = document.getElementById('location_id').value;
+    const quantity = document.getElementById('quantity').value;
+    const remark = document.getElementById('remark').value;
+    
+    if (!product_id || !location_id || !quantity || quantity <= 0) {
+        alert('请填写商品、库位和出库数量，且数量必须大于0');
+        return;
+    }
+    
+    fetch('/express/no-waybill/outbound', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            product_id: parseInt(product_id),
+            location_id: parseInt(location_id),
+            quantity: parseInt(quantity),
+            remark: remark
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        const resultDiv = document.getElementById('outboundResult');
+        const outboundInfoDiv = document.getElementById('outboundInfo');
+        const resultCard = document.getElementById('resultCard');
+        
+        resultCard.style.display = 'block';
+        
+        if (data.success) {
+            resultDiv.className = 'alert alert-success';
+            resultDiv.textContent = data.message;
+            resultDiv.style.display = 'block';
+            
+            // 显示出库信息
+            outboundInfoDiv.style.display = 'block';
+            document.getElementById('resultStatus').textContent = '成功';
+            document.getElementById('resultQuantity').textContent = quantity + '件';
+            document.getElementById('resultTime').textContent = new Date().toLocaleString('zh-CN');
+            
+            // 清空表单
+            document.getElementById('product_id').value = '';
+            document.getElementById('quantity').value = '';
+            document.getElementById('remark').value = '';
+        } else {
+            resultDiv.className = 'alert alert-danger';
+            resultDiv.textContent = data.message;
+            resultDiv.style.display = 'block';
+            outboundInfoDiv.style.display = 'none';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        const resultDiv = document.getElementById('outboundResult');
+        const resultCard = document.getElementById('resultCard');
+        resultCard.style.display = 'block';
+        resultDiv.className = 'alert alert-danger';
+        resultDiv.textContent = '出库失败，请重试';
+        resultDiv.style.display = 'block';
+        document.getElementById('outboundInfo').style.display = 'none';
+    });
+});
+</script>
+{% endblock %}

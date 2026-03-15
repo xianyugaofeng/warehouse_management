@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}每日结账 - 快递站管理{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>每日结账</h2>
+        <a href="{{ url_for('express.dashboard') }}" class="btn btn-secondary">
+            <i class="fa fa-arrow-left"></i> 返回
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="alert alert-info">
+                <i class="fa fa-info-circle"></i> 每日结账将把当日未出库的包裹转入滞留库存，确保次日派件时PDA显示准确库存状态。
+            </div>
+            <div class="text-center">
+                <button id="checkoutBtn" class="btn btn-primary btn-lg">
+                    <i class="fa fa-calendar-check-o"></i> 执行每日结账
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 结账结果 -->
+    <div class="card" id="resultCard" style="display: none;">
+        <div class="card-body">
+            <h5 class="card-header bg-success text-white mb-3">结账结果</h5>
+            <div id="checkoutResult" class="alert" style="display: none;"></div>
+            <div id="checkoutInfo" style="display: none;">
+                <table class="table table-bordered">
+                    <tr>
+                        <th width="50%">处理状态</th>
+                        <td id="resultStatus"></td>
+                    </tr>
+                    <tr>
+                        <th>处理时间</th>
+                        <td id="resultTime"></td>
+                    </tr>
+                    <tr>
+                        <th>滞留件数量</th>
+                        <td id="resultCount"></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+<script>
+document.getElementById('checkoutBtn').addEventListener('click', function() {
+    if (!confirm('确定要执行每日结账吗？此操作将把当日未出库的包裹转入滞留库存。')) {
+        return;
+    }
+    
+    fetch('/express/daily/checkout', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const resultDiv = document.getElementById('checkoutResult');
+        const checkoutInfoDiv = document.getElementById('checkoutInfo');
+        const resultCard = document.getElementById('resultCard');
+        
+        resultCard.style.display = 'block';
+        
+        if (data.success) {
+            resultDiv.className = 'alert alert-success';
+            resultDiv.textContent = data.message;
+            resultDiv.style.display = 'block';
+            
+            // 显示结账信息
+            checkoutInfoDiv.style.display = 'block';
+            document.getElementById('resultStatus').textContent = '成功';
+            document.getElementById('resultTime').textContent = new Date().toLocaleString('zh-CN');
+            
+            // 从消息中提取滞留件数量
+            const match = data.message.match(/处理了(\d+)件/);
+            if (match) {
+                document.getElementById('resultCount').textContent = match[1] + '件';
+            } else {
+                document.getElementById('resultCount').textContent = '0件';
+            }
+        } else {
+            resultDiv.className = 'alert alert-danger';
+            resultDiv.textContent = data.message;
+            resultDiv.style.display = 'block';
+            checkoutInfoDiv.style.display = 'none';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        const resultDiv = document.getElementById('checkoutResult');
+        const resultCard = document.getElementById('resultCard');
+        resultCard.style.display = 'block';
+        resultDiv.className = 'alert alert-danger';
+        resultDiv.textContent = '结账失败，请重试';
+        resultDiv.style.display = 'block';
+        document.getElementById('checkoutInfo').style.display = 'none';
+    });
+});
+</script>
+{% endblock %}

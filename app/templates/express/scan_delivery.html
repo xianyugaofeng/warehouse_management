@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}签收扫描 - 快递站管理{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>签收扫描</h2>
+        <a href="{{ url_for('express.dashboard') }}" class="btn btn-secondary">
+            <i class="fa fa-arrow-left"></i> 返回
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form id="scanForm">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label for="waybill_no" class="form-label">运单号</label>
+                        <input type="text" class="form-control" id="waybill_no" name="waybill_no" required autofocus>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="location_id" class="form-label">库位</label>
+                        <select class="form-select" id="location_id" name="location_id" required>
+                            <option value="">请选择库位</option>
+                            {% for location in locations %}
+                            <option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-12">
+                        <label for="remark" class="form-label">备注</label>
+                        <input type="text" class="form-control" id="remark" name="remark">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fa fa-check"></i> 扫描签收
+                        </button>
+                        <button type="reset" class="btn btn-secondary">
+                            <i class="fa fa-undo"></i> 重置
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 扫描结果 -->
+    <div class="card" id="resultCard" style="display: none;">
+        <div class="card-body">
+            <h5 class="card-header bg-success text-white mb-3">扫描结果</h5>
+            <div id="scanResult" class="alert" style="display: none;"></div>
+            <div id="waybillInfo" style="display: none;">
+                <table class="table table-bordered">
+                    <tr>
+                        <th width="30%">运单号</th>
+                        <td id="resultWaybillNo"></td>
+                    </tr>
+                    <tr>
+                        <th>商品名称</th>
+                        <td id="resultProductName"></td>
+                    </tr>
+                    <tr>
+                        <th>库位</th>
+                        <td id="resultLocation"></td>
+                    </tr>
+                    <tr>
+                        <th>状态</th>
+                        <td id="resultStatus"></td>
+                    </tr>
+                    <tr>
+                        <th>签收时间</th>
+                        <td id="resultScanTime"></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+<script>
+document.getElementById('scanForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const waybill_no = document.getElementById('waybill_no').value;
+    const location_id = document.getElementById('location_id').value;
+    const remark = document.getElementById('remark').value;
+    
+    if (!waybill_no || !location_id) {
+        alert('请填写运单号和选择库位');
+        return;
+    }
+    
+    fetch('/express/scan/delivery', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            waybill_no: waybill_no,
+            location_id: parseInt(location_id),
+            remark: remark
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        const resultDiv = document.getElementById('scanResult');
+        const waybillInfoDiv = document.getElementById('waybillInfo');
+        const resultCard = document.getElementById('resultCard');
+        
+        resultCard.style.display = 'block';
+        
+        if (data.success) {
+            resultDiv.className = 'alert alert-success';
+            resultDiv.textContent = '扫描成功！';
+            resultDiv.style.display = 'block';
+            
+            // 显示运单信息
+            waybillInfoDiv.style.display = 'block';
+            document.getElementById('resultWaybillNo').textContent = data.waybill.waybill_no;
+            document.getElementById('resultProductName').textContent = data.waybill.product ? data.waybill.product.name : '未知商品';
+            document.getElementById('resultLocation').textContent = data.waybill.location ? data.waybill.location.code : '未知库位';
+            document.getElementById('resultStatus').textContent = data.waybill.status;
+            document.getElementById('resultScanTime').textContent = new Date().toLocaleString('zh-CN');
+            
+            // 清空表单
+            document.getElementById('waybill_no').value = '';
+            document.getElementById('remark').value = '';
+            document.getElementById('waybill_no').focus();
+        } else {
+            resultDiv.className = 'alert alert-danger';
+            resultDiv.textContent = data.message;
+            resultDiv.style.display = 'block';
+            waybillInfoDiv.style.display = 'none';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        const resultDiv = document.getElementById('scanResult');
+        const resultCard = document.getElementById('resultCard');
+        resultCard.style.display = 'block';
+        resultDiv.className = 'alert alert-danger';
+        resultDiv.textContent = '扫描失败，请重试';
+        resultDiv.style.display = 'block';
+        document.getElementById('waybillInfo').style.display = 'none';
+    });
+});
+</script>
+{% endblock %}

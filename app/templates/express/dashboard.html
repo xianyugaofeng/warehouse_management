@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}快递站管理 - 仓库管理系统{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>快递站管理</h2>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">总运单数</h5>
+                    <h2 class="card-text">{{ total_waybills }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">今日到件</h5>
+                    <h2 class="card-text">{{ today_arrival }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">今日派件</h5>
+                    <h2 class="card-text">{{ today_departure }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">问题件数</h5>
+                    <h2 class="card-text">{{ problem_count }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 功能菜单 -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-header bg-primary text-white mb-3">扫描操作</h5>
+                    <div class="list-group">
+                        <a href="{{ url_for('express.scan_arrival_page') }}" class="list-group-item list-group-item-action">
+                            <i class="fa fa-download"></i> 到件扫描
+                        </a>
+                        <a href="{{ url_for('express.scan_departure_page') }}" class="list-group-item list-group-item-action">
+                            <i class="fa fa-upload"></i> 派件扫描
+                        </a>
+                        <a href="{{ url_for('express.scan_delivery_page') }}" class="list-group-item list-group-item-action">
+                            <i class="fa fa-check"></i> 签收扫描
+                        </a>
+                        <a href="{{ url_for('express.scan_problem_page') }}" class="list-group-item list-group-item-action">
+                            <i class="fa fa-exclamation-triangle"></i> 问题件处理
+                        </a>
+                        <a href="{{ url_for('express.scan_return_page') }}" class="list-group-item list-group-item-action">
+                            <i class="fa fa-undo"></i> 回流扫描
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-header bg-info text-white mb-3">查询与管理</h5>
+                    <div class="list-group">
+                        <a href="{{ url_for('express.waybill_query_page') }}" class="list-group-item list-group-item-action">
+                            <i class="fa fa-search"></i> 运单查询
+                        </a>
+                        <a href="{{ url_for('express.inventory_status_page') }}" class="list-group-item list-group-item-action">
+                            <i class="fa fa-box"></i> 库存状态查询
+                        </a>
+                        <a href="{{ url_for('express.daily_checkout_page') }}" class="list-group-item list-group-item-action">
+                            <i class="fa fa-calendar-check-o"></i> 每日结账
+                        </a>
+                        <a href="{{ url_for('express.batch_outbound_page') }}" class="list-group-item list-group-item-action">
+                            <i class="fa fa-truck"></i> 批量出库
+                        </a>
+                        <a href="{{ url_for('express.no_waybill_outbound_page') }}" class="list-group-item list-group-item-action">
+                            <i class="fa fa-minus-circle"></i> 无单出库
+                        </a>
+                        <a href="{{ url_for('express.daily_inventory_page') }}" class="list-group-item list-group-item-action">
+                            <i class="fa fa-clipboard"></i> 日终盘点
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 今日扫描记录 -->
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-header bg-secondary text-white mb-3">今日扫描记录（最近10条）</h5>
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>扫描类型</th>
+                            <th>运单号</th>
+                            <th>操作人</th>
+                            <th>扫描地点</th>
+                            <th>扫描时间</th>
+                            <th>批次号</th>
+                            <th>备注</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for scan in today_scans %}
+                        <tr>
+                            <td>
+                                {% if scan.scan_type == 'arrival' %}
+                                    <span class="badge bg-success">到件</span>
+                                {% elif scan.scan_type == 'departure' %}
+                                    <span class="badge bg-info">派件</span>
+                                {% elif scan.scan_type == 'delivery' %}
+                                    <span class="badge bg-primary">签收</span>
+                                {% elif scan.scan_type == 'problem' %}
+                                    <span class="badge bg-danger">问题件</span>
+                                {% elif scan.scan_type == 'return' %}
+                                    <span class="badge bg-warning">回流</span>
+                                {% else %}
+                                    {{ scan.scan_type }}
+                                {% endif %}
+                            </td>
+                            <td>{{ scan.waybill.waybill_no if scan.waybill else '-' }}</td>
+                            <td>{{ scan.operator.real_name if scan.operator else '-' }}</td>
+                            <td>{{ scan.location.code if scan.location else '-' }}</td>
+                            <td>{{ scan.scan_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>{{ scan.batch_no or '-' }}</td>
+                            <td>{{ scan.remark or '-' }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center">暂无扫描记录</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

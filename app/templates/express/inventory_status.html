@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}库存状态查询 - 快递站管理{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>库存状态查询</h2>
+        <a href="{{ url_for('express.dashboard') }}" class="btn btn-secondary">
+            <i class="fa fa-arrow-left"></i> 返回
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form id="queryForm" class="row g-3">
+                <div class="col-md-6">
+                    <label for="location_id" class="form-label">库位</label>
+                    <select class="form-select" id="location_id" name="location_id">
+                        <option value="">全部库位</option>
+                        {% for location in locations %}
+                        <option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="status" class="form-label">库存状态</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">全部状态</option>
+                        <option value="normal">正常待派</option>
+                        <option value="problem">问题件</option>
+                        <option value="overnight">滞留件</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-search"></i> 查询
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 查询结果 -->
+    <div class="card" id="resultCard" style="display: none;">
+        <div class="card-body">
+            <h5 class="card-header bg-info text-white mb-3">库存状态列表</h5>
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>运单号</th>
+                            <th>商品名称</th>
+                            <th>库位</th>
+                            <th>库存状态</th>
+                            <th>更新时间</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryStatusBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+<script>
+document.getElementById('queryForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const location_id = document.getElementById('location_id').value;
+    const status = document.getElementById('status').value;
+    
+    let url = '/express/inventory/status?';
+    if (location_id) {
+        url += `location_id=${location_id}&`;
+    }
+    if (status) {
+        url += `status=${status}`;
+    }
+    
+    fetch(url)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const inventoryStatuses = data.data;
+            
+            if (inventoryStatuses.length > 0) {
+                document.getElementById('resultCard').style.display = 'block';
+                const inventoryStatusBody = document.getElementById('inventoryStatusBody');
+                inventoryStatusBody.innerHTML = '';
+                
+                inventoryStatuses.forEach(status => {
+                    const row = document.createElement('tr');
+                    
+                    let statusBadge = '';
+                    if (status.status === 'normal') {
+                        statusBadge = '<span class="badge bg-success">正常待派</span>';
+                    } else if (status.status === 'problem') {
+                        statusBadge = '<span class="badge bg-danger">问题件</span>';
+                    } else if (status.status === 'overnight') {
+                        statusBadge = '<span class="badge bg-warning">滞留件</span>';
+                    } else {
+                        statusBadge = status.status;
+                    }
+                    
+                    row.innerHTML = `
+                        <td>${status.waybill_no}</td>
+                        <td>${status.product_name}</td>
+                        <td>${status.location}</td>
+                        <td>${statusBadge}</td>
+                        <td>${status.update_time}</td>
+                    `;
+                    
+                    inventoryStatusBody.appendChild(row);
+                });
+            } else {
+                alert('未找到符合条件的库存状态记录');
+                document.getElementById('resultCard').style.display = 'none';
+            }
+        } else {
+            alert(data.message);
+            document.getElementById('resultCard').style.display = 'none';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('查询失败，请重试');
+        document.getElementById('resultCard').style.display = 'none';
+    });
+});
+</script>
+{% endblock %}

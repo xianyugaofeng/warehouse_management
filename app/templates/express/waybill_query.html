@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}运单查询 - 快递站管理{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>运单查询</h2>
+        <a href="{{ url_for('express.dashboard') }}" class="btn btn-secondary">
+            <i class="fa fa-arrow-left"></i> 返回
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form id="queryForm" class="row g-3">
+                <div class="col-md-8">
+                    <label for="waybill_no" class="form-label">运单号</label>
+                    <input type="text" class="form-control" id="waybill_no" name="waybill_no" required autofocus>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fa fa-search"></i> 查询
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 查询结果 -->
+    <div class="card mb-4" id="resultCard" style="display: none;">
+        <div class="card-body">
+            <h5 class="card-header bg-primary text-white mb-3">运单信息</h5>
+            <table class="table table-bordered">
+                <tr>
+                    <th width="30%">运单号</th>
+                    <td id="resultWaybillNo"></td>
+                </tr>
+                <tr>
+                    <th>商品名称</th>
+                    <td id="resultProductName"></td>
+                </tr>
+                <tr>
+                    <th>库位</th>
+                    <td id="resultLocation"></td>
+                </tr>
+                <tr>
+                    <th>状态</th>
+                    <td id="resultStatus"></td>
+                </tr>
+                <tr>
+                    <th>快递员</th>
+                    <td id="resultCourier"></td>
+                </tr>
+                <tr>
+                    <th>创建时间</th>
+                    <td id="resultCreateTime"></td>
+                </tr>
+                <tr>
+                    <th>更新时间</th>
+                    <td id="resultUpdateTime"></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- 扫描记录 -->
+    <div class="card" id="scanRecordCard" style="display: none;">
+        <div class="card-body">
+            <h5 class="card-header bg-info text-white mb-3">扫描记录</h5>
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>扫描类型</th>
+                            <th>操作人</th>
+                            <th>扫描地点</th>
+                            <th>扫描时间</th>
+                            <th>批次号</th>
+                            <th>备注</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scanRecordBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+<script>
+document.getElementById('queryForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const waybill_no = document.getElementById('waybill_no').value;
+    
+    if (!waybill_no) {
+        alert('请输入运单号');
+        return;
+    }
+    
+    fetch(`/express/waybill/query?waybill_no=${waybill_no}`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const resultData = data.data;
+            
+            // 显示运单信息
+            document.getElementById('resultCard').style.display = 'block';
+            document.getElementById('resultWaybillNo').textContent = resultData.waybill_no;
+            document.getElementById('resultProductName').textContent = resultData.product_name;
+            document.getElementById('resultLocation').textContent = resultData.location;
+            document.getElementById('resultStatus').textContent = resultData.status;
+            document.getElementById('resultCourier').textContent = resultData.courier;
+            document.getElementById('resultCreateTime').textContent = resultData.create_time;
+            document.getElementById('resultUpdateTime').textContent = resultData.update_time;
+            
+            // 显示扫描记录
+            if (resultData.scan_records && resultData.scan_records.length > 0) {
+                document.getElementById('scanRecordCard').style.display = 'block';
+                const scanRecordBody = document.getElementById('scanRecordBody');
+                scanRecordBody.innerHTML = '';
+                
+                resultData.scan_records.forEach(record => {
+                    const row = document.createElement('tr');
+                    
+                    let scanTypeBadge = '';
+                    if (record.scan_type === 'arrival') {
+                        scanTypeBadge = '<span class="badge bg-success">到件</span>';
+                    } else if (record.scan_type === 'departure') {
+                        scanTypeBadge = '<span class="badge bg-info">派件</span>';
+                    } else if (record.scan_type === 'delivery') {
+                        scanTypeBadge = '<span class="badge bg-primary">签收</span>';
+                    } else if (record.scan_type === 'problem') {
+                        scanTypeBadge = '<span class="badge bg-danger">问题件</span>';
+                    } else if (record.scan_type === 'return') {
+                        scanTypeBadge = '<span class="badge bg-warning">回流</span>';
+                    } else {
+                        scanTypeBadge = record.scan_type;
+                    }
+                    
+                    row.innerHTML = `
+                        <td>${scanTypeBadge}</td>
+                        <td>${record.operator}</td>
+                        <td>${record.location}</td>
+                        <td>${record.scan_time}</td>
+                        <td>${record.batch_no || '-'}</td>
+                        <td>${record.remark || '-'}</td>
+                    `;
+                    
+                    scanRecordBody.appendChild(row);
+                });
+            } else {
+                document.getElementById('scanRecordCard').style.display = 'none';
+            }
+        } else {
+            alert(data.message);
+            document.getElementById('resultCard').style.display = 'none';
+            document.getElementById('scanRecordCard').style.display = 'none';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('查询失败，请重试');
+        document.getElementById('resultCard').style.display = 'none';
+        document.getElementById('scanRecordCard').style.display = 'none';
+    });
+});
+</script>
+{% endblock %}
