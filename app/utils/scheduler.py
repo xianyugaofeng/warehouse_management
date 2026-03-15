@@ -7,7 +7,8 @@ from app.models.inventory_count import InventoryCountTask, InventoryCountTaskSch
 from app.models.inventory import Inventory
 from app.models.product import Product
 from app.models.inventory import WarehouseLocation
-from app.utils.helpers import generate_inventory_adjustment_no, validate_virtual_inventory
+from app.utils.helpers import generate_inventory_adjustment_no, validate_book_inventory
+from flask import current_app
 from flask_login import current_user
 # 配置日志
 logging.basicConfig(level=logging.INFO,
@@ -58,22 +59,36 @@ def run_inventory_count_task(task_id, schedule_id=None):
         task.status = 'in_progress'
         task.start_time = datetime.now()
         
+        # 获取盘点容差配置
+        tolerance = current_app.config.get('INVENTORY_COUNT_TOLERANCE', 5)
+        
         # 处理盘点结果
         for inventory in inventories:
-            # 从虚拟库存获取预期数量
-            from app.models.inventory_count import VirtualInventory
-            virtual_inventory = VirtualInventory.query.filter_by(
+            # 从系统账面库存获取预期数量
+            from app.models.inventory_count import BookInventory
+            book_inventory = BookInventory.query.filter_by(
                 product_id=inventory.product_id,
                 location_id=inventory.location_id,
                 batch_no=inventory.batch_no
             ).first()
-            expected_quantity = virtual_inventory.virtual_quantity if virtual_inventory else inventory.quantity
+            expected_quantity = book_inventory.available_quantity if book_inventory else inventory.quantity
             
-            # 实际盘点数量为虚拟库存的总数量
+            # 实际盘点数量为系统账面库存的可用数量
             actual_quantity = expected_quantity
             
             # 计算差异
             difference = actual_quantity - inventory.quantity
+            
+            # 判断是否在容差范围内
+            is_within_tolerance = abs(difference) <= tolerance
+            
+            # 确定处理状态
+            if difference == 0:
+                result_status = 'matched'  # 完全匹配
+            elif is_within_tolerance:
+                result_status = 'auto_adjusted'  # 容差内自动调整
+            else:
+                result_status = 'manual_processing'  # 超出容差，需要人工处理
             
             # 创建盘点结果
             from app.models.inventory_count import InventoryCountResult
@@ -83,46 +98,54 @@ def run_inventory_count_task(task_id, schedule_id=None):
                 expected_quantity=expected_quantity,
                 actual_quantity=actual_quantity,
                 difference=difference,
-                status='auto_adjusted'
+                status=result_status
             )
             db.session.add(result)
             
-            # 自动处理差异
+            # 处理差异（容差范围内自动过账，超出容差需要人工审核）
             if difference != 0:
-                # 创建库存调整
-                adjustment_no = generate_inventory_adjustment_no()
-                from app.models.inventory_count import InventoryAdjustment
-                adjustment = InventoryAdjustment(
-                    adjustment_no=adjustment_no,
-                    inventory_id=inventory.id,
-                    before_quantity=inventory.quantity,
-                    after_quantity=expected_quantity,
-                    adjustment_quantity=expected_quantity - inventory.quantity,
-                    type='count_adjustment',
-                    reason=f'自动周期盘点调整',
-                    # 在 adjustment 和 result 中使用 SYSTEM_USER_ID
-                    operator_id=SYSTEM_USER_ID, # 系统用户
-                    count_task_id=task.id
-                )
-                db.session.add(adjustment)
-                
-                # 更新实物库存为期望库存数量（虚拟库存的总数量）
-                inventory.quantity = expected_quantity
-                
-                # 同步更新虚拟库存：实物库存等于inventory.quantity，在途和已分配库存清零
-                if virtual_inventory:
-                    virtual_inventory.physical_quantity = expected_quantity
-                    virtual_inventory.in_transit_quantity = 0
-                    virtual_inventory.allocated_quantity = 0
-                    # 验证虚拟库存
-                    is_valid, message = validate_virtual_inventory(virtual_inventory)
-                    if not is_valid:
-                        logger.warning(f'虚拟库存验证失败: {message}')
-                
-                # 更新盘点结果状态
-                result.adjust_reason = '自动周期盘点调整'
-                result.processor_id = SYSTEM_USER_ID  # 系统用户
-                result.process_time = datetime.now()
+                if is_within_tolerance:
+                    # 容差范围内：自动过账库存调整单
+                    adjustment_no = generate_inventory_adjustment_no()
+                    from app.models.inventory_count import InventoryAdjustment
+                    adjustment = InventoryAdjustment(
+                        adjustment_no=adjustment_no,
+                        inventory_id=inventory.id,
+                        before_quantity=inventory.quantity,
+                        after_quantity=expected_quantity,
+                        adjustment_quantity=expected_quantity - inventory.quantity,
+                        type='count_adjustment',
+                        reason=f'自动周期盘点调整（差异{difference}，在容差±{tolerance}范围内自动过账）',
+                        operator_id=SYSTEM_USER_ID,  # 系统用户
+                        count_task_id=task.id
+                    )
+                    db.session.add(adjustment)
+                    
+                    # 更新实物库存为期望库存数量（系统账面库存的可用数量）
+                    inventory.quantity = expected_quantity
+                    
+                    # 同步更新系统账面库存：账面数量等于inventory.quantity，在途和已分配数量清零
+                    if book_inventory:
+                        book_inventory.book_quantity = expected_quantity
+                        book_inventory.in_transit_quantity = 0
+                        book_inventory.allocated_quantity = 0
+                        # 验证系统账面库存
+                        is_valid, message = validate_book_inventory(book_inventory)
+                        if not is_valid:
+                            logger.warning(f'系统账面库存验证失败: {message}')
+                    
+                    # 更新盘点结果状态
+                    result.adjust_reason = f'容差范围内自动过账（差异{difference}件）'
+                    result.processor_id = SYSTEM_USER_ID  # 系统用户
+                    result.process_time = datetime.now()
+                    
+                    # 自动生成会计分录（这里可以扩展为实际的会计系统接口）
+                    # 借记/贷记"存货调整科目"
+                    logger.info(f'自动生成会计分录：调整库存 {inventory.product_id}，差异 {difference}')
+                else:
+                    # 超出容差：标记为需要人工处理
+                    result.adjust_reason = f'差异{difference}件超出容差范围±{tolerance}，需要人工审核'
+                    logger.warning(f'库存 {inventory.product_id} 差异{difference}件超出容差范围，需要人工处理')
         
         # 完成任务
         task.status = 'completed'

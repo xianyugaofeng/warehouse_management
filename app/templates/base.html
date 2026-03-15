@@ -75,7 +75,7 @@
                         <a href="{{ url_for('inventory_count.adjustment_list') }}" class="list-group-item list-group-item-action">库存调整历史</a>
                         <a href="{{ url_for('inventory_count.log_list') }}" class="list-group-item list-group-item-action">执行日志</a>
                         <a href="{{ url_for('inventory_count.schedule_list') }}" class="list-group-item list-group-item-action">调度管理</a>
-                        <a href="{{ url_for('inventory_count.virtual_inventory_list') }}" class="list-group-item list-group-item-action">虚拟库存管理</a>
+                        <a href="{{ url_for('inventory_count.book_inventory_list') }}" class="list-group-item list-group-item-action">系统账面库存</a>
                     {% endif %}
                     {% if current_user.has_permission('report_view') %}
                         <a href="{{ url_for('report.index') }}" class="list-group-item list-group-item-action">报表统计</a>

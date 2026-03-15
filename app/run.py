@@ -4,7 +4,7 @@ from app.models import Product, Category, Supplier
 from app.models import Inventory, WarehouseLocation
 from app.models import InboundItem, InboundOrder
 from app.models import OutboundItem, OutboundOrder
-from app.models import InventoryCountTask, InventoryCountResult, InventoryAdjustment, VirtualInventory, InventoryAccuracy, InventoryCountTaskSchedule, InventoryCountTaskLog
+from app.models import InventoryCountTask, InventoryCountResult, InventoryAdjustment, BookInventory, InventoryAccuracy, InventoryCountTaskSchedule, InventoryCountTaskLog
 
 app = create_app()
 
@@ -20,7 +20,7 @@ def make_shell_context():   # 在命令行使用flask shell命令启动Flask交�
         InboundItem=InboundItem, InboundOrder=InboundOrder,
         OutboundItem=OutboundItem, OutboundOrder=OutboundOrder, 
         InventoryCountTask=InventoryCountTask, InventoryCountResult=InventoryCountResult,
-        InventoryAdjustment=InventoryAdjustment, VirtualInventory=VirtualInventory, InventoryAccuracy=InventoryAccuracy,
+        InventoryAdjustment=InventoryAdjustment, BookInventory=BookInventory, InventoryAccuracy=InventoryAccuracy,
         InventoryCountTaskSchedule=InventoryCountTaskSchedule, InventoryCountTaskLog=InventoryCountTaskLog
     )
 

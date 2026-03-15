@@ -56,13 +56,13 @@
                                 <th>库位</th>
                                 <th>批次号</th>
                                 <th>实物库存</th>
-                                <th>虚拟库存</th>
+                                <th>系统账面库存</th>
                                 <th>实际数量</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for inventory in inventories %}
-                            {% set vi = virtual_inventories |
+                            {% set bi = book_inventories |
                                         selectattr('product_id', 'equalto', inventory.product_id) |
                                         selectattr('location_id', 'equalto', inventory.location_id) |
                                         selectattr('batch_no', 'equalto', inventory.batch_no) | 
@@ -74,7 +74,7 @@
                                     <td>{{ inventory.location.code }}</td>
                                     <td>{{ inventory.batch_no }}</td>
                                     <td>{{ inventory.quantity }}</td>
-                                    <td>{{ vi.virtual_quantity if vi else inventory.quantity }}</td>
+                                    <td>{{ bi.available_quantity if bi else inventory.quantity }}</td>
                                     <td>
                                         <input type="number" class="form-control" name="actual_quantity_{{ inventory.id }}" value="{{ inventory.quantity }}" min="0" required>
                                     </td>

@@ -95,22 +95,23 @@ class InventoryAdjustment(db.Model):
     def __repr__(self):
         return f'<InventoryAdjustment {self.adjustment_no}>'
 
-class VirtualInventory(db.Model):
-    """虚拟库存"""
-    __tablename__ = 'virtual_inventories'
+class BookInventory(db.Model):
+    """系统账面库存 - 记录系统账面数量、在途数量、已分配数量"""
+    __tablename__ = 'book_inventories'
     id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False) # 关联商品
     location_id = db.Column(db.Integer, db.ForeignKey('warehouse_locations.id'), nullable=False) # 关联库位
     batch_no = db.Column(db.String(32)) # 批次号
-    physical_quantity = db.Column(db.Integer, default=0) # 实物库存
-    in_transit_quantity = db.Column(db.Integer, default=0) # 在途库存
-    allocated_quantity = db.Column(db.Integer, default=0) # 已分配库存
-    # 虚拟库存通过计算属性实现，不存储在数据库中
+    book_quantity = db.Column(db.Integer, default=0) # 系统账面数量
+    in_transit_quantity = db.Column(db.Integer, default=0) # 在途数量（已入库未确认）
+    allocated_quantity = db.Column(db.Integer, default=0) # 已分配数量（已出库未确认）
+    # 可用库存通过计算属性实现，不存储在数据库中
+    # 可用库存 = 账面数量 + 在途数量 - 已分配数量
     update_time = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow) # 更新时间
 
     # 联合唯一约束
     __table_args__ = (
-        db.UniqueConstraint('product_id', 'location_id', 'batch_no', name='_virtual_product_location_batch_uc'),
+        db.UniqueConstraint('product_id', 'location_id', 'batch_no', name='_book_product_location_batch_uc'),
     )
 
     # 关联 
@@ -118,17 +119,17 @@ class VirtualInventory(db.Model):
     location = db.relationship('WarehouseLocation')
 
     @property
-    def virtual_quantity(self):
-        """虚拟库存 = 实物库存 + 在途库存 - 已分配库存"""
-        return self.physical_quantity + self.in_transit_quantity - self.allocated_quantity
+    def available_quantity(self):
+        """可用库存 = 账面数量 + 在途数量 - 已分配数量"""
+        return self.book_quantity + self.in_transit_quantity - self.allocated_quantity
 
     @property
-    def is_virtual_quantity_valid(self):
-        """验证虚拟库存是否有效"""
-        return self.virtual_quantity >= 0
+    def is_available_quantity_valid(self):
+        """验证可用库存是否有效"""
+        return self.available_quantity >= 0
 
     def __repr__(self):
-        return f'<VirtualInventory {self.product_id} - {self.location_id} - {self.virtual_quantity}>'
+        return f'<BookInventory {self.product_id} - {self.location_id} - {self.available_quantity}>'
 
 class InventoryAccuracy(db.Model):
     """库存准确率记录"""

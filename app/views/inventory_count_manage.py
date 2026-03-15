@@ -3,11 +3,12 @@ from flask import Blueprint, render_template, request, url_for, flash, redirect
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta
 from app import db
-from app.models.inventory_count import InventoryCountTask, InventoryCountResult, InventoryAdjustment, VirtualInventory, InventoryAccuracy, InventoryCountTaskSchedule, InventoryCountTaskLog
+from app.models.inventory_count import InventoryCountTask, InventoryCountResult, InventoryAdjustment, BookInventory, InventoryAccuracy, InventoryCountTaskSchedule, InventoryCountTaskLog
 from app.models.inventory import Inventory, WarehouseLocation
 from app.models.product import Product, Supplier
 from app.utils.auth import permission_required
-from app.utils.helpers import generate_inventory_count_task_no, generate_inventory_adjustment_no, validate_virtual_inventory
+from app.utils.helpers import generate_inventory_count_task_no, generate_inventory_adjustment_no, validate_book_inventory
+from flask import current_app
 from app.utils.scheduler import add_schedule
 
 inventory_count_bp = Blueprint('inventory_count', __name__)
@@ -124,21 +125,38 @@ def task_execute(task_id):
         task.start_time = datetime.now()
         task.operator_id = current_user.id
 
+        # 获取盘点容差配置
+        tolerance = current_app.config.get('INVENTORY_COUNT_TOLERANCE', 5)
+        
         # 处理盘点结果
         for inventory in inventories:
             actual_quantity = request.form.get(f'actual_quantity_{inventory.id}', type=int)
             if actual_quantity is not None:
-                # 从虚拟库存获取预期数量
-                virtual_inventory = VirtualInventory.query.filter_by(
+                # 从系统账面库存获取预期数量
+                book_inventory = BookInventory.query.filter_by(
                     product_id=inventory.product_id,
                     location_id=inventory.location_id,
                     batch_no=inventory.batch_no
                 ).first()
-                expected_quantity = virtual_inventory.virtual_quantity if virtual_inventory else inventory.quantity
+                expected_quantity = book_inventory.available_quantity if book_inventory else inventory.quantity
                 
-                # 实际盘点数量为虚拟库存的总数量
+                # 实际盘点数量为系统账面库存的可用数量
                 actual_quantity = expected_quantity
                 difference = actual_quantity - inventory.quantity
+                
+                # 判断是否在容差范围内
+                is_within_tolerance = abs(difference) <= tolerance
+                
+                # 确定处理状态
+                if difference == 0:
+                    result_status = 'matched'  # 完全匹配
+                    adjust_type = None
+                elif is_within_tolerance:
+                    result_status = 'auto_adjusted'  # 容差内自动调整
+                    adjust_type = 'auto_count_adjustment'
+                else:
+                    result_status = 'manual_processing'  # 超出容差，需要人工处理
+                    adjust_type = 'manual_count_adjustment'
 
                 # 创建盘点结果 
                 result = InventoryCountResult(
@@ -147,45 +165,54 @@ def task_execute(task_id):
                     expected_quantity = expected_quantity,
                     actual_quantity = actual_quantity,
                     difference = difference,
-                    status = 'auto_adjusted'
+                    status = result_status
                 )
                 db.session.add(result)
 
-                # 自动处理差异
+                # 处理差异（容差范围内自动过账，超出容差需要人工审核）
                 if difference != 0:
-                    # 创建库存调整 
-                    adjustment_no = generate_inventory_adjustment_no()
-                    adjustment = InventoryAdjustment(
-                        adjustment_no = adjustment_no,
-                        inventory_id = inventory.id,
-                        before_quantity = inventory.quantity,
-                        after_quantity = expected_quantity,
-                        adjustment_quantity = expected_quantity - inventory.quantity,
-                        type='count_adjustment',
-                        reason=f'{task.type}触发的盘点调整',
-                        operator_id = current_user.id,
-                        count_task_id=task.id
-                    )
+                    if is_within_tolerance:
+                        # 容差范围内：自动过账库存调整单
+                        adjustment_no = generate_inventory_adjustment_no()
+                        adjustment = InventoryAdjustment(
+                            adjustment_no = adjustment_no,
+                            inventory_id = inventory.id,
+                            before_quantity = inventory.quantity,
+                            after_quantity = expected_quantity,
+                            adjustment_quantity = expected_quantity - inventory.quantity,
+                            type='count_adjustment',
+                            reason=f'{task.type}触发的盘点调整（差异{difference}，在容差±{tolerance}范围内自动过账）',
+                            operator_id = current_user.id,
+                            count_task_id=task.id
+                        )
 
-                    # 更新实物库存为期望库存数量（虚拟库存的总数量）
-                    inventory.quantity = expected_quantity
-                    
-                    # 同步更新虚拟库存：实物库存等于inventory.quantity，在途和已分配库存清零
-                    if virtual_inventory:
-                        virtual_inventory.physical_quantity = expected_quantity
-                        virtual_inventory.in_transit_quantity = 0
-                        virtual_inventory.allocated_quantity = 0
-                        # 验证虚拟库存
-                        is_valid, message = validate_virtual_inventory(virtual_inventory)
-                        if not is_valid:
-                            flash(f'虚拟库存验证失败: {message}', 'warning')
-                    
-                    # 更新盘点结果状态
-                    result.adjust_reason = f'{task.type}触发的盘点调整'
-                    result.processor_id = current_user.id
-                    result.process_time = datetime.now()
+                        # 更新实物库存为期望库存数量（系统账面库存的可用数量）
+                        inventory.quantity = expected_quantity
+                        
+                        # 同步更新系统账面库存：账面数量等于inventory.quantity，在途和已分配数量清零
+                        if book_inventory:
+                            book_inventory.book_quantity = expected_quantity
+                            book_inventory.in_transit_quantity = 0
+                            book_inventory.allocated_quantity = 0
+                            # 验证系统账面库存
+                            is_valid, message = validate_book_inventory(book_inventory)
+                            if not is_valid:
+                                flash(f'系统账面库存验证失败: {message}', 'warning')
+                        
+                        # 更新盘点结果状态
+                        result.adjust_reason = f'容差范围内自动过账（差异{difference}件）'
+                        result.processor_id = current_user.id
+                        result.process_time = datetime.now()
 
-                    db.session.add(adjustment)
+                        db.session.add(adjustment)
+                        
+                        # 自动生成会计分录（这里可以扩展为实际的会计系统接口）
+                        # 借记/贷记"存货调整科目"
+                        # 实际实现时需要根据企业的会计科目体系进行配置
+                    else:
+                        # 超出容差：标记为需要人工处理
+                        result.adjust_reason = f'差异{difference}件超出容差范围±{tolerance}，需要人工审核'
+                        flash(f'库存 {inventory.product.name if inventory.product else inventory.id} 差异{difference}件超出容差范围，需要人工处理', 'warning')
                     
         # 完成任务
         task.status = 'completed'
@@ -224,13 +251,13 @@ def task_execute(task_id):
         db.session.commit()
         return redirect(url_for('inventory_count.task_detail', task_id=task.id))
 
-    # 获取虚拟库存数据
-    virtual_inventories = VirtualInventory.query.all()
+    # 获取系统账面库存数据
+    book_inventories = BookInventory.query.all()
     
     return render_template('inventory_count/task_execute.html',
                            task=task,
                            inventories=inventories,
-                           virtual_inventories=virtual_inventories
+                           book_inventories=book_inventories
     )        
 
 # 盘点任务详情
@@ -321,32 +348,32 @@ def adjustment_list():
                             end_date=end_date 
     )
 
-# 虚拟库存管理
-@inventory_count_bp.route('/virtual/list')
+# 系统账面库存管理
+@inventory_count_bp.route('/book/list')
 @permission_required('inventory_manage')
 @login_required
-def virtual_inventory_list():
+def book_inventory_list():
     keyword = request.args.get('keyword', '')
     location_id = request.args.get('location_id', '')
 
-    query = VirtualInventory.query.join(Product).join(WarehouseLocation)
+    query = BookInventory.query.join(Product).join(WarehouseLocation)
     if keyword:
         query = query.filter(Product.name.ilike(f'%{keyword}%') | 
                              Product.code.ilike(f'%{keyword}%')
         )
     
     if location_id:
-        query = query.filter(VirtualInventory.location_id == location_id)
+        query = query.filter(BookInventory.location_id == location_id)
     
     page = request.args.get('page', 1, type=int)
     per_page = 10
-    pagination = query.order_by(VirtualInventory.update_time.desc()).paginate(page=page, per_page=per_page)
-    virtual_inventories = pagination.items
+    pagination = query.order_by(BookInventory.update_time.desc()).paginate(page=page, per_page=per_page)
+    book_inventories = pagination.items
 
     locations = WarehouseLocation.query.filter_by(status=True).all()
 
-    return render_template('inventory_count/virtual_inventory_list.html',
-                           virtual_inventories=virtual_inventories,
+    return render_template('inventory_count/book_inventory_list.html',
+                           book_inventories=book_inventories,
                            pagination=pagination,
                            keyword=keyword,
                            location_id=location_id,
@@ -506,13 +533,13 @@ def task_start_schedule(task_id):
                            task=task)
 
 
-# 同步虚拟库存
-@inventory_count_bp.route('/virtual/sync', methods=['POST'])
+# 同步系统账面库存
+@inventory_count_bp.route('/book/sync', methods=['POST'])
 @permission_required('inventory_manage')
 @login_required
-def virtual_inventory_sync():
-    """同步虚拟库存与实物库存"""
-    from app.utils.helpers import sync_virtual_inventory
+def book_inventory_sync():
+    """同步系统账面库存与实物库存"""
+    from app.utils.helpers import sync_book_inventory
     from app.models.inventory import Inventory
     
     try:
@@ -523,7 +550,7 @@ def virtual_inventory_sync():
         
         for inventory in inventories:
             try:
-                sync_virtual_inventory(
+                sync_book_inventory(
                     inventory.product_id,
                     inventory.location_id,
                     inventory.batch_no
@@ -531,44 +558,44 @@ def virtual_inventory_sync():
                 synced_count += 1
             except Exception as e:
                 error_count += 1
-                logger.error(f'同步虚拟库存失败: {str(e)}')
+                logger.error(f'同步系统账面库存失败: {str(e)}')
         
-        flash(f'虚拟库存同步完成: 成功{synced_count}条, 失败{error_count}条', 'success')
+        flash(f'系统账面库存同步完成: 成功{synced_count}条, 失败{error_count}条', 'success')
     except Exception as e:
-        flash(f'虚拟库存同步失败: {str(e)}', 'danger')
+        flash(f'系统账面库存同步失败: {str(e)}', 'danger')
     
-    return redirect(url_for('inventory_count.virtual_inventory_list'))
+    return redirect(url_for('inventory_count.book_inventory_list'))
 
 
-# 验证虚拟库存
-@inventory_count_bp.route('/virtual/validate', methods=['POST'])
+# 验证系统账面库存
+@inventory_count_bp.route('/book/validate', methods=['POST'])
 @permission_required('inventory_manage')
 @login_required
-def virtual_inventory_validate():
-    """验证虚拟库存数据"""
-    from app.utils.helpers import validate_virtual_inventory
+def book_inventory_validate():
+    """验证系统账面库存数据"""
+    from app.utils.helpers import validate_book_inventory
     
     try:
-        virtual_inventories = VirtualInventory.query.all()
+        book_inventories = BookInventory.query.all()
         valid_count = 0
         invalid_count = 0
         errors = []
         
-        for vi in virtual_inventories:
-            is_valid, message = validate_virtual_inventory(vi)
+        for bi in book_inventories:
+            is_valid, message = validate_book_inventory(bi)
             if is_valid:
                 valid_count += 1
             else:
                 invalid_count += 1
-                errors.append(f'{vi.product.name if vi.product else vi.product_id} - {vi.location.code if vi.location else vi.location_id}: {message}')
+                errors.append(f'{bi.product.name if bi.product else bi.product_id} - {bi.location.code if bi.location else bi.location_id}: {message}')
         
-        flash(f'虚拟库存验证完成: 有效{valid_count}条, 无效{invalid_count}条', 'success' if invalid_count == 0 else 'warning')
+        flash(f'系统账面库存验证完成: 有效{valid_count}条, 无效{invalid_count}条', 'success' if invalid_count == 0 else 'warning')
         
         if errors:
             for error in errors[:10]:  # 只显示前10个错误
                 flash(error, 'danger')
                 
     except Exception as e:
-        flash(f'虚拟库存验证失败: {str(e)}', 'danger')
+        flash(f'系统账面库存验证失败: {str(e)}', 'danger')
     
-    return redirect(url_for('inventory_count.virtual_inventory_list'))
+    return redirect(url_for('inventory_count.book_inventory_list'))

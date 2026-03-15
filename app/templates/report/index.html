@@ -263,7 +263,13 @@
                                         <td>{{ item.name }}</td>
                                         <td>{{ item.code }}</td>
                                         <td>{{ item.total_quantity }}</td>
-                                        <td>{{ "%.2f%%"|format((item.total_quantity / total_stock) * 100) }}</td>
+                                        <td>
+                                            {% if total_stock > 0 %}
+                                                {{ "%.2f%%"|format((item.total_quantity / total_stock) * 100) }}
+                                            {% else %}
+                                                0.00%
+                                            {% endif %}
+                                        </td>
                                     </tr>
                                 {% endfor %}
                             {% else %}
@@ -328,7 +334,13 @@
                                 {% if top_product %}
                                     <p class="mb-1">总库存商品数: <span class="fw-bold">{{ total_product }}</span></p>
                                     <p class="mb-1">总库存数量: <span class="fw-bold">{{ total_stock }}</span></p>
-                                    <p class="mb-1">平均每种库存: <span class="fw-bold">{{ "%.1f"|format(total_stock / total_product) }}</span></p>
+                                    <p class="mb-1">平均每种库存: <span class="fw-bold">
+                                        {% if total_product > 0 %}
+                                            {{ "%.1f"|format(total_stock / total_product) }}
+                                        {% else %}
+                                            0
+                                        {% endif %}
+                                    </span></p>
                                 {% endif %}    
                             {% else %}
                                 <p class="text-center text-muted">暂无数据</p>

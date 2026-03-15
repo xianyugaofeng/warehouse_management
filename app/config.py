@@ -17,6 +17,12 @@ class Config:
 
     # 盘点任务
     INVENTORY_COUNT_CHECK_INTERVAL = 1
+    
+    # 盘点容差设置（循环盘点容差，差异在此范围内自动过账）
+    INVENTORY_COUNT_TOLERANCE = 5  # ±5件
+    
+    # 调拨损耗容差设置（合理损耗数量）
+    TRANSFER_LOSS_TOLERANCE = 0.02  # 2%的损耗率
 
 class DevelopmentConfig(Config):
     DEBUG = True

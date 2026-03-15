@@ -7,5 +7,5 @@ from .product import Product, Category, Supplier
 from .inventory import Inventory, WarehouseLocation
 from .inbound import InboundItem, InboundOrder
 from .outbound import OutboundItem, OutboundOrder
-from .inventory_count import InventoryCountTask, InventoryCountResult, InventoryAdjustment, VirtualInventory, InventoryAccuracy
+from .inventory_count import InventoryCountTask, InventoryCountResult, InventoryAdjustment, BookInventory, InventoryAccuracy
 from .inventory_count import InventoryCountTaskSchedule, InventoryCountTaskLog

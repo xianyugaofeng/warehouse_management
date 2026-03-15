@@ -51,42 +51,42 @@ def update_inventory(product_id, location_id, batch_no, quantity, is_bound=True)
                 quantity=0  # 初始数量为0
             )
             db.session.add(inventory)
-        # 增加虚拟库存的在途库存
-        update_virtual_inventory(product_id, location_id, batch_no, in_transit_change=quantity)
+        # 增加系统账面库存的在途库存
+        update_book_inventory(product_id, location_id, batch_no, in_transit_change=quantity)
     else:
         # 出库操作：增加已分配库存
         if not inventory:
             raise ValueError(f'<库存不足:商品ID{product_id},  库位ID{location_id}, 批次{batch_no}')
         
-        # 检查虚拟库存是否足够（实物库存 + 在途库存 - 已分配库存 >= 出库数量）
-        from app.models.inventory_count import VirtualInventory
-        virtual_inventory = VirtualInventory.query.filter_by(
+        # 检查系统账面库存是否足够（账面数量 + 在途数量 - 已分配数量 >= 出库数量）
+        from app.models.inventory_count import BookInventory
+        book_inventory = BookInventory.query.filter_by(
             product_id=product_id,
             location_id=location_id,
             batch_no=batch_no
         ).first()
         
-        if not virtual_inventory:
-            raise ValueError(f'<虚拟库存不存在:商品ID{product_id},  库位ID{location_id}, 批次{batch_no}')
+        if not book_inventory:
+            raise ValueError(f'<系统账面库存不存在:商品ID{product_id},  库位ID{location_id}, 批次{batch_no}')
         
-        if virtual_inventory.virtual_quantity < quantity:
+        if book_inventory.available_quantity < quantity:
             raise ValueError(f'<库存不足:商品ID{product_id},  库位ID{location_id}, 批次{batch_no}')
         
-        # 增加虚拟库存的已分配库存
-        update_virtual_inventory(product_id, location_id, batch_no, allocated_change=quantity)
+        # 增加系统账面库存的已分配库存
+        update_book_inventory(product_id, location_id, batch_no, allocated_change=quantity)
 
     db.session.commit()
     return inventory
 
 
-def sync_virtual_inventory(product_id, location_id, batch_no):
+def sync_book_inventory(product_id, location_id, batch_no):
     """
-    同步虚拟库存与实物库存
-    确保虚拟库存的实物库存部分与实物库存表保持一致
+    同步系统账面库存与实物库存
+    确保系统账面库存的账面数量部分与实物库存表保持一致
     """
     from app import db
     from app.models.inventory import Inventory
-    from app.models.inventory_count import VirtualInventory
+    from app.models.inventory_count import BookInventory
     
     # 获取实物库存
     inventory = Inventory.query.filter_by(
@@ -95,108 +95,108 @@ def sync_virtual_inventory(product_id, location_id, batch_no):
         batch_no=batch_no
     ).first()
     
-    # 获取或创建虚拟库存
-    virtual_inventory = VirtualInventory.query.filter_by(
+    # 获取或创建系统账面库存
+    book_inventory = BookInventory.query.filter_by(
         product_id=product_id,
         location_id=location_id,
         batch_no=batch_no
     ).first()
     
-    if not virtual_inventory:
-        virtual_inventory = VirtualInventory(
+    if not book_inventory:
+        book_inventory = BookInventory(
             product_id=product_id,
             location_id=location_id,
             batch_no=batch_no,
-            physical_quantity=inventory.quantity if inventory else 0,
+            book_quantity=inventory.quantity if inventory else 0,
             in_transit_quantity=0,
             allocated_quantity=0
         )
-        db.session.add(virtual_inventory)
+        db.session.add(book_inventory)
     else:
-        # 更新虚拟库存的实物库存部分
-        inventory.quantity = (virtual_inventory.physical_quantity + 
-                              virtual_inventory.in_transit_quantity -
-                              virtual_inventory.allocated_quantity)
-        virtual_inventory.physical_quantity = inventory.quantity
-        virtual_inventory.in_transit_quantity = 0
-        virtual_inventory.allocated_quantity = 0
-                             
+        # 更新系统账面库存的账面数量部分
+        inventory.quantity = (book_inventory.book_quantity + 
+                              book_inventory.in_transit_quantity -
+                              book_inventory.allocated_quantity)
+        book_inventory.book_quantity = inventory.quantity
+        book_inventory.in_transit_quantity = 0
+        book_inventory.allocated_quantity = 0
+                              
         
     db.session.commit()
-    return virtual_inventory
+    return book_inventory
 
 
-def update_virtual_inventory(product_id, location_id, batch_no, physical_change=0, in_transit_change=0, allocated_change=0):
+def update_book_inventory(product_id, location_id, batch_no, book_change=0, in_transit_change=0, allocated_change=0):
     """
-    更新虚拟库存
+    更新系统账面库存
     参数:
-        physical_change: 实物库存变化量（正数增加，负数减少）
-        in_transit_change: 在途库存变化量（正数增加，负数减少）
-        allocated_change: 已分配库存变化量（正数增加，负数减少）
+        book_change: 账面数量变化量（正数增加，负数减少）
+        in_transit_change: 在途数量变化量（正数增加，负数减少）
+        allocated_change: 已分配数量变化量（正数增加，负数减少）
     """
     from app import db
-    from app.models.inventory_count import VirtualInventory
+    from app.models.inventory_count import BookInventory
     
-    # 获取或创建虚拟库存
-    virtual_inventory = VirtualInventory.query.filter_by(
+    # 获取或创建系统账面库存
+    book_inventory = BookInventory.query.filter_by(
         product_id=product_id,
         location_id=location_id,
         batch_no=batch_no
     ).first()
     
-    if not virtual_inventory:
-        virtual_inventory = VirtualInventory(
+    if not book_inventory:
+        book_inventory = BookInventory(
             product_id=product_id,
             location_id=location_id,
             batch_no=batch_no,
-            physical_quantity=0,
+            book_quantity=0,
             in_transit_quantity=0,
             allocated_quantity=0
         )
-        db.session.add(virtual_inventory)
+        db.session.add(book_inventory)
     
     # 更新各部分库存
-    virtual_inventory.physical_quantity += physical_change
-    virtual_inventory.in_transit_quantity += in_transit_change
-    virtual_inventory.allocated_quantity += allocated_change
+    book_inventory.book_quantity += book_change
+    book_inventory.in_transit_quantity += in_transit_change
+    book_inventory.allocated_quantity += allocated_change
     
-    # 验证虚拟库存
-    if not virtual_inventory.is_virtual_quantity_valid:
-        raise ValueError(f'虚拟库存计算错误: 商品ID{product_id}, 库位ID{location_id}, 批次{batch_no}')
+    # 验证系统账面库存
+    if not book_inventory.is_available_quantity_valid:
+        raise ValueError(f'系统账面库存计算错误: 商品ID{product_id}, 库位ID{location_id}, 批次{batch_no}')
     
     db.session.commit()
-    return virtual_inventory
+    return book_inventory
 
 
-def validate_virtual_inventory(virtual_inventory, tolerance=0):
+def validate_book_inventory(book_inventory, tolerance=0):
     """
-    验证虚拟库存是否有效
+    验证系统账面库存是否有效
     参数:
-        virtual_inventory: 虚拟库存对象
+        book_inventory: 系统账面库存对象
         tolerance: 允许的误差范围
     返回:
         (is_valid, message) 验证结果和消息
     """
-    if not virtual_inventory:
-        return False, '虚拟库存不存在'
+    if not book_inventory:
+        return False, '系统账面库存不存在'
     
     # 验证各部分库存不能为负数
-    if virtual_inventory.physical_quantity < 0:
-        return False, f'实物库存不能为负数: {virtual_inventory.physical_quantity}'
+    if book_inventory.book_quantity < 0:
+        return False, f'账面数量不能为负数: {book_inventory.book_quantity}'
     
-    if virtual_inventory.in_transit_quantity < 0:
-        return False, f'在途库存不能为负数: {virtual_inventory.in_transit_quantity}'
+    if book_inventory.in_transit_quantity < 0:
+        return False, f'在途数量不能为负数: {book_inventory.in_transit_quantity}'
     
-    if virtual_inventory.allocated_quantity < 0:
-        return False, f'已分配库存不能为负数: {virtual_inventory.allocated_quantity}'
+    if book_inventory.allocated_quantity < 0:
+        return False, f'已分配数量不能为负数: {book_inventory.allocated_quantity}'
     
-    # 验证虚拟库存计算
-    calculated_virtual = (virtual_inventory.physical_quantity + 
-                         virtual_inventory.in_transit_quantity - 
-                         virtual_inventory.allocated_quantity)
+    # 验证系统账面库存计算
+    calculated_available = (book_inventory.book_quantity + 
+                           book_inventory.in_transit_quantity - 
+                           book_inventory.allocated_quantity)
     
-    if abs(calculated_virtual - virtual_inventory.virtual_quantity) > tolerance:
-        return False, f'虚拟库存计算错误: 计算值{calculated_virtual}, 当前值{virtual_inventory.virtual_quantity}'
+    if abs(calculated_available - book_inventory.available_quantity) > tolerance:
+        return False, f'可用库存计算错误: 计算值{calculated_available}, 当前值{book_inventory.available_quantity}'
     
     return True, '验证通过'
 
