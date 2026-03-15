@@ -1,17 +1,17 @@
 {% extends "base.html" %}
-{% block title %}执行日志 - 仓库管理系统{% endblock %}
+{% block title %}库存调整历史 - 仓库管理系统{% endblock %}
 
 {% block content %}
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>执行日志</h2>
+        <h2>库存调整历史</h2>
     </div>
 
     <!--搜索表单-->
     <div class="card mb-4">
         <div class="card-body">
-            <form action="{{ url_for('inventory_count.log_list') }}" method="GET" class="row g-3">
+            <form action="{{ url_for('inventory_count.adjustment_list') }}" method="GET" class="row g-3">
                 <div class="col-md-4">
-                    <input type="text" name="keyword" class="form-control" placeholder="搜索任务编号或名称" value="{{ keyword }}">
+                    <input type="text" name="keyword" class="form-control" placeholder="搜索产品名称、编码或调整单号" value="{{ keyword }}">
                 </div>
                 <div class="col-md-3">
                     <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
@@ -28,57 +28,60 @@
         </div>
     </div>
 
-    <!--日志列表-->
+    <!--调整历史列表-->
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-hover table-bordered">
                     <thead class="table-light">
                         <tr>
-                            <th>任务编号</th>
-                            <th>任务名称</th>
-                            <th>执行类型</th>
-                            <th>开始时间</th>
-                            <th>结束时间</th>
-                            <th>状态</th>
+                            <th>调整单号</th>
+                            <th>产品名称</th>
+                            <th>产品编码</th>
+                            <th>调整前数量</th>
+                            <th>调整后数量</th>
+                            <th>调整数量</th>
+                            <th>调整类型</th>
+                            <th>调整原因</th>
                             <th>操作人</th>
-                            <th>错误信息</th>
+                            <th>调整时间</th>
+                            <th>关联任务</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for log in logs %}
+                        {% for adjustment in adjustments %}
                             <tr>
-                                <td>{{ log.task.task_no }}</td>
-                                <td>{{ log.task.name }}</td>
+                                <td>{{ adjustment.adjustment_no }}</td>
+                                <td>{{ adjustment.inventory.product.name if adjustment.inventory and adjustment.inventory.product else '未知产品' }}</td>
+                                <td>{{ adjustment.inventory.product.code if adjustment.inventory and adjustment.inventory.product else '-' }}</td>
+                                <td>{{ adjustment.before_quantity }}</td>
+                                <td>{{ adjustment.after_quantity }}</td>
                                 <td>
-                                    {% if log.execution_type == 'manual' %}手动
-                                    {% elif log.execution_type == 'automatic' %}自动
-                                    {% else %}{{ log.execution_type }}
-                                    {% endif %}
-                                </td>
-                                <td>{{ log.start_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                                <td>{{ log.end_time.strftime('%Y-%m-%d %H:%M:%S') if log.end_time else '-' }}</td>
-                                <td>
-                                    {% if log.status == 'success' %}
-                                        <span class="badge bg-success">成功</span>
-                                    {% elif log.status == 'failed' %}
-                                        <span class="badge bg-danger">失败</span>
+                                    {% if adjustment.adjustment_quantity > 0 %}
+                                    <span class="text-success">+{{ adjustment.adjustment_quantity }}</span>
                                     {% else %}
-                                        {{ log.status }}
+                                    <span class="text-danger">{{ adjustment.adjustment_quantity }}</span>
                                     {% endif %}
                                 </td>
-                                <td>{{ log.operator.real_name if log.operator else '系统' }}</td>
                                 <td>
-                                    {% if log.error_message %}
-                                        {{ log.error_message[:100] }} {% if log.error_message|length > 100 %}...{% endif %}
+                                    {% if adjustment.type == 'count_adjustment' %}
+                                        <span class="badge bg-info">盘点调整</span>
+                                    {% elif adjustment.type == 'loss' %}
+                                        <span class="badge bg-danger">损耗</span>
+                                    {% elif adjustment.type == 'other' %}
+                                        <span class="badge bg-secondary">其他</span>
                                     {% else %}
-                                        -
+                                        {{ adjustment.type }}
                                     {% endif %}
                                 </td>
+                                <td>{{ adjustment.reason }}</td>
+                                <td>{{ adjustment.operator.real_name if adjustment.operator else '系统' }}</td>
+                                <td>{{ adjustment.create_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                <td>{{ adjustment.count_task.task_no if adjustment.count_task else '-' }}</td>
                             </tr>
                         {% else %}
                             <tr>
-                                <td colspan="8" class="text-center">暂无数据</td>
+                                <td colspan="11" class="text-center">暂无数据</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -90,7 +93,7 @@
                 <ul class="pagination justify-content-center">
                     {% if pagination.has_prev %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('inventory_count.log_list', page=pagination.prev_num, keyword=keyword, start_date=start_date, end_date=end_date) }}">
+                            <a class="page-link" href="{{ url_for('inventory_count.adjustment_list', page=pagination.prev_num, keyword=keyword, start_date=start_date, end_date=end_date) }}">
                                 上一页
                             </a>
                         </li>
@@ -105,7 +108,7 @@
                                 <li class="page-item active"><span class="page-link">{{ page }}</span></li>
                             {% else %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('inventory_count.log_list', page=page, keyword=keyword, start_date=start_date, end_date=end_date) }}">
+                                    <a class="page-link" href="{{ url_for('inventory_count.adjustment_list', page=page, keyword=keyword, start_date=start_date, end_date=end_date) }}">
                                         {{ page }}
                                     </a>
                                 </li>
@@ -116,7 +119,7 @@
                     {% endfor %}
                     {% if pagination.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('inventory_count.log_list', page=pagination.next_num, keyword=keyword, start_date=start_date, end_date=end_date) }}">
+                            <a class="page-link" href="{{ url_for('inventory_count.adjustment_list', page=pagination.next_num, keyword=keyword, start_date=start_date, end_date=end_date) }}">
                                 下一页
                             </a>
                         </li>
