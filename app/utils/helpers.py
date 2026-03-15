@@ -79,14 +79,15 @@ def update_inventory(product_id, location_id, batch_no, quantity, is_bound=True)
     return inventory
 
 
-def sync_book_inventory(product_id, location_id, batch_no):
+def sync_book_inventory(product_id, location_id, batch_no, operator_id=None):
     """
     同步系统账面库存与实物库存
     确保系统账面库存的账面数量部分与实物库存表保持一致
     """
     from app import db
     from app.models.inventory import Inventory
-    from app.models.inventory_count import BookInventory
+    from app.models.inventory_count import BookInventory, InventoryAdjustment
+    from app.utils.helpers import generate_inventory_adjustment_no
     
     # 获取实物库存
     inventory = Inventory.query.filter_by(
@@ -113,15 +114,36 @@ def sync_book_inventory(product_id, location_id, batch_no):
         )
         db.session.add(book_inventory)
     else:
+        # 记录调整前的数量
+        before_quantity = inventory.quantity if inventory else 0
+        
         # 更新系统账面库存的账面数量部分
-        inventory.quantity = (book_inventory.book_quantity + 
-                              book_inventory.in_transit_quantity -
-                              book_inventory.allocated_quantity)
-        book_inventory.book_quantity = inventory.quantity
+        new_quantity = (book_inventory.book_quantity + 
+                       book_inventory.in_transit_quantity -
+                       book_inventory.allocated_quantity)
+        
+        if inventory:
+            inventory.quantity = new_quantity
+        book_inventory.book_quantity = new_quantity
         book_inventory.in_transit_quantity = 0
         book_inventory.allocated_quantity = 0
-                              
         
+        # 如果数量发生变化，创建库存调整历史
+        if inventory and before_quantity != new_quantity:
+            adjustment_no = generate_inventory_adjustment_no()
+            adjustment = InventoryAdjustment(
+                adjustment_no=adjustment_no,
+                inventory_id=inventory.id,
+                before_quantity=before_quantity,
+                after_quantity=new_quantity,
+                adjustment_quantity=new_quantity - before_quantity,
+                type='other',
+                reason='系统账面库存同步调整',
+                operator_id=operator_id,
+                count_task_id=None
+            )
+            db.session.add(adjustment)
+                              
     db.session.commit()
     return book_inventory
 

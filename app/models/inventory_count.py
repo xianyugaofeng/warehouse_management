@@ -83,7 +83,7 @@ class InventoryAdjustment(db.Model):
     adjustment_quantity = db.Column(db.Integer, nullable=False) # 调整数量
     type = db.Column(db.String(16), nullable=False) # 调整类别: count_adjustment(盘点调整), loss(损耗), other(其他)
     reason = db.Column(db.String(256), nullable=False) # 调整原因
-    operator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False) # 操作人
+    operator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True) # 操作人
     count_task_id = db.Column(db.Integer, db.ForeignKey('inventory_count_tasks.id')) # 关联盘点任务
     create_time = db.Column(db.DateTime, default=datetime.utcnow) # 创建时间
 

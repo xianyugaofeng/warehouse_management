@@ -553,7 +553,8 @@ def book_inventory_sync():
                 sync_book_inventory(
                     inventory.product_id,
                     inventory.location_id,
-                    inventory.batch_no
+                    inventory.batch_no,
+                    operator_id=current_user.id  # 传递当前用户ID
                 )
                 synced_count += 1
             except Exception as e:
