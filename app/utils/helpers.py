@@ -52,28 +52,19 @@ def update_inventory(product_id, location_id, batch_no, quantity, is_bound=True)
             )
             db.session.add(inventory)
         # 增加系统账面库存的在途库存
-        update_book_inventory(product_id, location_id, batch_no, in_transit_change=quantity)
+        inventory.quantity += quantity;
     else:
         # 出库操作：增加已分配库存
         if not inventory:
             raise ValueError(f'<库存不足:商品ID{product_id},  库位ID{location_id}, 批次{batch_no}')
         
-        # 检查系统账面库存是否足够（账面数量 + 在途数量 - 已分配数量 >= 出库数量）
-        from app.models.inventory_count import BookInventory
-        book_inventory = BookInventory.query.filter_by(
-            product_id=product_id,
-            location_id=location_id,
-            batch_no=batch_no
-        ).first()
-        
-        if not book_inventory:
+        if not inventory:
             raise ValueError(f'<系统账面库存不存在:商品ID{product_id},  库位ID{location_id}, 批次{batch_no}')
         
-        if book_inventory.available_quantity < quantity:
+        if inventory.quantity < quantity:
             raise ValueError(f'<库存不足:商品ID{product_id},  库位ID{location_id}, 批次{batch_no}')
         
-        # 增加系统账面库存的已分配库存
-        update_book_inventory(product_id, location_id, batch_no, allocated_change=quantity)
+        inventory.quantity -= quantity
 
     db.session.commit()
     return inventory
