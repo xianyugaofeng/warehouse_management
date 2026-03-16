@@ -8,6 +8,7 @@ class WarehouseLocation(db.Model):
     code = db.Column(db.String(32), unique=True, nullable=False)  # 库位编码(如A1-01-02)
     name = db.Column(db.String(64), nullable=False)  # 库位名称
     area = db.Column(db.String(32))  # 所属区域
+    location_type = db.Column(db.String(16), default='normal')  # 库位类型: normal(正常), inspection(待检), reject(不合格品)
     status = db.Column(db.Boolean, default=True)  # 状态(启用/禁用)
     remark = db.Column(db.String(256))  # 备注
     inventories = db.relationship('Inventory', backref='location', lazy='dynamic')  # 关联库存

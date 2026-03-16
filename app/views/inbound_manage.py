@@ -91,34 +91,6 @@ def add():
                                    now=datetime.now()
             )
         
-        # 验证入库所需单据是否齐全
-        if not related_order:
-            flash('采购订单缺失，暂停办理入库手续，请向相关负责人报告', 'danger')
-            return render_template('inbound/add.html',
-                                   products=products,
-                                   suppliers=suppliers,
-                                   locations=locations,
-                                   now=datetime.now()
-            )
-        
-        if not delivery_order_no:
-            flash('正式送货单缺失，暂停办理入库手续，请向相关负责人报告', 'danger')
-            return render_template('inbound/add.html',
-                                   products=products,
-                                   suppliers=suppliers,
-                                   locations=locations,
-                                   now=datetime.now()
-            )
-        
-        if not inspection_cert_no:
-            flash('质量检验报告缺失，暂停办理入库手续，请向相关负责人报告', 'danger')
-            return render_template('inbound/add.html',
-                                   products=products,
-                                   suppliers=suppliers,
-                                   locations=locations,
-                                   now=datetime.now()
-            )
-        
         # 验证仓库管理员签字
         if not signature:
             flash('请仓库管理员签字确认', 'danger')
@@ -143,6 +115,7 @@ def add():
             operator_id=current_user.id,
             inbound_date=inbound_date,
             total_amount=total_amount,
+            status='pending_inspection',  # 初始状态为待检
             remark=remark
         )
         db.session.add(inbound_order)
@@ -166,13 +139,47 @@ def add():
             # 例如：通过表单字段或API调用质量检测系统
             quality_issue = request.form.get('quality_issue', 'no')
             if quality_issue == 'yes':
-                flash('商品存在质量问题，暂停办理入库手续，请向相关负责人报告', 'danger')
-                return render_template('inbound/add.html',
+                inbound_order.status = 'rejected'
+                inbound_order.reject_reason = '商品存在质量问题'
+                # 查找不合格品暂放区域
+                reject_location = WarehouseLocation.query.filter_by(location_type='reject').first()
+                if not reject_location:
+                    flash('未设置不合格品暂放区域，请先配置仓库位置', 'danger')
+                    return render_template('inbound/add.html',
                                    products=products,
                                    suppliers=suppliers,
                                    locations=locations,
                                    now=datetime.now()
-                )
+                    )
+                # 将商品存放在不合格品暂放区域
+                for i in range(len(product_ids)):
+                    product_id = product_ids[i]
+                    batch_no = batch_nos[i] or f'B{datetime.now().strftime("%Y%m%d")}{i+1}'
+                    quantity = int(quantities[i]) if quantities[i].isdigit() else 0
+                    unit_price = float(unit_prices[i]) if unit_prices[i] else 0.0
+                    subtotal = float(subtotals[i]) if subtotals[i] else 0.0
+                    production_date = production_dates[i] if production_dates[i] else None
+                    expire_date = expire_dates[i] if expire_dates[i] else None
+
+                    # 创建入库明细
+                    item = InboundItem(
+                        order_id=inbound_order.id,
+                        product_id=product_id,
+                        location_id=reject_location.id,  # 存放在不合格品暂放区域
+                        quantity=quantity,
+                        batch_no=batch_no,
+                        production_date=production_date,
+                        expire_date=expire_date,
+                        unit_price=unit_price,
+                        subtotal=subtotal,
+                        signature=signature
+                    )
+                    db.session.add(item)
+                
+                db.session.commit()
+                flash('商品存在质量问题，已标记为不合格并存放于暂放区域', 'danger')
+                # 这里可以添加通知相关经办人员的代码
+                return redirect(url_for('inbound.list'))
             
             # 检查单据信息是否完整
             if not related_order or not delivery_order_no or not inspection_cert_no:
@@ -184,9 +191,13 @@ def add():
                                    now=datetime.now()
                 )
             
+            # 查找存放区域
+            normal_location = WarehouseLocation.query.filter_by(location_type='normal').first()
+            if not normal_location:
+                flash('未设置正常区域，请先配置仓库位置', 'danger')
+                
             for i in range(len(product_ids)):
                 product_id = product_ids[i]
-                location_id = location_ids[i]
                 batch_no = batch_nos[i] or f'B{datetime.now().strftime("%Y%m%d")}{i+1}'
                 quantity = int(quantities[i]) if quantities[i].isdigit() else 0
                 unit_price = float(unit_prices[i]) if unit_prices[i] else 0.0
@@ -198,7 +209,7 @@ def add():
                 item = InboundItem(
                     order_id=inbound_order.id,
                     product_id=product_id,
-                    location_id=location_id,
+                    location_id=normal_location_location.id,  # 存放在正常区域
                     quantity=quantity,
                     batch_no=batch_no,
                     production_date=production_date,
@@ -209,11 +220,11 @@ def add():
                 )
                 db.session.add(item)
 
-                # 更新库存
-                update_inventory(product_id, location_id, batch_no, quantity, is_bound=True)
+                # 更新库存到待检区域
+                update_inventory(product_id, normal_location.id, batch_no, quantity, is_bound=True)
 
             db.session.commit()
-            flash('入库单创建成功', 'success')
+            flash('入库单创建成功，商品已存放于待检区域等待检验', 'success')
             return redirect(url_for('inbound.list'))
         except Exception as e:
             db.session.rollback()
