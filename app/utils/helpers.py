@@ -27,7 +27,7 @@ def generate_inventory_adjustment_no():
     random_str = str(random.randint(100, 999))
     return f'ADJ{date_str}{random_str}'
     
-# 库存更新函数(入库时增加在途库存, 出库时增加已分配库存)
+# 库存更新函数(入库时增加库存, 出库时增加库存)
 def update_inventory(product_id, location_id, batch_no, quantity, is_bound=True):
     from app import db
     from app.models.inventory import Inventory
@@ -39,9 +39,8 @@ def update_inventory(product_id, location_id, batch_no, quantity, is_bound=True)
         batch_no=batch_no
     ).first()   # 返回一个inventory对象
     
-    # 入库操作：增加在途库存
+    # 入库操作
     if is_bound:
-        # 入库时不再直接更新实物库存，而是通过盘点任务同步
         # 只创建库存记录（如果不存在），但数量保持为0
         if not inventory:
             inventory = Inventory(
@@ -51,10 +50,9 @@ def update_inventory(product_id, location_id, batch_no, quantity, is_bound=True)
                 quantity=0  # 初始数量为0
             )
             db.session.add(inventory)
-        # 增加系统账面库存的在途库存
         inventory.quantity += quantity
     else:
-        # 出库操作：增加已分配库存
+        # 出库操作
         if not inventory:
             raise ValueError(f'<库存不足:商品ID{product_id},  库位ID{location_id}, 批次{batch_no}')
         
