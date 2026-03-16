@@ -91,9 +91,9 @@ def add():
                                    now=datetime.now()
             )
         
-        # 验证采购部门签发的正式送货单
+        # 验证入库所需单据是否齐全
         if not related_order:
-            flash('请提供采购部门签发的正式送货单', 'danger')
+            flash('采购订单缺失，暂停办理入库手续，请向相关负责人报告', 'danger')
             return render_template('inbound/add.html',
                                    products=products,
                                    suppliers=suppliers,
@@ -101,9 +101,17 @@ def add():
                                    now=datetime.now()
             )
         
-        # 验证质量管理部门出具的检验合格单
+        if not delivery_order_no:
+            flash('正式送货单缺失，暂停办理入库手续，请向相关负责人报告', 'danger')
+            return render_template('inbound/add.html',
+                                   products=products,
+                                   suppliers=suppliers,
+                                   locations=locations,
+                                   now=datetime.now()
+            )
+        
         if not inspection_cert_no:
-            flash('请提供质量管理部门出具的检验合格单', 'danger')
+            flash('质量检验报告缺失，暂停办理入库手续，请向相关负责人报告', 'danger')
             return render_template('inbound/add.html',
                                    products=products,
                                    suppliers=suppliers,
@@ -142,6 +150,40 @@ def add():
 
         # 处理入库明细并更新库存
         try:
+            # 检查是否有数量不符的情况
+            for i in range(len(product_ids)):
+                quantity = int(quantities[i]) if quantities[i].isdigit() else 0
+                if quantity <= 0:
+                    flash('数量必须大于0', 'danger')
+                    return render_template('inbound/add.html',
+                                   products=products,
+                                   suppliers=suppliers,
+                                   locations=locations,
+                                   now=datetime.now()
+                    )
+            
+            # 检查是否存在质量问题（这里可以扩展为实际的质量检查逻辑）
+            # 例如：通过表单字段或API调用质量检测系统
+            quality_issue = request.form.get('quality_issue', 'no')
+            if quality_issue == 'yes':
+                flash('商品存在质量问题，暂停办理入库手续，请向相关负责人报告', 'danger')
+                return render_template('inbound/add.html',
+                                   products=products,
+                                   suppliers=suppliers,
+                                   locations=locations,
+                                   now=datetime.now()
+                )
+            
+            # 检查单据信息是否完整
+            if not related_order or not delivery_order_no or not inspection_cert_no:
+                flash('入库所需单据不齐全，暂停办理入库手续，请向相关负责人报告', 'danger')
+                return render_template('inbound/add.html',
+                                   products=products,
+                                   suppliers=suppliers,
+                                   locations=locations,
+                                   now=datetime.now()
+                )
+            
             for i in range(len(product_ids)):
                 product_id = product_ids[i]
                 location_id = location_ids[i]
@@ -151,9 +193,6 @@ def add():
                 subtotal = float(subtotals[i]) if subtotals[i] else 0.0
                 production_date = production_dates[i] if production_dates[i] else None
                 expire_date = expire_dates[i] if expire_dates[i] else None
-
-                if quantity <= 0:
-                    return None
 
                 # 创建入库明细
                 item = InboundItem(

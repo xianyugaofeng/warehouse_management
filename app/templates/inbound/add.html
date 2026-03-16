@@ -156,6 +156,17 @@
                         <input type="text" class="form-control" id="signature" name="signature" placeholder="请输入仓库管理员姓名" required>
                     </div>
                     <div class="col-md-12 mb-3">
+                        <label class="form-label">质量检查<span class="text-danger">*</span></label>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="quality_issue" id="quality_issue_no" value="no" checked>
+                            <label class="form-check-label" for="quality_issue_no">无质量问题</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="quality_issue" id="quality_issue_yes" value="yes">
+                            <label class="form-check-label" for="quality_issue_yes">存在质量问题</label>
+                        </div>
+                    </div>
+                    <div class="col-md-12 mb-3">
                         <label for="remark" class="form-label">备注</label>
                         <input type="text" class="form-control" id="remark" name="remark" placeholder="输入备注信息(选填)">
                     </div>
