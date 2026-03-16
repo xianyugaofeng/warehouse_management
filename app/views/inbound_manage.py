@@ -138,19 +138,18 @@ def add():
             # 检查是否存在质量问题（这里可以扩展为实际的质量检查逻辑）
             # 例如：通过表单字段或API调用质量检测系统
             quality_issue = request.form.get('quality_issue', 'no')
-            if quality_issue == 'yes':
-                inbound_order.status = 'rejected'
-                inbound_order.reject_reason = '商品存在质量问题'
+            if quality_issue == 'yes' or not delivery_order_no:
+                if quality_issue == 'yes':
+                    inbound_order.status = 'rejected'
+                    inbound_order.reject_reason = '商品存在质量问题'
+                if not delivery_order_no and quality_issue == 'no':
+                    inbound_order.status = 'rejected'
+                    inbound_order.reject_reason = '商品检验不合格'
                 # 查找不合格品暂放区域
                 reject_location = WarehouseLocation.query.filter_by(location_type='reject').first()
                 if not reject_location:
                     flash('未设置不合格品暂放区域，请先配置仓库位置', 'danger')
-                    return render_template('inbound/add.html',
-                                   products=products,
-                                   suppliers=suppliers,
-                                   locations=locations,
-                                   now=datetime.now()
-                    )
+                    
                 # 将商品存放在不合格品暂放区域
                 for i in range(len(product_ids)):
                     product_id = product_ids[i]
@@ -182,7 +181,7 @@ def add():
                 return redirect(url_for('inbound.list'))
             
             # 检查单据信息是否完整
-            if not related_order or not delivery_order_no or not inspection_cert_no:
+            if not related_order or not inspection_cert_no:
                 flash('入库所需单据不齐全，暂停办理入库手续，请向相关负责人报告', 'danger')
                 return render_template('inbound/add.html',
                                    products=products,
@@ -195,7 +194,7 @@ def add():
             normal_location = WarehouseLocation.query.filter_by(location_type='normal').first()
             if not normal_location:
                 flash('未设置正常区域，请先配置仓库位置', 'danger')
-                
+
             for i in range(len(product_ids)):
                 product_id = product_ids[i]
                 batch_no = batch_nos[i] or f'B{datetime.now().strftime("%Y%m%d")}{i+1}'
