@@ -56,7 +56,7 @@ def update_inventory(product_id, location_id, batch_no, quantity, is_bound=True)
         if not inventory:
             raise ValueError(f'<库存不足:商品ID{product_id},  库位ID{location_id}, 批次{batch_no}')
         
-        if not inventory:
+        if not inventory.quantity:
             raise ValueError(f'<系统账面库存不存在:商品ID{product_id},  库位ID{location_id}, 批次{batch_no}')
         
         if inventory.quantity < quantity:

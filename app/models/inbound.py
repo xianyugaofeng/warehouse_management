@@ -7,11 +7,14 @@ class InboundOrder(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     order_no = db.Column(db.String(32), unique=True, nullable=False)    # 入库单号（自动生成）
     supplier_id = db.Column(db.Integer, db.ForeignKey('suppliers.id'))   # 关联供应商
-    related_order = db.Column(db.String(32))    # 采购单号
+    related_order = db.Column(db.String(32), nullable=False)    # 采购单号（送货单）
+    delivery_order_no = db.Column(db.String(32), nullable=False)    # 正式送货单号
+    inspection_cert_no = db.Column(db.String(32), nullable=False)    # 检验合格单号
     operator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # 关联操作员
     inbound_date = db.Column(db.Date, default=datetime.utcnow, nullable=False)  # 入库日期
     total_amount = db.Column(db.Integer, default=0)   # 入库总数量
-    status = db.Column(db.String(16), default='completed', nullable=False)  # 状态(draft/completed/canceled)
+    status = db.Column(db.String(16), default='completed', nullable=False)  # 状态(draft/completed/canceled/rejected)
+    reject_reason = db.Column(db.String(256))  # 拒绝原因
     remark = db.Column(db.String(256))  # 备注
     create_time = db.Column(db.DateTime, default=datetime.utcnow)
     update_time = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -36,11 +39,12 @@ class InboundItem(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)   # 关联商品
     location_id = db.Column(db.Integer, db.ForeignKey('warehouse_locations.id'), nullable=False)   # 关联库位
     quantity = db.Column(db.Integer, nullable=False)   # 入库数量
-    batch_no = db.Column(db.String(32))   # 批次号
+    batch_no = db.Column(db.String(32), nullable=False)   # 批次号
     production_date = db.Column(db.Date)   # 生产日期
     expire_date = db.Column(db.Date)    # 过期日期
-    unit_price = db.Column(db.Float)    # 单价（可选）
-    subtotal = db.Column(db.Float)     # 小计（可选）
+    unit_price = db.Column(db.Float, nullable=False)    # 单价
+    subtotal = db.Column(db.Float, nullable=False)     # 小计
+    signature = db.Column(db.String(64))  # 仓库管理员签字
 
     # 关联商品、库位
     product = db.relationship('Product')

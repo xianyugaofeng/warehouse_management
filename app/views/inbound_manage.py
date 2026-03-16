@@ -64,6 +64,9 @@ def add():
         # 接收表单数据
         supplier_id = request.form.get('supplier_id')
         related_order = request.form.get('related_order')
+        delivery_order_no = request.form.get('delivery_order_no')
+        inspection_cert_no = request.form.get('inspection_cert_no')
+        signature = request.form.get('signature')
         inbound_date = request.form.get('inbound_date', datetime.now().strftime('%Y-%m-%d'))
         # 默认值为当前时间
         remark = request.form.get('remark')
@@ -73,6 +76,8 @@ def add():
         location_ids = request.form.getlist('location_id[]')
         batch_nos = request.form.getlist('batch_no[]')
         quantities = request.form.getlist('quantity[]')
+        unit_prices = request.form.getlist('unit_price[]')
+        subtotals = request.form.getlist('subtotal[]')
         production_dates = request.form.getlist('production_date[]')
         expire_dates = request.form.getlist('expire_date[]')
 
@@ -82,7 +87,37 @@ def add():
             return render_template('inbound/add.html',
                                    products=products,
                                    suppliers=suppliers,
-                                   location=locations,
+                                   locations=locations,
+                                   now=datetime.now()
+            )
+        
+        # 验证采购部门签发的正式送货单
+        if not related_order:
+            flash('请提供采购部门签发的正式送货单', 'danger')
+            return render_template('inbound/add.html',
+                                   products=products,
+                                   suppliers=suppliers,
+                                   locations=locations,
+                                   now=datetime.now()
+            )
+        
+        # 验证质量管理部门出具的检验合格单
+        if not inspection_cert_no:
+            flash('请提供质量管理部门出具的检验合格单', 'danger')
+            return render_template('inbound/add.html',
+                                   products=products,
+                                   suppliers=suppliers,
+                                   locations=locations,
+                                   now=datetime.now()
+            )
+        
+        # 验证仓库管理员签字
+        if not signature:
+            flash('请仓库管理员签字确认', 'danger')
+            return render_template('inbound/add.html',
+                                   products=products,
+                                   suppliers=suppliers,
+                                   locations=locations,
                                    now=datetime.now()
             )
 
@@ -95,6 +130,8 @@ def add():
             order_no=order_no,
             supplier_id=supplier_id,
             related_order=related_order,
+            delivery_order_no=delivery_order_no,
+            inspection_cert_no=inspection_cert_no,
             operator_id=current_user.id,
             inbound_date=inbound_date,
             total_amount=total_amount,
@@ -110,6 +147,8 @@ def add():
                 location_id = location_ids[i]
                 batch_no = batch_nos[i] or f'B{datetime.now().strftime("%Y%m%d")}{i+1}'
                 quantity = int(quantities[i]) if quantities[i].isdigit() else 0
+                unit_price = float(unit_prices[i]) if unit_prices[i] else 0.0
+                subtotal = float(subtotals[i]) if subtotals[i] else 0.0
                 production_date = production_dates[i] if production_dates[i] else None
                 expire_date = expire_dates[i] if expire_dates[i] else None
 
@@ -124,7 +163,10 @@ def add():
                     quantity=quantity,
                     batch_no=batch_no,
                     production_date=production_date,
-                    expire_date=expire_date
+                    expire_date=expire_date,
+                    unit_price=unit_price,
+                    subtotal=subtotal,
+                    signature=signature
                 )
                 db.session.add(item)
 

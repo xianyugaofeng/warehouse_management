@@ -39,12 +39,20 @@
                             </select>
                         </td>
                         <td>
-                            //批次号输入框(选填)
-                            <input type="text" class="form-control" name="batch_no[]" placeholder="批次号(选填)">
+                            //批次号输入框(必填)
+                            <input type="text" class="form-control" name="batch_no[]" placeholder="批次号" required>
                         </td>
                         <td>
                             //数量输入框(必填，最小值为1)  Bootstrap样式 + 自定义类
                             <input type="number" class="form-control quantity-input" name="quantity[]" min="1" required placeholder="数量">
+                        </td>
+                        <td>
+                            //单价输入框(必填)
+                            <input type="number" class="form-control" name="unit_price[]" min="0" step="0.01" required placeholder="单价">
+                        </td>
+                        <td>
+                            //小计输入框(必填)
+                            <input type="number" class="form-control" name="subtotal[]" min="0" step="0.01" required placeholder="小计">
                         </td>
                         //生产日期和过期日期的日期输入框
                         <td>
@@ -128,15 +136,26 @@
                         </select>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label for="related_order" class="form-label">关联采购单</label>
-                        <input type="text" class="form-control" id="related_order" name="related_order" placeholder="输入采购单号(选填)">
+                        <label for="related_order" class="form-label">采购单号<span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="related_order" name="related_order" placeholder="输入采购单号" required>
                     </div>
-                    <!--Bootstrap 栅格系统的自动换行功能-->
+                    <div class="col-md-6 mb-3">
+                        <label for="delivery_order_no" class="form-label">正式送货单号<span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="delivery_order_no" name="delivery_order_no" placeholder="输入采购部门签发的正式送货单号" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="inspection_cert_no" class="form-label">检验合格单号<span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="inspection_cert_no" name="inspection_cert_no" placeholder="输入质量管理部门出具的检验合格单号" required>
+                    </div>
                     <div class="col-md-6 mb-3">
                         <label for="inbound_date" class="form-label">入库日期<span class="text-danger">*</span></label>
                         <input type="date" class="form-control" id="inbound_date" name="inbound_date" value="{{ now.strftime('%Y-%m-%d') if now else '' }}" required>
                     </div>
                     <div class="col-md-6 mb-3">
+                        <label for="signature" class="form-label">仓库管理员签字<span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="signature" name="signature" placeholder="请输入仓库管理员姓名" required>
+                    </div>
+                    <div class="col-md-12 mb-3">
                         <label for="remark" class="form-label">备注</label>
                         <input type="text" class="form-control" id="remark" name="remark" placeholder="输入备注信息(选填)">
                     </div>
@@ -159,10 +178,12 @@
                                 <tr>
                                     <th width="20%">商品</th>
                                     <th width="15%">库位</th>
-                                    <th width="15%">批次号</th>
-                                    <th width="10%">数量</th>
-                                    <th width="15%">生产日期</th>
-                                    <th width="15%">过期日期</th>
+                                    <th width="13%">批次号</th>
+                            <th width="8%">数量</th>
+                            <th width="8%">单价</th>
+                            <th width="8%">小计</th>
+                            <th width="13%">生产日期</th>
+                            <th width="13%">过期日期</th>
                                     <th width="10%">操作</th>
                                 </tr>
                             </thead>
@@ -190,10 +211,16 @@
                                         </select>
                                     </td>
                                     <td>
-                                        <input type="text" class="form-control" name="batch_no[]" placeholder="批次号(选填)">
+                                        <input type="text" class="form-control" name="batch_no[]" placeholder="批次号" required>
                                     </td>
                                     <td>
                                         <input type="number" class="form-control quantity-input" name="quantity[]" min="1" required placeholder="数量">
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control" name="unit_price[]" min="0" step="0.01" required placeholder="单价">
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control" name="subtotal[]" min="0" step="0.01" required placeholder="小计">
                                     </td>
                                     <td>
                                         <input type="date" class="form-control" name="production_date[]">
