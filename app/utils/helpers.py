@@ -14,6 +14,52 @@ def generate_outbound_no():
     date_str = datetime.now().strftime('%Y%m%d')
     random_str = str(random.randint(100, 999))
     return f'OUT{date_str}{random_str}'
+
+
+# 生成采购单号（PO+日期+3位随机数）
+def generate_purchase_no():
+    date_str = datetime.now().strftime('%Y%m%d')
+    random_str = str(random.randint(100, 999))
+    return f'PO{date_str}{random_str}'
+
+
+# 生成检验单号（QO+日期+3位随机数）
+def generate_inspection_no():
+    date_str = datetime.now().strftime('%Y%m%d')
+    random_str = str(random.randint(100, 999))
+    return f'QO{date_str}{random_str}'
+
+
+def recommend_location(product_id, locations):
+    """
+    根据库位状态（是否空闲、是否同品）自动推荐一个最佳库位
+    优先级: 1. 同品且有库存的库位 2. 空闲库位 3. 任意正常库位
+    """
+    from app.models.inventory import Inventory
+    
+    if not locations:
+        return None
+    
+    # 查找同品且有库存的库位
+    same_product_locations = []
+    for location in locations:
+        inventory = Inventory.query.filter_by(product_id=product_id, location_id=location.id).first()
+        if inventory and inventory.quantity > 0:
+            same_product_locations.append(location)
+    if same_product_locations:
+        return same_product_locations[0]
+
+    # 查找空闲库位（无库存的库位）
+    free_locations = []
+    for location in locations:
+        inventory = Inventory.query.filter_by(location_id=location.id).first()
+        if not inventory or inventory.quantity == 0:
+            free_locations.append(location)
+    if free_locations:
+        return free_locations[0]
+
+    # 返回任意正常库位
+    return locations[0]
     
 # 库存更新函数(入库时增加库存, 出库时增加库存)
 def update_inventory(product_id, location_id, batch_no, quantity, is_bound=True):

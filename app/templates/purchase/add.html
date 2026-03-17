@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <h2 class="mt-4 mb-4">添加采购单</h2>
+            
+            <form method="post" class="mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        采购单信息
+                    </div>
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="form-group col-md-4">
+                                <label for="supplier_id">供应商</label>
+                                <select name="supplier_id" id="supplier_id" class="form-control" required>
+                                    <option value="">请选择供应商</option>
+                                    {% for supplier in suppliers %}
+                                    <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="expected_date">预计到货日期</label>
+                                <input type="date" name="expected_date" id="expected_date" class="form-control" value="{{ now.strftime('%Y-%m-%d') }}" required>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="remark">备注</label>
+                                <input type="text" name="remark" id="remark" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mt-4">
+                    <div class="card-header">
+                        采购明细
+                        <button type="button" id="add-item" class="btn btn-sm btn-primary float-right">添加明细</button>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-bordered" id="items-table">
+                            <thead>
+                                <tr>
+                                    <th>商品</th>
+                                    <th>数量</th>
+                                    <th>单价</th>
+                                    <th>小计</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="item-row">
+                                    <td>
+                                        <select name="product_id[]" class="form-control product-select" required>
+                                            <option value="">请选择商品</option>
+                                            {% for product in products %}
+                                            <option value="{{ product.id }}">{{ product.name }} ({{ product.code }})</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td><input type="number" name="quantity[]" class="form-control quantity" min="1" required></td>
+                                    <td><input type="number" name="unit_price[]" class="form-control unit-price" min="0" step="0.01" required></td>
+                                    <td><input type="number" name="subtotal[]" class="form-control subtotal" readonly></td>
+                                    <td><button type="button" class="btn btn-sm btn-danger remove-item">删除</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">保存</button>
+                    <a href="{{ url_for('purchase.list') }}" class="btn btn-secondary">取消</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// 添加明细行
+document.getElementById('add-item').addEventListener('click', function() {
+    const tableBody = document.getElementById('items-table').querySelector('tbody');
+    const firstRow = tableBody.querySelector('.item-row');
+    const newRow = firstRow.cloneNode(true);
+    
+    // 清空输入值
+    const inputs = newRow.querySelectorAll('input');
+    inputs.forEach(input => input.value = '');
+    
+    // 重新绑定事件
+    const removeBtn = newRow.querySelector('.remove-item');
+    removeBtn.addEventListener('click', function() {
+        this.closest('.item-row').remove();
+    });
+    
+    tableBody.appendChild(newRow);
+    
+    // 绑定计算事件
+    bindCalculationEvents(newRow);
+});
+
+// 绑定计算事件
+function bindCalculationEvents(row) {
+    const quantityInput = row.querySelector('.quantity');
+    const unitPriceInput = row.querySelector('.unit-price');
+    const subtotalInput = row.querySelector('.subtotal');
+    
+    function calculateSubtotal() {
+        const quantity = parseFloat(quantityInput.value) || 0;
+        const unitPrice = parseFloat(unitPriceInput.value) || 0;
+        subtotalInput.value = (quantity * unitPrice).toFixed(2);
+    }
+    
+    quantityInput.addEventListener('input', calculateSubtotal);
+    unitPriceInput.addEventListener('input', calculateSubtotal);
+}
+
+// 绑定初始行的事件
+const initialRows = document.querySelectorAll('.item-row');
+initialRows.forEach(row => bindCalculationEvents(row));
+
+// 删除明细行
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('remove-item')) {
+        const row = e.target.closest('.item-row');
+        const rows = document.querySelectorAll('.item-row');
+        if (rows.length > 1) {
+            row.remove();
+        } else {
+            alert('至少保留一条明细');
+        }
+    }
+});
+</script>
+{% endblock %}

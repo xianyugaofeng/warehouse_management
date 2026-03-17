@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <h2 class="mt-4 mb-4">采购单详情</h2>
+            
+            <div class="card">
+                <div class="card-header">
+                    采购单信息
+                </div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>采购单号</label>
+                            <p class="form-control-plaintext">{{ purchase_order.order_no }}</p>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>供应商</label>
+                            <p class="form-control-plaintext">{{ purchase_order.supplier.name if purchase_order.supplier else '未知' }}</p>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>操作员</label>
+                            <p class="form-control-plaintext">{{ purchase_order.operator.username if purchase_order.operator else '未知' }}</p>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>预计到货日期</label>
+                            <p class="form-control-plaintext">{{ purchase_order.expected_date }}</p>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>实际到货日期</label>
+                            <p class="form-control-plaintext">{{ purchase_order.actual_date if purchase_order.actual_date else '-' }}</p>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>状态</label>
+                            <p class="form-control-plaintext">
+                                {% if purchase_order.status == 'pending_receipt' %}
+                                <span class="badge badge-warning">待收货</span>
+                                {% elif purchase_order.status == 'receiving' %}
+                                <span class="badge badge-info">收货中</span>
+                                {% elif purchase_order.status == 'completed' %}
+                                <span class="badge badge-success">已完成</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-12">
+                            <label>备注</label>
+                            <p class="form-control-plaintext">{{ purchase_order.remark if purchase_order.remark else '-' }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    采购明细
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>商品</th>
+                                <th>采购数量</th>
+                                <th>实际数量</th>
+                                <th>单价</th>
+                                <th>小计</th>
+                                <th>质检状态</th>
+                                <th>备注</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in purchase_order.items %}
+                            <tr>
+                                <td>{{ item.product.name }} ({{ item.product.code }})</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ item.actual_quantity }}</td>
+                                <td>{{ item.unit_price }}</td>
+                                <td>{{ item.subtotal }}</td>
+                                <td>
+                                    {% if item.quality_status == 'pending' %}
+                                    <span class="badge badge-secondary">待质检</span>
+                                    {% elif item.quality_status == 'passed' %}
+                                    <span class="badge badge-success">合格</span>
+                                    {% elif item.quality_status == 'failed' %}
+                                    <span class="badge badge-danger">不合格</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.remark if item.remark else '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="2">总数量</td>
+                                <td>{{ purchase_order.total_amount }}</td>
+                                <td colspan="2">总金额</td>
+                                <td colspan="2">{{ purchase_order.items|sum(attribute='subtotal') }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <a href="{{ url_for('purchase.list') }}" class="btn btn-secondary">返回列表</a>
+                {% if purchase_order.status == 'pending_receipt' %}
+                <a href="{{ url_for('purchase.edit', id=purchase_order.id) }}" class="btn btn-primary">编辑</a>
+                <a href="{{ url_for('inspection.receive', id=purchase_order.id) }}" class="btn btn-success">收货</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

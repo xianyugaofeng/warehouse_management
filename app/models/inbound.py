@@ -8,8 +8,10 @@ class InboundOrder(db.Model):
     order_no = db.Column(db.String(32), unique=True, nullable=False)    # 入库单号（自动生成）
     supplier_id = db.Column(db.Integer, db.ForeignKey('suppliers.id'))   # 关联供应商
     related_order = db.Column(db.String(32))    # 采购单号（送货单）
-    delivery_order_no = db.Column(db.String(32))    # 正式送货单号
+    delivery_order_no = db.Column(db.String(32))    # 正式送货单号（即采购单号）
     inspection_cert_no = db.Column(db.String(32))    # 检验合格单号
+    purchase_order_id = db.Column(db.Integer, db.ForeignKey('purchase_orders.id'))   # 关联采购单
+    inspection_order_id = db.Column(db.Integer, db.ForeignKey('inspection_orders.id'))   # 关联检验合格单
     operator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # 关联操作员
     inbound_date = db.Column(db.Date, default=datetime.utcnow, nullable=False)  # 入库日期
     total_amount = db.Column(db.Integer, default=0)   # 入库总数量
@@ -27,6 +29,12 @@ class InboundOrder(db.Model):
 
     # 关联供应商
     supplier = db.relationship('Supplier')
+
+    # 关联采购单
+    purchase_order = db.relationship('PurchaseOrder', backref='inbound_orders')
+
+    # 关联检验合格单
+    inspection_order = db.relationship('InspectionOrder', backref='inbound_orders')
 
     def __repr__(self):
         return f'<InboundOrder {self.order_no}>'

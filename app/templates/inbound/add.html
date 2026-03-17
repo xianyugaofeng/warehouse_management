@@ -1,6 +1,98 @@
 {% extends "base.html" %}
 {% block title %}添加入库单 - 仓库管理系统{% endblock %}
 
+{% block js %}
+    <script>
+        $(document).ready(function() {
+            // 选择检验单后自动提交表单
+            $('#inspection_select').change(function() {
+                const inspectionId = $(this).val();
+                if (inspectionId) {
+                    window.location.href = '{{ url_for("inbound.add") }}?inspection_id=' + inspectionId;
+                }
+            });
+
+            // 动态添加明细行
+            let rowIndex = 0;
+            $("#addItemBtn").click(function() {
+                rowIndex++;
+                const newRow = `
+                    <tr id="itemRow${rowIndex}">
+                        <td>
+                            <select class="form-select product-select" name="product_id[]" required>
+                                <option value="">请选择商品</option>
+                                {% for product in products %}
+                                    <option value="{{ product.id }}">
+                                        {{ product.name }} ({{ product.code }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <select class="form-select" name="location_id[]" required>
+                                <option value="">请选择库位</option>
+                                {% for location in locations %}
+                                    <option value="{{ location.id }}">
+                                        {{ location.code }} - {{ location.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <input type="text" class="form-control" name="batch_no[]" placeholder="批次号">
+                        </td>
+                        <td>
+                            <input type="number" class="form-control quantity-input" name="quantity[]" min="1" required placeholder="数量">
+                        </td>
+                        <td>
+                            <input type="number" class="form-control" name="unit_price[]" min="0" step="0.01" required placeholder="单价">
+                        </td>
+                        <td>
+                            <input type="number" class="form-control" name="subtotal[]" min="0" step="0.01" required placeholder="小计">
+                        </td>
+                        <td>
+                            <input type="date" class="form-control" name="production_date[]">
+                        </td>
+                        <td>
+                            <input type="date" class="form-control" name="expire_date[]">
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-danger remove-item" data-row="${rowIndex}">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                $("#itemTableBody").append(newRow);
+            });
+
+            // 删除明细行
+            $(document).on("click", ".remove-item", function() {
+                const rowId = $(this).data("row");
+                $(`#itemRow${rowId}`).remove();
+            });
+
+            // 表单提交验证
+            $("form").submit(function() {
+                const hasItems = $("#itemTableBody tr").length > 0;
+                if (!hasItems) {
+                    alert("请至少添加一条入库明细!");
+                    return false;
+                }
+                let isValid = true;
+                $(".quantity-input").each(function() {
+                    if ($(this).val() <= 0 || !$(this).val()) {
+                        alert("数量必须大于0!");
+                        isValid = false;
+                        return false;
+                    }
+                });
+                return isValid;
+            });
+        });
+    </script>
+{% endblock %}
+
 {% block js %}      <!--JavaScript脚本 用于处理入库单表单的动态交互和验证-->
     <!--动态添加入库明细行-->
     <!--删除指定的入库明细行-->
@@ -106,22 +198,86 @@
 {% endblock %}
 
 {% block content %}
-    <div class="row mb-4">      <!--Bootstrap行布局 下边距1.5em-->
+    <div class="row mb-4">
         <div class="col">
             <h2>添加入库单</h2>
-            <nav aria-label="breadcrumb">       <!--无障碍访问标签，为屏幕阅读器描述这是面包屑导航-->
-                <ol class="breadcrumb">         <!--Bootstrap 面包屑导航样式-->
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{{ url_for('inbound.list') }}">入库管理</a></li>
                     <li class="breadcrumb-item active" aria-current="page">添加入库单</li>
-                    <!--breadcrumb-item active:面包屑项高亮显示-->
                 </ol>
             </nav>
         </div>
     </div>
 
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">选择检验单</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <label for="inspection_select" class="form-label">从检验合格单创建入库单</label>
+                    <select class="form-select" id="inspection_select">
+                        <option value="">-- 请选择检验合格单 --</option>
+                        {% for order in inspection_orders %}
+                        <option value="{{ order.id }}" {% if selected_inspection and selected_inspection.id == order.id %}selected{% endif %}>
+                            {{ order.order_no }} - {{ order.purchase_order.order_no if order.purchase_order else '' }} ({{ order.qualified_quantity }}件合格)
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted">选择检验合格单后，系统将自动填充商品信息</small>
+                </div>
+                <div class="col-md-6">
+                    <a href="{{ url_for('inbound.add') }}" class="btn btn-outline-secondary">手动创建入库单</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if selected_inspection %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">检验单信息</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <strong>检验单号:</strong> {{ selected_inspection.order_no }}
+                </div>
+                <div class="col-md-3">
+                    <strong>采购单号:</strong> {{ selected_inspection.purchase_order.order_no if selected_inspection.purchase_order else '' }}
+                </div>
+                <div class="col-md-3">
+                    <strong>送货单号:</strong> {{ selected_inspection.delivery_order_no }}
+                </div>
+                <div class="col-md-3">
+                    <strong>检验日期:</strong> {{ selected_inspection.inspection_date }}
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-md-3">
+                    <strong>检验总数量:</strong> {{ selected_inspection.total_quantity }}
+                </div>
+                <div class="col-md-3">
+                    <strong>合格数量:</strong> <span class="text-success">{{ selected_inspection.qualified_quantity }}</span>
+                </div>
+                <div class="col-md-3">
+                    <strong>不合格数量:</strong> <span class="text-danger">{{ selected_inspection.unqualified_quantity }}</span>
+                </div>
+                <div class="col-md-3">
+                    <strong>签字:</strong> {{ selected_inspection.signature }}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <div class="card shadow-sm">
         <div class="card-body p-4">
             <form method="POST" action="{{ url_for('inbound.add') }}">
+                <input type="hidden" name="inspection_id" value="{{ selected_inspection.id if selected_inspection else '' }}">
+                
                 <!--入库单基本信息-->
                 <div class="row mb-4">      <!--Bootstrap栅格行 下边距1.5em-->
                     <div class="col-md-6 mb-3">
@@ -150,10 +306,6 @@
                     <div class="col-md-6 mb-3">
                         <label for="inbound_date" class="form-label">入库日期<span class="text-danger">*</span></label>
                         <input type="date" class="form-control" id="inbound_date" name="inbound_date" value="{{ now.strftime('%Y-%m-%d') if now else '' }}" required>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="signature" class="form-label">仓库管理员签字<span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="signature" name="signature" placeholder="请输入仓库管理员姓名" required>
                     </div>
                     <div class="col-md-12 mb-3">
                         <label class="form-label">质量检查<span class="text-danger">*</span></label>
