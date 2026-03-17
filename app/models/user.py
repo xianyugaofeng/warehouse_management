@@ -5,7 +5,6 @@ from app import db, login_manager
 
 PERMISSIONS = {
     'user_manage': '用户管理',
-    'product_manage': '商品管理',
     'inbound_manage': '入库管理',
     'outbound_manage': '出库管理',
     'inventory_manage': '库存管理',

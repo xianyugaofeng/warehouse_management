@@ -60,14 +60,12 @@
             {% if current_user.is_authenticated %}  <!--仅当用户已登录时显示侧边栏-->
             <div class="col-md-2 sidebar">  <!--中等屏幕及以上占 2 列宽度 sidebar: 自定义 CSS 类 之前定义过的样式-->
                 <div class="list-group list-group-flush mt-4">  <!--Bootstrap 列表组 无边框样式list-group-flush mt-4：上边距 1.5rem-->
-                    {% if current_user.has_permission('product_manage') %}
-                        <a href="{{ url_for('product.list') }}" class="list-group-item list-group-item-action">商品管理</a>
-                    {% endif %}
                     {% if current_user.has_permission('inbound_manage') %}
-                        <a href="{{ url_for('inbound.list') }}" class="list-group-item list-group-item-action">入库管理</a>
-                        <a href="{{ url_for('inspection.list') }}" class="list-group-item list-group-item-action">检验单管理</a>
-                        <a href="{{ url_for('putaway.list') }}" class="list-group-item list-group-item-action">上架管理</a>
+                        <a href="{{ url_for('product.list') }}" class="list-group-item list-group-item-action">商品管理</a>
                         <a href="{{ url_for('purchase.list') }}" class="list-group-item list-group-item-action">采购单管理</a>
+                        <a href="{{ url_for('inspection.list') }}" class="list-group-item list-group-item-action">检验单管理</a>
+                        <a href="{{ url_for('putaway.list') }}" class="list-group-item list-group-item-action">上架单管理</a>
+                        <a href="{{ url_for('inbound.list') }}" class="list-group-item list-group-item-action">入库单管理</a>
                     {% endif %}
                     {% if current_user.has_permission('outbound_manage') %}
                         <a href="{{ url_for('outbound.list') }}" class="list-group-item list-group-item-action">出库管理</a>
@@ -78,7 +76,7 @@
                     {% if current_user.has_permission('report_view') %}
                         <a href="{{ url_for('report.index') }}" class="list-group-item list-group-item-action">报表统计</a>
                     {% endif %}
-                    {% if current_user.has_permission('product_manage') %}
+                    {% if current_user.has_permission('inbound_manage') %}
                         <a href="{{ url_for('supplier.list') }}" class="list-group-item list-group-item-action">供应商管理</a>
                     {% endif %}
                 </div>
