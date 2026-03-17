@@ -29,6 +29,7 @@ select * from categories;
 # flask shell代码
 from app import db
 from app.models import Role, Permission
+from app.utils.helpers import generate_inbound_no, generate_outbound_no, generate_purchase_no, generate_inspection_no, update_inventory, recommend_location
 
 # 创建权限
 for name, desc in Permission.PERMISSIONS.items():
@@ -190,6 +191,8 @@ purchase_order1 = PurchaseOrder(
     order_no=generate_purchase_no(),
     supplier_id=supplier1.id,
     operator_id=admin.id,
+    expected_date=datetime.now().date() + timedelta(days=7),  # 预计到货日期
+    actual_date=datetime.now().date(),  # 实际到货日期
     total_amount=100,
     status='completed',
     remark='采购原材料'
@@ -277,6 +280,7 @@ db.session.flush()
 inbound_item1 = InboundItem(
     order_id=inbound_order1.id,
     product_id=raw_material1.id,
+    location_id=location1.id,  # 添加库位ID
     quantity=48,
     batch_no=f'B{datetime.now().strftime("%Y%m%d")}1',
     unit_price=100.0,
@@ -285,6 +289,7 @@ inbound_item1 = InboundItem(
 inbound_item2 = InboundItem(
     order_id=inbound_order1.id,
     product_id=raw_material2.id,
+    location_id=location1.id,  # 添加库位ID
     quantity=97,
     batch_no=f'B{datetime.now().strftime("%Y%m%d")}2',
     unit_price=20.0,
