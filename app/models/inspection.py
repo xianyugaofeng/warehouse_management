@@ -2,6 +2,30 @@ from datetime import datetime
 from app import db
 
 
+class DefectiveProduct(db.Model):
+    __tablename__ = 'defective_products'
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)  # 关联商品
+    location_id = db.Column(db.Integer, db.ForeignKey('warehouse_locations.id'), nullable=False)  # 关联库位
+    batch_no = db.Column(db.String(32))  # 批次号
+    quantity = db.Column(db.Integer, nullable=False)  # 不合格数量
+    defect_reason = db.Column(db.String(64), nullable=False)  # 不合格原因
+    inspection_order_id = db.Column(db.Integer, db.ForeignKey('inspection_orders.id'), nullable=False)  # 关联检验单
+    create_time = db.Column(db.DateTime, default=datetime.utcnow)
+    remark = db.Column(db.String(256))  # 备注
+
+    # 关联商品
+    product = db.relationship('Product')
+    # 关联库位
+    location = db.relationship('WarehouseLocation')
+    # 关联检验单
+    inspection_order = db.relationship('InspectionOrder')
+
+    def __repr__(self):
+        product = self.product.name if self.product else '未知商品'
+        return f'<DefectiveProduct {product} - {self.quantity}>'
+
+
 class InspectionOrder(db.Model):
     __tablename__ = 'inspection_orders'
     id = db.Column(db.Integer, primary_key=True)
@@ -45,6 +69,7 @@ class InspectionItem(db.Model):
     qualified_quantity = db.Column(db.Integer, default=0)   # 合格数量
     unqualified_quantity = db.Column(db.Integer, default=0)   # 不合格数量
     quality_status = db.Column(db.String(16), default='pending')  # 质检状态(pending/passed/failed)
+    defect_reason = db.Column(db.String(64))  # 不合格原因
     remark = db.Column(db.String(256))  # 备注
 
     # 关联商品

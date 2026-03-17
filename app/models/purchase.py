@@ -11,6 +11,7 @@ class PurchaseOrder(db.Model):
     expected_date = db.Column(db.Date, nullable=False)  # 预计到货日期
     actual_date = db.Column(db.Date)  # 实际到货日期
     total_amount = db.Column(db.Integer, default=0)   # 采购总数量
+    allow_partial_receipt = db.Column(db.Boolean, default=False)  # 是否允许部分收货
     status = db.Column(db.String(16), default='pending_receipt', nullable=False)  # 状态(pending_receipt/receiving/completed)
     remark = db.Column(db.String(256))  # 备注
     create_time = db.Column(db.DateTime, default=datetime.utcnow)

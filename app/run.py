@@ -11,7 +11,7 @@ from app.models import Inventory, WarehouseLocation
 from app.models import InboundItem, InboundOrder
 from app.models import OutboundItem, OutboundOrder
 from app.models import PurchaseOrder, PurchaseItem
-from app.models import InspectionOrder, InspectionItem
+from app.models import InspectionOrder, InspectionItem, DefectiveProduct
 
 
 app = create_app()

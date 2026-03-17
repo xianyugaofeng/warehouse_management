@@ -67,6 +67,7 @@ def add():
         # 接收表单数据
         supplier_id = request.form.get('supplier_id')
         expected_date = request.form.get('expected_date', datetime.now().strftime('%Y-%m-%d'))
+        allow_partial_receipt = request.form.get('allow_partial_receipt') == 'true'
         remark = request.form.get('remark')
 
         # 接收明细数据
@@ -155,11 +156,13 @@ def edit(id):
         # 接收表单数据
         supplier_id = request.form.get('supplier_id')
         expected_date = request.form.get('expected_date')
+        allow_partial_receipt = request.form.get('allow_partial_receipt') == 'true'
         remark = request.form.get('remark')
 
         # 更新采购单
         purchase_order.supplier_id = supplier_id
         purchase_order.expected_date = expected_date
+        purchase_order.allow_partial_receipt = allow_partial_receipt
         purchase_order.remark = remark
 
         # 删除原有明细
