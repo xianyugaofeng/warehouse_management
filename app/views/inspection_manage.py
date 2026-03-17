@@ -64,6 +64,15 @@ def detail(id):
     inspection_order = InspectionOrder.query.get_or_404(id)
     return render_template('inspection/detail.html', inspection_order=inspection_order)
 
+# 待收货采购单列表
+@inspection_bp.route('/receive_list')
+@permission_required('inbound_manage')
+@login_required
+def receive_list():
+    # 查找待收货的采购单
+    pending_orders = PurchaseOrder.query.filter_by(status='pending_receipt').all()
+    return render_template('inspection/receive_list.html', pending_orders=pending_orders)
+
 # 收货和质检
 @inspection_bp.route('/receive/<int:id>', methods=['GET', 'POST'])
 @permission_required('inbound_manage')
@@ -81,7 +90,7 @@ def receive(id):
         
         if not signature:
             flash('请仓库管理员签字确认', 'danger')
-            return render_template('inspection/receive.html', purchase_order=purchase_order)
+            return render_template('inspection/receive.html', purchase_order=purchase_order, now=datetime.now())
 
         # 更新采购单状态为收货中
         purchase_order.status = 'receiving'

@@ -28,7 +28,7 @@
                     <div class="form-row">
                         <div class="form-group col-md-4">
                             <label>预计到货日期</label>
-                            <p class="form-control-plaintext">{{ purchase_order.expected_date }}</p>
+                            <p class="form-control-plaintext">{{ purchase_order.expected_date.strftime('%Y-%m-%d') if purchase_order.expected_date else '-' }}</p>
                         </div>
                         <div class="form-group col-md-4">
                             <label>实际到货日期</label>
