@@ -68,7 +68,7 @@ class InspectionItem(db.Model):
     quantity = db.Column(db.Integer, nullable=False)   # 检验数量
     qualified_quantity = db.Column(db.Integer, default=0)   # 合格数量
     unqualified_quantity = db.Column(db.Integer, default=0)   # 不合格数量
-    quality_status = db.Column(db.String(16), default='pending')  # 质检状态(pending/passed/failed)
+    quality_status = db.Column(db.String(16), default='pending')  # 质检状态(pending/completed)
     defect_reason = db.Column(db.String(64))  # 不合格原因
     remark = db.Column(db.String(256))  # 备注
 

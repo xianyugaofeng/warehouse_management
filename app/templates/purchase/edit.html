@@ -29,9 +29,28 @@
                                 </select>
                             </div>
                             <div class="col-md-3">
+                                <label for="product_id" class="form-label">商品<span class="text-danger">*</span></label>
+                                <select name="product_id" id="product_id" class="form-select" required>
+                                    <option value="">请选择商品</option>
+                                    {% for product in products %}
+                                    <option value="{{ product.id }}" {% if purchase_order.product_id == product.id %}selected{% endif %}>{{ product.name }} ({{ product.code }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="quantity" class="form-label">数量<span class="text-danger">*</span></label>
+                                <input type="number" name="quantity" id="quantity" class="form-control" min="1" value="{{ purchase_order.quantity }}" required>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="unit_price" class="form-label">单价<span class="text-danger">*</span></label>
+                                <input type="number" name="unit_price" id="unit_price" class="form-control" min="0" step="0.01" value="{{ purchase_order.unit_price }}" required>
+                            </div>
+                            <div class="col-md-2">
                                 <label for="expected_date" class="form-label">预计到货日期<span class="text-danger">*</span></label>
                                 <input type="date" name="expected_date" id="expected_date" class="form-control" value="{{ purchase_order.expected_date.strftime('%Y-%m-%d') if purchase_order.expected_date else '' }}" required>
                             </div>
+                        </div>
+                        <div class="row mt-3">
                             <div class="col-md-3">
                                 <label for="allow_partial_receipt" class="form-label">允许部分收货</label>
                                 <select name="allow_partial_receipt" id="allow_partial_receipt" class="form-select">
@@ -39,44 +58,10 @@
                                     <option value="true" {% if purchase_order.allow_partial_receipt %}selected{% endif %}>是（可以分批收货）</option>
                                 </select>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-9">
                                 <label for="remark" class="form-label">备注</label>
                                 <input type="text" name="remark" id="remark" class="form-control" value="{{ purchase_order.remark or '' }}">
                             </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="card mt-4">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">采购明细</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-bordered">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>商品</th>
-                                        <th>数量</th>
-                                        <th>单价</th>
-                                        <th>小计</th>
-                                        <th>操作</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for item in purchase_order.items %}
-                                    <tr>
-                                        <td>{{ item.product.name }} ({{ item.product.code }})</td>
-                                        <td>{{ item.quantity }}</td>
-                                        <td>{{ item.unit_price }}</td>
-                                        <td>{{ item.subtotal }}</td>
-                                        <td>
-                                            <button type="button" class="btn btn-sm btn-danger" onclick="removeItem({{ item.id }})">删除</button>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
                         </div>
                     </div>
                 </div>

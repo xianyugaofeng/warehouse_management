@@ -2,17 +2,24 @@
 
 {% block js %}
 <script>
-function toggleDefectFields(selectElement, itemId) {
-    const defectReasonCell = document.getElementById('defect_reason_cell_' + itemId);
-    const defectLocationCell = document.getElementById('defect_location_cell_' + itemId);
+function toggleDefectFields(selectElement) {
+    const defectReasonCell = document.getElementById('defect_reason_cell');
+    const defectLocationCell = document.getElementById('defect_location_cell');
     
-    if (selectElement.value === 'failed') {
+    if (selectElement.value !== 'completed') {
         defectReasonCell.style.display = 'table-cell';
         defectLocationCell.style.display = 'table-cell';
     } else {
         defectReasonCell.style.display = 'none';
         defectLocationCell.style.display = 'none';
     }
+}
+
+function updateTotal() {
+    const qualified = parseInt(document.getElementById('qualified_quantity').value) || 0;
+    const unqualified = parseInt(document.getElementById('unqualified_quantity').value) || 0;
+    const total = qualified + unqualified;
+    document.getElementById('actual_quantity').value = total;
 }
 </script>
 {% endblock %}
@@ -73,30 +80,36 @@ function toggleDefectFields(selectElement, itemId) {
                                         <th>商品编码</th>
                                         <th>采购数量</th>
                                         <th>实际收货数量</th>
+                                        <th>合格数量</th>
+                                        <th>不合格数量</th>
                                         <th>质检状态</th>
                                         <th>不合格原因</th>
                                         <th>暂存区库位</th>
-                                        <th>备注</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for item in purchase_order.items %}
                                     <tr>
-                                        <td>{{ item.product.name }}</td>
-                                        <td>{{ item.product.code }}</td>
-                                        <td>{{ item.quantity }}</td>
+                                        <td>{{ purchase_order.product.name }}</td>
+                                        <td>{{ purchase_order.product.code }}</td>
+                                        <td>{{ purchase_order.quantity }}</td>
                                         <td>
-                                            <input type="number" name="actual_quantity_{{ item.id }}" class="form-control" min="0" max="{{ item.quantity }}" value="{{ item.quantity }}" required>
+                                            <input type="number" name="actual_quantity" id="actual_quantity" class="form-control" min="0" max="{{ purchase_order.quantity }}" value="{{ purchase_order.quantity }}" required>
                                         </td>
                                         <td>
-                                            <select name="quality_status_{{ item.id }}" class="form-control" required onchange="toggleDefectFields(this, {{ item.id }})">
+                                            <input type="number" name="qualified_quantity" id="qualified_quantity" class="form-control" min="0" max="{{ purchase_order.quantity }}" value="{{ purchase_order.quantity }}" oninput="updateTotal()" required>
+                                        </td>
+                                        <td>
+                                            <input type="number" name="unqualified_quantity" id="unqualified_quantity" class="form-control" min="0" max="{{ purchase_order.quantity }}" value="0" oninput="updateTotal()" required>
+                                        </td>
+                                        <td>
+                                            <select name="quality_status" class="form-control" required onchange="toggleDefectFields(this)">
                                                 <option value="pending">待质检</option>
-                                                <option value="passed">合格</option>
-                                                <option value="failed">不合格</option>
+                                                <option value="completed">合格</option>
+                                                <option value="rejected">不合格</option>
                                             </select>
                                         </td>
-                                        <td id="defect_reason_cell_{{ item.id }}" style="display:none;">
-                                            <select name="defect_reason_{{ item.id }}" class="form-control">
+                                        <td id="defect_reason_cell" style="display:none;">
+                                            <select name="defect_reason" class="form-control">
                                                 <option value="">请选择不合格原因</option>
                                                 <option value="破损">破损</option>
                                                 <option value="变质">变质</option>
@@ -105,19 +118,15 @@ function toggleDefectFields(selectElement, itemId) {
                                                 <option value="其他">其他</option>
                                             </select>
                                         </td>
-                                        <td id="defect_location_cell_{{ item.id }}" style="display:none;">
-                                            <select name="defect_location_{{ item.id }}" class="form-control">
+                                        <td id="defect_location_cell" style="display:none;">
+                                            <select name="defect_location" class="form-control">
                                                 <option value="">请选择暂存区库位</option>
                                                 {% for location in reject_locations %}
                                                 <option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>
                                                 {% endfor %}
                                             </select>
                                         </td>
-                                        <td>
-                                            <input type="text" name="remark_{{ item.id }}" class="form-control">
-                                        </td>
                                     </tr>
-                                    {% endfor %}
                                 </tbody>
                             </table>
                         </div>

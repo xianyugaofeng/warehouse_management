@@ -23,9 +23,28 @@
                                 </select>
                             </div>
                             <div class="form-group col-md-3">
+                                <label for="product_id">商品</label>
+                                <select name="product_id" id="product_id" class="form-control" required>
+                                    <option value="">请选择商品</option>
+                                    {% for product in products %}
+                                    <option value="{{ product.id }}">{{ product.name }} ({{ product.code }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group col-md-2">
+                                <label for="quantity">数量</label>
+                                <input type="number" name="quantity" id="quantity" class="form-control" min="1" required>
+                            </div>
+                            <div class="form-group col-md-2">
+                                <label for="unit_price">单价</label>
+                                <input type="number" name="unit_price" id="unit_price" class="form-control" min="0" step="0.01" required>
+                            </div>
+                            <div class="form-group col-md-2">
                                 <label for="expected_date">预计到货日期</label>
                                 <input type="date" name="expected_date" id="expected_date" class="form-control" value="{{ now.strftime('%Y-%m-%d') }}" required>
                             </div>
+                        </div>
+                        <div class="form-row">
                             <div class="form-group col-md-3">
                                 <label for="allow_partial_receipt">允许部分收货</label>
                                 <select name="allow_partial_receipt" id="allow_partial_receipt" class="form-control">
@@ -33,47 +52,11 @@
                                     <option value="true">是（可以分批收货）</option>
                                 </select>
                             </div>
-                            <div class="form-group col-md-3">
+                            <div class="form-group col-md-9">
                                 <label for="remark">备注</label>
                                 <input type="text" name="remark" id="remark" class="form-control">
                             </div>
                         </div>
-                    </div>
-                </div>
-                
-                <div class="card mt-4">
-                    <div class="card-header">
-                        采购明细
-                        <button type="button" id="add-item" class="btn btn-sm btn-primary float-right">添加明细</button>
-                    </div>
-                    <div class="card-body">
-                        <table class="table table-bordered" id="items-table">
-                            <thead>
-                                <tr>
-                                    <th>商品</th>
-                                    <th>数量</th>
-                                    <th>单价</th>
-                                    <th>小计</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="item-row">
-                                    <td>
-                                        <select name="product_id[]" class="form-control product-select" required>
-                                            <option value="">请选择商品</option>
-                                            {% for product in products %}
-                                            <option value="{{ product.id }}">{{ product.name }} ({{ product.code }})</option>
-                                            {% endfor %}
-                                        </select>
-                                    </td>
-                                    <td><input type="number" name="quantity[]" class="form-control quantity" min="1" required></td>
-                                    <td><input type="number" name="unit_price[]" class="form-control unit-price" min="0" step="0.01" required></td>
-                                    <td><input type="number" name="subtotal[]" class="form-control subtotal" readonly></td>
-                                    <td><button type="button" class="btn btn-sm btn-danger remove-item">删除</button></td>
-                                </tr>
-                            </tbody>
-                        </table>
                     </div>
                 </div>
                 
@@ -85,61 +68,4 @@
         </div>
     </div>
 </div>
-
-<script>
-// 添加明细行
-document.getElementById('add-item').addEventListener('click', function() {
-    const tableBody = document.getElementById('items-table').querySelector('tbody');
-    const firstRow = tableBody.querySelector('.item-row');
-    const newRow = firstRow.cloneNode(true);
-    
-    // 清空输入值
-    const inputs = newRow.querySelectorAll('input');
-    inputs.forEach(input => input.value = '');
-    
-    // 重新绑定事件
-    const removeBtn = newRow.querySelector('.remove-item');
-    removeBtn.addEventListener('click', function() {
-        this.closest('.item-row').remove();
-    });
-    
-    tableBody.appendChild(newRow);
-    
-    // 绑定计算事件
-    bindCalculationEvents(newRow);
-});
-
-// 绑定计算事件
-function bindCalculationEvents(row) {
-    const quantityInput = row.querySelector('.quantity');
-    const unitPriceInput = row.querySelector('.unit-price');
-    const subtotalInput = row.querySelector('.subtotal');
-    
-    function calculateSubtotal() {
-        const quantity = parseFloat(quantityInput.value) || 0;
-        const unitPrice = parseFloat(unitPriceInput.value) || 0;
-        subtotalInput.value = (quantity * unitPrice).toFixed(2);
-    }
-    
-    quantityInput.addEventListener('input', calculateSubtotal);
-    unitPriceInput.addEventListener('input', calculateSubtotal);
-}
-
-// 绑定初始行的事件
-const initialRows = document.querySelectorAll('.item-row');
-initialRows.forEach(row => bindCalculationEvents(row));
-
-// 删除明细行
-document.addEventListener('click', function(e) {
-    if (e.target.classList.contains('remove-item')) {
-        const row = e.target.closest('.item-row');
-        const rows = document.querySelectorAll('.item-row');
-        if (rows.length > 1) {
-            row.remove();
-        } else {
-            alert('至少保留一条明细');
-        }
-    }
-});
-</script>
 {% endblock %}

@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import current_user, login_required
 from datetime import datetime
 from app import db
-from app.models.purchase import PurchaseOrder, PurchaseItem
+from app.models.purchase import PurchaseOrder
 from app.models.product import Product, Supplier
 from app.models.inventory import WarehouseLocation
 from app.models.inspection import InspectionOrder, InspectionItem
@@ -66,19 +66,24 @@ def add():
     if request.method == 'POST':
         # 接收表单数据
         supplier_id = request.form.get('supplier_id')
+        product_id = request.form.get('product_id')
         expected_date = request.form.get('expected_date', datetime.now().strftime('%Y-%m-%d'))
         allow_partial_receipt = request.form.get('allow_partial_receipt') == 'true'
+        quantity = int(request.form.get('quantity', 0))
+        unit_price = float(request.form.get('unit_price', 0))
         remark = request.form.get('remark')
 
-        # 接收明细数据
-        product_ids = request.form.getlist('product_id[]')
-        quantities = request.form.getlist('quantity[]')
-        unit_prices = request.form.getlist('unit_price[]')
-        subtotals = request.form.getlist('subtotal[]')
-
         # 验证数据
-        if not product_ids or len(product_ids) != len(quantities):
-            flash('请添加至少一条采购明细', 'danger')
+        if not product_id:
+            flash('请选择商品', 'danger')
+            return render_template('purchase/add.html',
+                                   products=products,
+                                   suppliers=suppliers,
+                                   now=datetime.now()
+            )
+
+        if quantity <= 0:
+            flash('数量必须大于0', 'danger')
             return render_template('purchase/add.html',
                                    products=products,
                                    suppliers=suppliers,
@@ -87,45 +92,23 @@ def add():
 
         # 创建采购单
         order_no = generate_purchase_no()
-        total_amount = sum(int(qty) for qty in quantities if qty.isdigit())
+        subtotal = quantity * unit_price
         purchase_order = PurchaseOrder(
             order_no=order_no,
             supplier_id=supplier_id,
+            product_id=product_id,
             operator_id=current_user.id,
             expected_date=expected_date,
-            total_amount=total_amount,
+            quantity=quantity,
+            unit_price=unit_price,
+            subtotal=subtotal,
+            allow_partial_receipt=allow_partial_receipt,
             status='pending_receipt',  # 初始状态为待收货
             remark=remark
         )
         db.session.add(purchase_order)
-        db.session.flush()  # 刷新获取order_id,用于明细关联
 
-        # 处理采购明细
         try:
-            for i in range(len(product_ids)):
-                product_id = product_ids[i]
-                quantity = int(quantities[i]) if quantities[i].isdigit() else 0
-                unit_price = float(unit_prices[i]) if unit_prices[i] else 0.0
-                subtotal = float(subtotals[i]) if subtotals[i] else 0.0
-
-                if quantity <= 0:
-                    flash('数量必须大于0', 'danger')
-                    return render_template('purchase/add.html',
-                                   products=products,
-                                   suppliers=suppliers,
-                                   now=datetime.now()
-                    )
-
-                # 创建采购明细
-                item = PurchaseItem(
-                    order_id=purchase_order.id,
-                    product_id=product_id,
-                    quantity=quantity,
-                    unit_price=unit_price,
-                    subtotal=subtotal
-                )
-                db.session.add(item)
-
             db.session.commit()
             flash('采购单创建成功', 'success')
             return redirect(url_for('purchase.list'))
@@ -155,64 +138,41 @@ def edit(id):
     if request.method == 'POST':
         # 接收表单数据
         supplier_id = request.form.get('supplier_id')
+        product_id = request.form.get('product_id')
         expected_date = request.form.get('expected_date')
         allow_partial_receipt = request.form.get('allow_partial_receipt') == 'true'
+        quantity = int(request.form.get('quantity', 0))
+        unit_price = float(request.form.get('unit_price', 0))
         remark = request.form.get('remark')
 
-        # 更新采购单
-        purchase_order.supplier_id = supplier_id
-        purchase_order.expected_date = expected_date
-        purchase_order.allow_partial_receipt = allow_partial_receipt
-        purchase_order.remark = remark
-
-        # 删除原有明细
-        PurchaseItem.query.filter_by(order_id=id).delete()
-
-        # 接收新的明细数据
-        product_ids = request.form.getlist('product_id[]')
-        quantities = request.form.getlist('quantity[]')
-        unit_prices = request.form.getlist('unit_price[]')
-        subtotals = request.form.getlist('subtotal[]')
-
         # 验证数据
-        if not product_ids or len(product_ids) != len(quantities):
-            flash('请添加至少一条采购明细', 'danger')
+        if not product_id:
+            flash('请选择商品', 'danger')
             return render_template('purchase/edit.html',
                                    purchase_order=purchase_order,
                                    products=products,
                                    suppliers=suppliers
             )
 
-        # 处理采购明细
-        total_amount = 0
-        try:
-            for i in range(len(product_ids)):
-                product_id = product_ids[i]
-                quantity = int(quantities[i]) if quantities[i].isdigit() else 0
-                unit_price = float(unit_prices[i]) if unit_prices[i] else 0.0
-                subtotal = float(subtotals[i]) if subtotals[i] else 0.0
-
-                if quantity <= 0:
-                    flash('数量必须大于0', 'danger')
-                    return render_template('purchase/edit.html',
+        if quantity <= 0:
+            flash('数量必须大于0', 'danger')
+            return render_template('purchase/edit.html',
                                    purchase_order=purchase_order,
                                    products=products,
                                    suppliers=suppliers
-                    )
+            )
 
-                total_amount += quantity
+        # 更新采购单
+        purchase_order.supplier_id = supplier_id
+        purchase_order.product_id = product_id
+        purchase_order.expected_date = expected_date
+        purchase_order.allow_partial_receipt = allow_partial_receipt
+        purchase_order.quantity = quantity
+        purchase_order.unit_price = unit_price
+        purchase_order.subtotal = quantity * unit_price
+        purchase_order.remark = remark
 
-                # 创建采购明细
-                item = PurchaseItem(
-                    order_id=purchase_order.id,
-                    product_id=product_id,
-                    quantity=quantity,
-                    unit_price=unit_price,
-                    subtotal=subtotal
-                )
-                db.session.add(item)
-
-            purchase_order.total_amount = total_amount
+        try:
             db.session.commit()
             flash('采购单更新成功', 'success')
             return redirect(url_for('purchase.list'))
