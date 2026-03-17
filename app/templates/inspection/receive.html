@@ -7,86 +7,91 @@
             <h2 class="mt-4 mb-4">收货与质检</h2>
             
             <form method="post" class="mb-4">
-                <div class="card">
-                    <div class="card-header">
-                        采购单信息
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">采购单信息</h5>
                     </div>
                     <div class="card-body">
-                        <div class="form-row">
-                            <div class="form-group col-md-4">
-                                <label>采购单号</label>
-                                <p class="form-control-plaintext">{{ purchase_order.order_no }}</p>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <strong>采购单号:</strong> {{ purchase_order.order_no }}
                             </div>
-                            <div class="form-group col-md-4">
-                                <label>供应商</label>
-                                <p class="form-control-plaintext">{{ purchase_order.supplier.name if purchase_order.supplier else '未知' }}</p>
+                            <div class="col-md-4">
+                                <strong>供应商:</strong> {{ purchase_order.supplier.name if purchase_order.supplier else '未知' }}
                             </div>
-                            <div class="form-group col-md-4">
-                                <label>预计到货日期</label>
-                                <p class="form-control-plaintext">{{ purchase_order.expected_date }}</p>
+                            <div class="col-md-4">
+                                <strong>预计到货日期:</strong> {{ purchase_order.expected_date.strftime('%Y-%m-%d') if purchase_order.expected_date else '-' }}
                             </div>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group col-md-4">
-                                <label>送货单号</label>
-                                <p class="form-control-plaintext">{{ purchase_order.order_no }}</p>
-                                <small class="text-muted">送货单号即采购单号</small>
+                        <div class="row mt-2">
+                            <div class="col-md-4">
+                                <strong>送货单号:</strong> {{ purchase_order.order_no }}
+                                <small class="text-muted">（送货单号即采购单号）</small>
                             </div>
-                            <div class="form-group col-md-4">
-                                <label for="signature">仓库管理员签字</label>
-                                <input type="text" name="signature" id="signature" class="form-control" required>
-                            </div>
-                            <div class="form-group col-md-4">
-                                <label>实际到货日期</label>
-                                <p class="form-control-plaintext">{{ now.strftime('%Y-%m-%d') }}</p>
+                            <div class="col-md-4">
+                                <strong>实际到货日期:</strong> {{ now.strftime('%Y-%m-%d') if now else '-' }}
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="card mt-4">
-                    <div class="card-header">
-                        收货与质检明细
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">收货与质检明细</h5>
                     </div>
                     <div class="card-body">
-                        <table class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>商品</th>
-                                    <th>采购数量</th>
-                                    <th>实际收货数量</th>
-                                    <th>质检状态</th>
-                                    <th>备注</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for item in purchase_order.items %}
-                                <tr>
-                                    <td>{{ item.product.name }} ({{ item.product.code }})</td>
-                                    <td>{{ item.quantity }}</td>
-                                    <td>
-                                        <input type="number" name="actual_quantity_{{ item.id }}" class="form-control" min="0" max="{{ item.quantity }}" value="{{ item.quantity }}" required>
-                                    </td>
-                                    <td>
-                                        <select name="quality_status_{{ item.id }}" class="form-control" required>
-                                            <option value="pending">待质检</option>
-                                            <option value="passed">合格</option>
-                                            <option value="failed">不合格</option>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <input type="text" name="remark_{{ item.id }}" class="form-control">
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                        <div class="table-responsive">
+                            <table class="table table-hover table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>商品名称</th>
+                                        <th>商品编码</th>
+                                        <th>采购数量</th>
+                                        <th>实际收货数量</th>
+                                        <th>质检状态</th>
+                                        <th>备注</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in purchase_order.items %}
+                                    <tr>
+                                        <td>{{ item.product.name }}</td>
+                                        <td>{{ item.product.code }}</td>
+                                        <td>{{ item.quantity }}</td>
+                                        <td>
+                                            <input type="number" name="actual_quantity_{{ item.id }}" class="form-control" min="0" max="{{ item.quantity }}" value="{{ item.quantity }}" required>
+                                        </td>
+                                        <td>
+                                            <select name="quality_status_{{ item.id }}" class="form-control" required>
+                                                <option value="pending">待质检</option>
+                                                <option value="passed">合格</option>
+                                                <option value="failed">不合格</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <input type="text" name="remark_{{ item.id }}" class="form-control">
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="mt-4">
-                    <button type="submit" class="btn btn-primary">确认收货</button>
-                    <a href="{{ url_for('purchase.list') }}" class="btn btn-secondary">取消</a>
+                <div class="card shadow-sm mt-4">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="signature" class="form-label">仓库管理员签字<span class="text-danger">*</span></label>
+                                <input type="text" name="signature" id="signature" class="form-control" placeholder="请输入仓库管理员姓名" required>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">确认收货</button>
+                            <a href="{{ url_for('purchase.list') }}" class="btn btn-outline-secondary">取消</a>
+                        </div>
+                    </div>
                 </div>
             </form>
         </div>

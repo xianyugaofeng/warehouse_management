@@ -14,7 +14,7 @@ putaway_bp = Blueprint('putaway', __name__)
 
 # 上架操作 - 为指定入库单进行上架
 @putaway_bp.route('/putaway/<int:id>', methods=['GET', 'POST'])
-@permission_required('putaway_manage')
+@permission_required('inbound_manage')
 @login_required
 def putaway(id):
     inbound_order = InboundOrder.query.get_or_404(id)
@@ -65,7 +65,7 @@ def putaway(id):
 
 # 上架管理首页 - 显示待上架的入库单
 @putaway_bp.route('/list')
-@permission_required('putaway_manage')
+@permission_required('inbound_manage')
 @login_required
 def list():
     keyword = request.args.get('keyword', '')

@@ -7,82 +7,134 @@
             <h2 class="mt-4 mb-4">采购单管理</h2>
             
             <!-- 搜索表单 -->
-            <form method="get" class="form-inline mb-4">
-                <div class="form-group mr-3">
-                    <input type="text" name="keyword" class="form-control" placeholder="采购单号" value="{{ keyword }}">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-2">
+                            <input type="text" name="keyword" class="form-control" placeholder="采购单号" value="{{ keyword }}">
+                        </div>
+                        <div class="col-md-2">
+                            <select name="supplier_id" class="form-select">
+                                <option value="">所有供应商</option>
+                                {% for supplier in suppliers %}
+                                <option value="{{ supplier.id }}" {% if supplier_id == supplier.id|string %}selected{% endif %}>{{ supplier.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select name="status" class="form-select">
+                                <option value="">所有状态</option>
+                                <option value="pending_receipt" {% if status == 'pending_receipt' %}selected{% endif %}>待收货</option>
+                                <option value="receiving" {% if status == 'receiving' %}selected{% endif %}>收货中</option>
+                                <option value="completed" {% if status == 'completed' %}selected{% endif %}>已完成</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="date" name="start_date" class="form-control" value="{{ start_date }}" placeholder="开始日期">
+                        </div>
+                        <div class="col-md-2">
+                            <input type="date" name="end_date" class="form-control" value="{{ end_date }}" placeholder="结束日期">
+                        </div>
+                        <div class="col-md-2">
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary flex-fill">搜索</button>
+                                <a href="{{ url_for('purchase.add') }}" class="btn btn-success flex-fill">添加采购单</a>
+                            </div>
+                        </div>
+                    </form>
                 </div>
-                <div class="form-group mr-3">
-                    <select name="supplier_id" class="form-control">
-                        <option value="">所有供应商</option>
-                        {% for supplier in suppliers %}
-                        <option value="{{ supplier.id }}" {% if supplier_id == supplier.id|string %}selected{% endif %}>{{ supplier.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group mr-3">
-                    <select name="status" class="form-control">
-                        <option value="">所有状态</option>
-                        <option value="pending_receipt" {% if status == 'pending_receipt' %}selected{% endif %}>待收货</option>
-                        <option value="receiving" {% if status == 'receiving' %}selected{% endif %}>收货中</option>
-                        <option value="completed" {% if status == 'completed' %}selected{% endif %}>已完成</option>
-                    </select>
-                </div>
-                <div class="form-group mr-3">
-                    <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
-                </div>
-                <div class="form-group mr-3">
-                    <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
-                </div>
-                <button type="submit" class="btn btn-primary">搜索</button>
-                <a href="{{ url_for('purchase.add') }}" class="btn btn-success ml-3">添加采购单</a>
-            </form>
+            </div>
             
             <!-- 采购单列表 -->
-            <table class="table table-bordered table-striped">
-                <thead>
-                    <tr>
-                        <th>采购单号</th>
-                        <th>供应商</th>
-                        <th>预计到货日期</th>
-                        <th>实际到货日期</th>
-                        <th>总数量</th>
-                        <th>状态</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for order in orders %}
-                    <tr>
-                        <td>{{ order.order_no }}</td>
-                        <td>{{ order.supplier.name if order.supplier else '未知' }}</td>
-                        <td>{{ order.expected_date }}</td>
-                        <td>{{ order.actual_date if order.actual_date else '-' }}</td>
-                        <td>{{ order.total_amount }}</td>
-                        <td>
-                            {% if order.status == 'pending_receipt' %}
-                            <span class="badge badge-warning">待收货</span>
-                            {% elif order.status == 'receiving' %}
-                            <span class="badge badge-info">收货中</span>
-                            {% elif order.status == 'completed' %}
-                            <span class="badge badge-success">已完成</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <a href="{{ url_for('purchase.detail', id=order.id) }}" class="btn btn-sm btn-info">详情</a>
-                            {% if order.status == 'pending_receipt' %}
-                            <a href="{{ url_for('purchase.edit', id=order.id) }}" class="btn btn-sm btn-primary">编辑</a>
-                            <a href="{{ url_for('inspection.receive', id=order.id) }}" class="btn btn-sm btn-success">收货</a>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>采购单号</th>
+                                    <th>供应商</th>
+                                    <th>预计到货日期</th>
+                                    <th>实际到货日期</th>
+                                    <th>总数量</th>
+                                    <th>状态</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in orders %}
+                                <tr>
+                                    <td>{{ order.order_no }}</td>
+                                    <td>{{ order.supplier.name if order.supplier else '未知' }}</td>
+                                    <td>{{ order.expected_date.strftime('%Y-%m-%d') if order.expected_date else '-' }}</td>
+                                    <td>{{ order.actual_date.strftime('%Y-%m-%d') if order.actual_date else '-' }}</td>
+                                    <td>{{ order.total_amount }}</td>
+                                    <td>
+                                        {% if order.status == 'pending_receipt' %}
+                                        <span class="badge bg-warning">待收货</span>
+                                        {% elif order.status == 'receiving' %}
+                                        <span class="badge bg-info">收货中</span>
+                                        {% elif order.status == 'completed' %}
+                                        <span class="badge bg-success">已完成</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-1">
+                                            <a href="{{ url_for('purchase.detail', id=order.id) }}" class="btn btn-sm btn-info">详情</a>
+                                            {% if order.status == 'pending_receipt' %}
+                                            <a href="{{ url_for('purchase.edit', id=order.id) }}" class="btn btn-sm btn-primary">编辑</a>
+                                            <a href="{{ url_for('inspection.receive', id=order.id) }}" class="btn btn-sm btn-success">收货</a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center">暂无采购单数据</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
             
             <!-- 分页 -->
-            <div class="pagination">
-                {{ pagination.links }}
-            </div>
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('purchase.list', page=pagination.prev_num, keyword=keyword, supplier_id=supplier_id, status=status, start_date=start_date, end_date=end_date) }}">
+                                上一页
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">上一页</span></li>
+                    {% endif %}
+                    {% for page in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=3) %}
+                        {% if page %}
+                            {% if pagination.page == page %}
+                                <li class="page-item active"><span class="page-link">{{ page }}</span></li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('purchase.list', page=page, keyword=keyword, supplier_id=supplier_id, status=status, start_date=start_date, end_date=end_date) }}">
+                                        {{ page }}
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    {% if pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('purchase.list', page=pagination.next_num, keyword=keyword, supplier_id=supplier_id, status=status, start_date=start_date, end_date=end_date) }}">下一页</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">下一页</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
         </div>
     </div>
 </div>

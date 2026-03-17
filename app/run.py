@@ -1,3 +1,9 @@
+import sys
+import os
+
+# 添加项目根目录到Python路径
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from app import create_app, db
 from app.models import User, Role, Permission
 from app.models import Product, Category, Supplier
@@ -6,7 +12,7 @@ from app.models import InboundItem, InboundOrder
 from app.models import OutboundItem, OutboundOrder
 from app.models import PurchaseOrder, PurchaseItem
 from app.models import InspectionOrder, InspectionItem
-from app.models import InventoryCountTask, InventoryCountResult, InventoryAdjustment, BookInventory, InventoryAccuracy, InventoryCountTaskSchedule, InventoryCountTaskLog
+
 
 app = create_app()
 
@@ -22,10 +28,7 @@ def make_shell_context():   # 在命令行使用flask shell命令启动Flask交�
         InboundItem=InboundItem, InboundOrder=InboundOrder,
         OutboundItem=OutboundItem, OutboundOrder=OutboundOrder,
         PurchaseOrder=PurchaseOrder, PurchaseItem=PurchaseItem,
-        InspectionOrder=InspectionOrder, InspectionItem=InspectionItem,
-        InventoryCountTask=InventoryCountTask, InventoryCountResult=InventoryCountResult,
-        InventoryAdjustment=InventoryAdjustment, BookInventory=BookInventory, InventoryAccuracy=InventoryAccuracy,
-        InventoryCountTaskSchedule=InventoryCountTaskSchedule, InventoryCountTaskLog=InventoryCountTaskLog
+        InspectionOrder=InspectionOrder, InspectionItem=InspectionItem
     )
 
 if __name__ == '__main__':

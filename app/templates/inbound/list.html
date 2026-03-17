@@ -81,14 +81,16 @@
                                 <td>{{ order.inbound_date.strftime('%Y-%m-%d') }}</td>      <!--格式化显示入库日期-->
                                 <td>{{ order.total_amount }}</td>
                                 <td>{{ order.operator.real_name or order.operator.username }}</td>      <!--优先显示操作员的真实姓名-->
-                                <td>        <!--显示入库单的核心信息-->
+                                <td>
                                     {% if order.status == 'completed' %}
-                                        <span class="badge bg-success">已完成</span>      <!--绿色徽章样式-->
+                                        <span class="badge bg-success">已完成</span>
                                     {% elif order.status == 'draft' %}
-                                        <span class="badge bg-warning">草稿</span>        <!--黄色警告徽章样式-->
+                                        <span class="badge bg-warning">草稿</span>
+                                    {% elif order.status == 'pending' %}
+                                        <span class="badge bg-info">待上架</span>
                                     {% else %}
-                                        <span class="badge bg-danger">已取消</span>        <!--红色危险徽章样式-->
-                                    {% endif %}     <!--使用不同颜色的徽章直观显示入库单状态-->
+                                        <span class="badge bg-danger">已取消</span>
+                                    {% endif %}
                                 </td>
                                 <td>{{ order.create_time.strftime('%Y-%m-%d %H-%M') }}</td>
                                 <td>

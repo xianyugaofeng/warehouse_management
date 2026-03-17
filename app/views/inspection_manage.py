@@ -13,7 +13,7 @@ inspection_bp = Blueprint('inspection', __name__)
 
 # 质检单列表
 @inspection_bp.route('/list')
-@permission_required('inspection_manage')
+@permission_required('inbound_manage')
 @login_required
 def list():
     keyword = request.args.get('keyword', '')
@@ -58,7 +58,7 @@ def list():
 
 # 质检单详情
 @inspection_bp.route('/detail/<int:id>')
-@permission_required('inspection_manage')
+@permission_required('inbound_manage')
 @login_required
 def detail(id):
     inspection_order = InspectionOrder.query.get_or_404(id)
@@ -66,7 +66,7 @@ def detail(id):
 
 # 收货和质检
 @inspection_bp.route('/receive/<int:id>', methods=['GET', 'POST'])
-@permission_required('inspection_manage')
+@permission_required('inbound_manage')
 @login_required
 def receive(id):
     purchase_order = PurchaseOrder.query.get_or_404(id)

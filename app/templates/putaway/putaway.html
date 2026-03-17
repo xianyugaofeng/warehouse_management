@@ -51,11 +51,12 @@
             <form method="POST" action="{{ url_for('putaway.putaway', id=inbound_order.id) }}">
                 <h5 class="mt-4 mb-3">上架明细</h5>
                 <div class="table-responsive">
-                    <table class="table table-bordered">
+                    <table class="table table-hover table-bordered">
                         <thead class="table-light">
                             <tr>
-                                <th>商品</th>
-                                <th>库位（推荐）</th>
+                                <th>商品名称</th>
+                                <th>商品编码</th>
+                                <th>库位选择</th>
                                 <th>批次号</th>
                                 <th>数量</th>
                                 <th>单价</th>
@@ -65,9 +66,8 @@
                         <tbody>
                             {% for item in inbound_order.items %}
                             <tr>
-                                <td>
-                                    {{ item.product.name }} ({{ item.product.code }})
-                                </td>
+                                <td>{{ item.product.name }}</td>
+                                <td>{{ item.product.code }}</td>
                                 <td>
                                     <select class="form-select" name="location_id_{{ item.id }}" required>
                                         <option value="">请选择库位</option>
@@ -75,12 +75,12 @@
                                         <option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>
                                         {% endfor %}
                                     </select>
-                                    <small class="text-muted">系统将自动推荐最佳库位</small>
+                                    <small class="text-muted">如未选择，系统将自动推荐最佳库位</small>
                                 </td>
                                 <td>{{ item.batch_no }}</td>
                                 <td>{{ item.quantity }}</td>
-                                <td>{{ item.unit_price }}</td>
-                                <td>{{ item.subtotal }}</td>
+                                <td>¥{{ "%.2f"|format(item.unit_price) }}</td>
+                                <td>¥{{ "%.2f"|format(item.subtotal) }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>

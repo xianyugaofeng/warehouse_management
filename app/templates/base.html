@@ -65,6 +65,9 @@
                     {% endif %}
                     {% if current_user.has_permission('inbound_manage') %}
                         <a href="{{ url_for('inbound.list') }}" class="list-group-item list-group-item-action">入库管理</a>
+                        <a href="{{ url_for('inspection.list') }}" class="list-group-item list-group-item-action">检验单管理</a>
+                        <a href="{{ url_for('putaway.list') }}" class="list-group-item list-group-item-action">上架管理</a>
+                        <a href="{{ url_for('purchase.list') }}" class="list-group-item list-group-item-action">采购单管理</a>
                     {% endif %}
                     {% if current_user.has_permission('outbound_manage') %}
                         <a href="{{ url_for('outbound.list') }}" class="list-group-item list-group-item-action">出库管理</a>

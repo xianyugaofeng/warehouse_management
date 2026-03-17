@@ -39,7 +39,7 @@
                             </select>
                         </td>
                         <td>
-                            <input type="text" class="form-control" name="batch_no[]" placeholder="批次号">
+                            <input type="text" class="form-control" name="batch_no[]" placeholder="批次号" required>
                         </td>
                         <td>
                             <input type="number" class="form-control quantity-input" name="quantity[]" min="1" required placeholder="数量">
@@ -88,110 +88,6 @@
                     }
                 });
                 return isValid;
-            });
-        });
-    </script>
-{% endblock %}
-
-{% block js %}      <!--JavaScript脚本 用于处理入库单表单的动态交互和验证-->
-    <!--动态添加入库明细行-->
-    <!--删除指定的入库明细行-->
-    <!--在表单提交时进行验证,确保至少有一条明细,且所有数量都大于0-->
-    <script>
-        // 在DOM结构加载完成后立即执行代码的方法,不必等待图片,视频等资源完全加载
-        $(document).ready(function() {
-            //动态添加入库明细行
-            let rowIndex = 0;     //声明一个变量rowIndex记录当前行索引
-            $("#addItemBtn").click(function() {     //为ID为addItemBtn的元素绑定点击事件
-                //click()方法触发click事件
-                rowIndex++;             //每次点击添加按钮,行索引加1,确保每一行有唯一的ID
-                const newRow = `
-                    <tr id="itemRow${rowIndex}">        //使用模板字符串(反引号)构建一个表格行的HTML
-                        //在表单中提交数组
-                        <td>    //Bootstrap样式 + 自定义类
-                            <select class="form-select product-select" name="product_id[]" required>
-                                //一个选择商品的下拉框，使用Jinja2循环填充商品数据
-                                <option value="">请选择商品<option>
-                                {% for product in products %}
-                                    <option value="{{ product.id }}">
-                                        {{ product.name }} ({{ product.code }})
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </td>
-                        <td>
-                            <select class="form-select" name="location_id[]" required>
-                                //一个选择库位的下拉框，使用Jinja2循环填充库位数据
-                                <option value="">请选择库位<option>
-                                {% for location in locations %}
-                                    <option value="{{ location.id }}">
-                                        {{ location.code }} - {{ location.name }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </td>
-                        <td>
-                            //批次号输入框(必填)
-                            <input type="text" class="form-control" name="batch_no[]" placeholder="批次号" required>
-                        </td>
-                        <td>
-                            //数量输入框(必填，最小值为1)  Bootstrap样式 + 自定义类
-                            <input type="number" class="form-control quantity-input" name="quantity[]" min="1" required placeholder="数量">
-                        </td>
-                        <td>
-                            //单价输入框(必填)
-                            <input type="number" class="form-control" name="unit_price[]" min="0" step="0.01" required placeholder="单价">
-                        </td>
-                        <td>
-                            //小计输入框(必填)
-                            <input type="number" class="form-control" name="subtotal[]" min="0" step="0.01" required placeholder="小计">
-                        </td>
-                        //生产日期和过期日期的日期输入框
-                        <td>
-                            <input type="date" class="form-control" name="production_date[]">
-                        </td>
-                        <td>
-                            <input type="date" class="form-control" name="expire_date[]">
-                        </td>
-                        <td>
-                            //一个删除按钮,按钮上有一个垃圾桶图标,并设置data-row属性为当前行索引,以便于删除时识别
-                            //remove-item:自定义类 用于JavaScript选择器识别删除按钮
-                            //data-row:自定义属性名,表示行索引标识 "${rowIndex}":JavaScript模板字符串语法,动态插入行索引值
-                            <button type="button" class="btn btn-sm btn-danger remove-item" data-row="${rowIndex}">
-                                <i class="fa fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-                //将新创建的行追加到ID为itemTableBody的元素(表格体)中
-                $("#itemTableBody").append(newRow);
-            });
-            //删除明细行
-            //使用事件委托,为所有具有remove-item类的元素(包括动态添加的)绑定点击事件
-            $(document).on("click", ".remove-item", function() {
-                const rowId = $(this).data("row");      //获取当前jQuery对象上存储的名为row的数据值
-                //这个数据可以是通过HTML5的data-row属性设置的
-                $(`#itemRow${rowId}`).remove();     //当点击删除按钮时，获取该按钮的data-row属性值，然后移除对应ID的行
-            });
-            //表单提交验证 该事件只适用于<form>元素
-            $("form").submit(function() {       //为表单的提交事件绑定验证函数
-                const hasItems = $("#itemTableBody tr").length > 0;     //检查表格中是否有明细行即itemTableBody中是否有行
-                //如果没有，弹出警告并阻止提交
-                if (!hasItems) {
-                    alert("请至少添加一条入库明细!");
-                    return false;
-                }
-                // 验证数量输入
-                let isValid = true;
-                // 遍历所有数量输入框
-                $(".quantity-input").each(function() {      //each()方法为每个匹配元素规定要运行的函数
-                    if ($(this).val() <= 0 || !$(this).val()) {    //检查每个输入框的值是否大于0且不为空
-                        alert("数量必须大于0!");     //如果有任何一个不满足条件，则弹出警告并阻止提交
-                        isValid = false;
-                        return false;
-                    }
-                });
-                return isValid;     //如果所有验证都通过，则允许表单提交
             });
         });
     </script>
@@ -252,7 +148,7 @@
                     <strong>送货单号:</strong> {{ selected_inspection.delivery_order_no }}
                 </div>
                 <div class="col-md-3">
-                    <strong>检验日期:</strong> {{ selected_inspection.inspection_date }}
+                    <strong>检验日期:</strong> {{ selected_inspection.inspection_date.strftime('%Y-%m-%d') if selected_inspection.inspection_date else '-' }}
                 </div>
             </div>
             <div class="row mt-2">
@@ -339,7 +235,7 @@
                         <table class="table table-bordered">
                             <thead class="table-light">
                                 <tr>
-                                    <th width="20%">商品</th>
+                                    <th width="20%">商品名称</th>
                                     <th width="15%">库位</th>
                                     <th width="13%">批次号</th>
                             <th width="8%">数量</th>

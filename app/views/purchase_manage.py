@@ -13,7 +13,7 @@ purchase_bp = Blueprint('purchase', __name__)
 
 # 采购单列表
 @purchase_bp.route('/list')
-@permission_required('purchase_manage')
+@permission_required('inbound_manage')
 @login_required
 def list():
     keyword = request.args.get('keyword', '')
@@ -57,7 +57,7 @@ def list():
 
 # 添加采购单
 @purchase_bp.route('/add', methods=['GET', 'POST'])
-@permission_required('purchase_manage')
+@permission_required('inbound_manage')
 @login_required
 def add():
     products = Product.query.all()
@@ -140,7 +140,7 @@ def add():
 
 # 编辑采购单
 @purchase_bp.route('/edit/<int:id>', methods=['GET', 'POST'])
-@permission_required('purchase_manage')
+@permission_required('inbound_manage')
 @login_required
 def edit(id):
     purchase_order = PurchaseOrder.query.get_or_404(id)
@@ -225,7 +225,7 @@ def edit(id):
 
 # 采购单详情
 @purchase_bp.route('/detail/<int:id>')
-@permission_required('purchase_manage')
+@permission_required('inbound_manage')
 @login_required
 def detail(id):
     purchase_order = PurchaseOrder.query.get_or_404(id)
@@ -233,7 +233,7 @@ def detail(id):
 
 # 查看采购单收货状态
 @purchase_bp.route('/receive/<int:id>')
-@permission_required('purchase_manage')
+@permission_required('inbound_manage')
 @login_required
 def receive(id):
     purchase_order = PurchaseOrder.query.get_or_404(id)
