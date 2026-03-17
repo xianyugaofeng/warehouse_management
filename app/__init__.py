@@ -29,7 +29,6 @@ def create_app(config_name='default'):
     from app.views.inventory_manage import inventory_bp
     from app.views.product_manage import product_bp
     from app.views.supplier_manage import supplier_bp
-    from app.views.inventory_count_manage import inventory_count_bp
     from app.views.report import report_bp
     from app.views.inspection_manage import inspection_bp
     # 注册蓝图（这会注册所有蓝图中的路由）
@@ -41,7 +40,6 @@ def create_app(config_name='default'):
     app.register_blueprint(product_bp, url_prefix='/product')
     app.register_blueprint(supplier_bp, url_prefix='/supplier')
     app.register_blueprint(report_bp, url_prefix='/report')
-    app.register_blueprint(inventory_count_bp, url_prefix='/inventory_count')
     app.register_blueprint(inspection_bp, url_prefix='/inspection')
     
     # 注册根路由
@@ -54,19 +52,6 @@ def create_app(config_name='default'):
     def next_page():
         return render_template('base.html')
 
-    # 导入调度器（移到这里避免循环导入）
-    from app.utils.scheduler import start_scheduler, stop_scheduler
-    
-    # 只有当不是在执行 Flask 命令且不是在测试模式时才启动调度器
-    # 这样在运行数据库迁移命令或测试时就不会尝试访问不存在的表
-    import sys
-    if 'flask' not in sys.argv[0] and 'db' not in sys.argv and not app.config.get('TESTING', False):
-        # 启动调度器
-        with app.app_context():
-            start_scheduler()
 
-        # 注册应用关闭时的清理函数
-        # atexit.register(stop_scheduler) 确保在应用关闭时调用
-        atexit.register(stop_scheduler)
 
     return app
