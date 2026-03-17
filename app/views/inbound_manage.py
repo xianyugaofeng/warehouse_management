@@ -6,8 +6,9 @@ from app.models.inbound import InboundOrder, InboundItem
 from app.models.product import Product, Supplier
 from app.models.inventory import WarehouseLocation
 from app.models.purchase import PurchaseItem
+from app.models.inspection import InspectionOrder
 from app.utils.auth import permission_required
-from app.utils.helpers import generate_inbound_no, update_inventory
+from app.utils.helpers import generate_inbound_no, update_inventory, recommend_location
 
 inbound_bp = Blueprint('inbound', __name__)
 

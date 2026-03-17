@@ -116,7 +116,8 @@ db.session.add_all([location1, location2, location3])
 db.session.commit()
 
 from app.models import Product, Inventory, InboundOrder, InboundItem, OutboundOrder, OutboundItem, InventoryCountTask
-from app.utils.helpers import generate_inbound_no, generate_outbound_no, update_inventory, generate_inventory_count_task_no
+from app.models import PurchaseOrder, PurchaseItem, InspectionOrder, InspectionItem
+from app.utils.helpers import generate_inbound_no, generate_outbound_no, update_inventory, generate_inventory_count_task_no, generate_purchase_no, generate_inspection_no, recommend_location
 from datetime import datetime, timedelta
 
 # 创建商品样例
@@ -184,202 +185,136 @@ accessory2 = Product(
 db.session.add_all([raw_material1, raw_material2, finished_product1, finished_product2, accessory1, accessory2])
 db.session.commit()
 
-
-# 创建入库单样例
-# 第一个入库单
-order_no1 = generate_inbound_no()
-total_qty1 = 100 + 50  # 100张不锈钢板材 + 50个手机充电器
-inbound_order1 = InboundOrder(
-    order_no=order_no1,
+# 创建采购单样例
+purchase_order1 = PurchaseOrder(
+    order_no=generate_purchase_no(),
     supplier_id=supplier1.id,
-    operator_id=admin.id,  # 使用管理员用户作为操作员
+    operator_id=admin.id,
+    total_amount=100,
+    status='completed',
+    remark='采购原材料'
+)
+db.session.add(purchase_order1)
+db.session.flush()
+
+# 添加采购明细
+purchase_item1 = PurchaseItem(
+    order_id=purchase_order1.id,
+    product_id=raw_material1.id,
+    quantity=50,
+    unit_price=100.0,
+    subtotal=5000.0
+)
+purchase_item2 = PurchaseItem(
+    order_id=purchase_order1.id,
+    product_id=raw_material2.id,
+    quantity=100,
+    unit_price=20.0,
+    subtotal=2000.0
+)
+db.session.add_all([purchase_item1, purchase_item2])
+db.session.commit()
+
+# 创建检验单样例
+inspection_order1 = InspectionOrder(
+    order_no=generate_inspection_no(),
+    purchase_order_id=purchase_order1.id,
+    supplier_id=supplier1.id,
+    delivery_order_no=purchase_order1.order_no,  # 送货单号即采购单号
+    operator_id=admin.id,
+    inspection_date=datetime.now().date(),
+    total_quantity=150,
+    qualified_quantity=145,
+    unqualified_quantity=5,
+    status='completed',
+    signature='仓库管理员',
+    remark='检验合格'
+)
+db.session.add(inspection_order1)
+db.session.flush()
+
+# 添加检验明细
+inspection_item1 = InspectionItem(
+    inspection_id=inspection_order1.id,
+    product_id=raw_material1.id,
+    quantity=50,
+    qualified_quantity=48,
+    unqualified_quantity=2,
+    quality_status='passed',
+    remark='合格'
+)
+inspection_item2 = InspectionItem(
+    inspection_id=inspection_order1.id,
+    product_id=raw_material2.id,
+    quantity=100,
+    qualified_quantity=97,
+    unqualified_quantity=3,
+    quality_status='passed',
+    remark='合格'
+)
+db.session.add_all([inspection_item1, inspection_item2])
+db.session.commit()
+
+# 创建入库单样例（待上架状态）
+inbound_order1 = InboundOrder(
+    order_no=generate_inbound_no(),
+    supplier_id=supplier1.id,
+    related_order=purchase_order1.order_no,
+    delivery_order_no=purchase_order1.order_no,  # 送货单号即采购单号
+    inspection_cert_no=inspection_order1.order_no,
+    purchase_order_id=purchase_order1.id,
+    inspection_order_id=inspection_order1.id,
+    operator_id=admin.id,
     inbound_date=datetime.now().date(),
-    total_amount=total_qty1,
-    status="completed"
+    total_amount=145,
+    status='pending',  # 初始状态为待上架
+    remark='原材料入库'
 )
 db.session.add(inbound_order1)
-db.session.flush()  # 刷新获取order_id
+db.session.flush()
 
-# 创建入库项并更新库存
+# 添加入库明细
 inbound_item1 = InboundItem(
     order_id=inbound_order1.id,
     product_id=raw_material1.id,
-    location_id=location1.id,
-    quantity=100,
-    batch_no="RM-20260301"
+    quantity=48,
+    batch_no=f'B{datetime.now().strftime("%Y%m%d")}1',
+    unit_price=100.0,
+    subtotal=4800.0
 )
-db.session.add(inbound_item1)
-update_inventory(raw_material1.id, location1.id, "RM-20260301", 100, is_bound=True)
-
 inbound_item2 = InboundItem(
     order_id=inbound_order1.id,
-    product_id=accessory1.id,
-    location_id=location3.id,
-    quantity=50,
-    batch_no="AC-20260301"
-)
-db.session.add(inbound_item2)
-update_inventory(accessory1.id, location3.id, "AC-20260301", 50, is_bound=True)
-
-# 第二个入库单
-order_no2 = generate_inbound_no()
-total_qty2 = 200 + 20  # 200kg塑料颗粒 + 20台智能手机
-inbound_order2 = InboundOrder(
-    order_no=order_no2,
-    supplier_id=supplier2.id,
-    operator_id=admin.id,  # 使用管理员用户作为操作员
-    inbound_date=datetime.now().date(),
-    total_amount=total_qty2,
-    status="completed"
-)
-db.session.add(inbound_order2)
-db.session.flush()  # 刷新获取order_id
-
-# 创建入库项并更新库存
-inbound_item3 = InboundItem(
-    order_id=inbound_order2.id,
     product_id=raw_material2.id,
-    location_id=location1.id,
-    quantity=200,
-    batch_no="RM-20260302"
+    quantity=97,
+    batch_no=f'B{datetime.now().strftime("%Y%m%d")}2',
+    unit_price=20.0,
+    subtotal=1940.0
 )
-db.session.add(inbound_item3)
-update_inventory(raw_material2.id, location1.id, "RM-20260302", 200, is_bound=True)
-
-inbound_item4 = InboundItem(
-    order_id=inbound_order2.id,
-    product_id=finished_product1.id,
-    location_id=location2.id,
-    quantity=20,
-    batch_no="FP-20260301"
-)
-db.session.add(inbound_item4)
-update_inventory(finished_product1.id, location2.id, "FP-20260301", 20, is_bound=True)
-
-# 提交入库单和入库项
+db.session.add_all([inbound_item1, inbound_item2])
 db.session.commit()
 
-# 创建出库单样例
-# 第一个出库单
-order_no3 = generate_outbound_no()
-total_qty3 = 10 + 30  # 10台智能手机 + 30个手机充电器
-outbound_order1 = OutboundOrder(
-    order_no=order_no3,
-    related_order="SO-20260301-001",
-    receiver="张三",
-    receive_phone="13800138001",
-    operator_id=admin.id,  # 使用管理员用户作为操作员
-    outbound_date=datetime.now().date(),
-    purpose="销售出库",
-    total_amount=total_qty3,
-    status="completed",
-    remark="客户A订单"
-)
-db.session.add(outbound_order1)
-db.session.flush()  # 刷新获取order_id
+# 模拟上架操作
+# 获取所有正常库位
+locations = WarehouseLocation.query.filter_by(status=True).all()
 
-# 创建出库项并更新库存
-outbound_item1 = OutboundItem(
-    order_id=outbound_order1.id,
-    product_id=finished_product1.id,
-    location_id=location2.id,
-    quantity=10,
-    batch_no="FP-20260301"
-)
-db.session.add(outbound_item1)
-update_inventory(finished_product1.id, location2.id, "FP-20260301", 10, is_bound=False)
+# 为每个入库明细分配库位并更新库存
+for item in inbound_order1.items:
+    # 推荐最佳库位
+    recommended_location = recommend_location(item.product_id, locations)
+    if recommended_location:
+        item.location_id = recommended_location.id
+        item.signature = '仓库管理员'  # 上架时签字
+        # 更新库存
+        update_inventory(item.product_id, recommended_location.id, item.batch_no, item.quantity, is_bound=True)
 
-outbound_item2 = OutboundItem(
-    order_id=outbound_order1.id,
-    product_id=accessory1.id,
-    location_id=location3.id,
-    quantity=30,
-    batch_no="AC-20260301"
-)
-db.session.add(outbound_item2)
-update_inventory(accessory1.id, location3.id, "AC-20260301", 30, is_bound=False)
-
-# 第二个出库单
-order_no4 = generate_outbound_no()
-total_qty4 = 50  # 50kg塑料颗粒
-outbound_order2 = OutboundOrder(
-    order_no=order_no4,
-    related_order="SO-20260302-001",
-    receiver="李四",
-    receive_phone="13900139001",
-    operator_id=admin.id,  # 使用管理员用户作为操作员
-    outbound_date=datetime.now().date(),
-    purpose="生产领用",
-    total_amount=total_qty4,
-    status="completed",
-    remark="生产线B使用"
-)
-db.session.add(outbound_order2)
-db.session.flush()  # 刷新获取order_id
-
-# 创建出库项并更新库存
-outbound_item3 = OutboundItem(
-    order_id=outbound_order2.id,
-    product_id=raw_material2.id,
-    location_id=location1.id,
-    quantity=50,
-    batch_no="RM-20260302"
-)
-db.session.add(outbound_item3)
-update_inventory(raw_material2.id, location1.id, "RM-20260302", 50, is_bound=False)
-
-# 提交出库单和出库项
+# 更新入库单状态为已完成
+inbound_order1.status = 'completed'
 db.session.commit()
 
-# 创建盘点任务样例
-# 第一个盘点任务：时间触发的月度盘点
-from datetime import timedelta
-task_no1 = generate_inventory_count_task_no()
-task1 = InventoryCountTask(
-    task_no=task_no1,
-    name="月度盘点",
-    type="time",
-    status="completed",
-    area="A区",
-    start_time=datetime.now() - timedelta(days=1),
-    end_time=datetime.now(),
-    operator_id=admin.id,
-    cycle_days=30,  # 30天周期
-    remark="每月定期盘点"
-)
-db.session.add(task1)
+print("数据生成完成！")
+print(f"采购单: {purchase_order1.order_no}")
+print(f"检验单: {inspection_order1.order_no}")
+print(f"入库单: {inbound_order1.order_no}")
+print(f"上架完成，库存已更新")
 
-# 第二个盘点任务：区域触发的B区盘点
-task_no2 = generate_inventory_count_task_no()
-task2 = InventoryCountTask(
-    task_no=task_no2,
-    name="B区季度盘点",
-    type="area",
-    status="pending",
-    area="B区",
-    cycle_days=90,  # 90天周期
-    remark="每季度对B区进行盘点"
-)
-db.session.add(task2)
 
-# 第三个盘点任务：阈值触发的高价值商品盘点
-task_no3 = generate_inventory_count_task_no()
-task3 = InventoryCountTask(
-    task_no=task_no3,
-    name="高价值商品盘点",
-    type="threshold",
-    status="pending",
-    threshold=1000,  # 阈值1000
-    remark="当库存价值超过阈值时触发盘点"
-)
-db.session.add(task3)
-
-# 提交盘点任务
-db.session.commit()
-
-print("数据初始化完成！")
-print(f"创建了 {Product.query.count()} 个商品")
-print(f"创建了 {Inventory.query.count()} 个库存记录")
-print(f"创建了 {InboundOrder.query.count()} 个入库单")
-print(f"创建了 {OutboundOrder.query.count()} 个出库单")
-print(f"创建了 {InventoryCountTask.query.count()} 个盘点任务")

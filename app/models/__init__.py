@@ -8,4 +8,4 @@ from .purchase import PurchaseOrder, PurchaseItem
 from .inventory import Inventory, WarehouseLocation
 from .inbound import InboundItem, InboundOrder
 from .outbound import OutboundItem, OutboundOrder
-from .inspection import InspectionRecord, InspectionOrder, InspectionItem
+from .inspection import InspectionOrder, InspectionItem

@@ -1,10 +1,9 @@
 import unittest
 from app import create_app, db
 from app.models.inventory import Inventory
-from app.models.inventory_count import VirtualInventory
 from app.models.product import Product, Category
 from app.models.inventory import WarehouseLocation
-from app.utils.helpers import update_inventory, update_virtual_inventory
+from app.utils.helpers import update_inventory
 
 class TestInventoryManagement(unittest.TestCase):
     def setUp(self):
@@ -61,21 +60,12 @@ class TestInventoryManagement(unittest.TestCase):
         )
         db.session.add(self.inventory)
         
-        # 创建初始虚拟库存
-        self.virtual_inventory = VirtualInventory(
-            product_id=self.product.id,
-            location_id=self.location.id,
-            batch_no='B2026030701',
-            physical_quantity=0,
-            in_transit_quantity=0,
-            allocated_quantity=0
-        )
-        db.session.add(self.virtual_inventory)
+
         
         db.session.commit()
     
-    def test_inbound_increases_in_transit_inventory(self):
-        """测试入库操作增加在途库存"""
+    def test_inbound_increases_inventory(self):
+        """测试入库操作增加库存"""
         # 执行入库操作
         update_inventory(
             self.product.id,
@@ -85,26 +75,17 @@ class TestInventoryManagement(unittest.TestCase):
             is_bound=True
         )
         
-        # 重新获取虚拟库存
-        vi = VirtualInventory.query.filter_by(
-            product_id=self.product.id,
-            location_id=self.location.id,
-            batch_no='B2026030701'
-        ).first()
-        
-        # 验证在途库存增加
-        self.assertEqual(vi.in_transit_quantity, 10)
-        # 验证实物库存不变
+        # 验证实物库存增加
         inventory = Inventory.query.filter_by(
             product_id=self.product.id,
             location_id=self.location.id,
             batch_no='B2026030701'
         ).first()
-        self.assertEqual(inventory.quantity, 0)
+        self.assertEqual(inventory.quantity, 10)
     
-    def test_outbound_increases_allocated_inventory(self):
-        """测试出库操作增加已分配库存"""
-        # 先入库10个，增加在途库存
+    def test_outbound_decreases_inventory(self):
+        """测试出库操作减少库存"""
+        # 先入库10个
         update_inventory(
             self.product.id,
             self.location.id,
@@ -122,47 +103,15 @@ class TestInventoryManagement(unittest.TestCase):
             is_bound=False
         )
         
-        # 重新获取虚拟库存
-        vi = VirtualInventory.query.filter_by(
-            product_id=self.product.id,
-            location_id=self.location.id,
-            batch_no='B2026030701'
-        ).first()
-        
-        # 验证已分配库存增加
-        self.assertEqual(vi.allocated_quantity, 5)
-        # 验证在途库存不变
-        self.assertEqual(vi.in_transit_quantity, 10)
-        # 验证实物库存不变
+        # 验证实物库存减少
         inventory = Inventory.query.filter_by(
             product_id=self.product.id,
             location_id=self.location.id,
             batch_no='B2026030701'
         ).first()
-        self.assertEqual(inventory.quantity, 0)
+        self.assertEqual(inventory.quantity, 5)
     
-    def test_virtual_inventory_calculation(self):
-        """测试虚拟库存计算"""
-        # 更新虚拟库存
-        update_virtual_inventory(
-            self.product.id,
-            self.location.id,
-            'B2026030701',
-            physical_change=0,
-            in_transit_change=10,
-            allocated_change=3
-        )
-        
-        # 重新获取虚拟库存
-        vi = VirtualInventory.query.filter_by(
-            product_id=self.product.id,
-            location_id=self.location.id,
-            batch_no='B2026030701'
-        ).first()
-        
-        # 验证虚拟库存计算
-        expected_virtual = 0 + 10 - 3  # 实物 + 在途 - 已分配
-        self.assertEqual(vi.virtual_quantity, expected_virtual)
+
 
 if __name__ == '__main__':
     unittest.main()
