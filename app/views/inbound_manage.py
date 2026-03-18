@@ -176,6 +176,17 @@ def create_inbound_from_inspection(inspection_id, request, products, suppliers, 
                 subtotal=unit_price * inspection.qualified_quantity
             )
             db.session.add(inbound_item)
+            
+            # 创建库存记录（处于等待状态，对应入库管理模块的"待上架"状态）
+            from app.models.inventory import Inventory
+            inventory = Inventory(
+                product_id=inspection.purchase_order.product_id,
+                location_id=waiting_location.id,
+                quantity=inspection.qualified_quantity,
+                batch_no=batch_no,
+                remark='入库待上架'
+            )
+            db.session.add(inventory)
         
         db.session.commit()
         flash('入库单创建成功，商品已入库并增加库存', 'success')
@@ -312,6 +323,19 @@ def create_inbound_manual(request, products, suppliers, locations):
             subtotal=subtotal
         )
         db.session.add(item)
+        
+        # 创建库存记录（处于等待状态，对应入库管理模块的"待上架"状态）
+        from app.models.inventory import Inventory
+        inventory = Inventory(
+            product_id=product_id,
+            location_id=location_id,
+            quantity=quantity,
+            batch_no=batch_no,
+            production_date=production_date if production_date else None,
+            expire_date=expire_date if expire_date else None,
+            remark='入库待上架'
+        )
+        db.session.add(inventory)
 
         db.session.commit()
         flash('入库单创建成功，商品已入库并增加库存', 'success')

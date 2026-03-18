@@ -4,7 +4,7 @@ from app import create_app, db
 from app.models.user import User, Role, Permission
 from app.models.purchase import PurchaseOrder
 from app.models.product import Product, Supplier, Category
-from app.models.inspection import InspectionOrder, InspectionItem, DefectiveProduct
+from app.models.inspection import InspectionOrder, InspectionItem
 from app.models.inventory import WarehouseLocation
 
 class TestInspection(unittest.TestCase):

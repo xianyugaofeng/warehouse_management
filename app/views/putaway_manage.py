@@ -48,8 +48,20 @@ def putaway(id):
                 item.location_id = location_id
                 item.signature = signature
                 
-                # 更新库存
-                update_inventory(item.product_id, location_id, item.batch_no, item.quantity, is_bound=True)
+                # 查找并更新库存记录的库位（从等待区转移到正常库位）
+                # 库存状态会根据库位类型自动更新：waiting -> normal
+                inventory = Inventory.query.filter_by(
+                    product_id=item.product_id,
+                    batch_no=item.batch_no
+                ).first()
+                
+                if inventory:
+                    # 更新库存记录的库位，状态会自动从"等待"变为"正常"
+                    inventory.location_id = location_id
+                    inventory.remark = '已上架'
+                else:
+                    # 如果库存记录不存在，创建新的库存记录
+                    update_inventory(item.product_id, location_id, item.batch_no, item.quantity, is_bound=True)
 
             # 更新入库单状态为已完成
             inbound_order.status = 'completed'

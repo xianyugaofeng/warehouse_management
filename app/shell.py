@@ -28,7 +28,7 @@ select * from categories;
 """
 # flask shell代码
 from app import db
-from app.models import Role, Permission, User, WarehouseLocation, Supplier, Category, Product, Inventory, InboundOrder, InboundItem, OutboundOrder, OutboundItem, PurchaseOrder, InspectionOrder, InspectionItem, DefectiveProduct, ReturnOrder, ReturnItem
+from app.models import Role, Permission, User, WarehouseLocation, Supplier, Category, Product, Inventory, InboundOrder, InboundItem, OutboundOrder, OutboundItem, PurchaseOrder, InspectionOrder, InspectionItem, ReturnOrder, ReturnItem
 from app.utils.helpers import generate_inbound_no, generate_outbound_no, generate_purchase_no, generate_inspection_no, generate_return_no, update_inventory, recommend_location
 from datetime import datetime, timedelta
 
@@ -257,8 +257,8 @@ inspection_item1 = InspectionItem(
 )
 db.session.add(inspection_item1)
 
-# 创建不合格商品记录
-defective_product = DefectiveProduct(
+# 创建不合格商品库存记录
+defective_inventory = Inventory(
     product_id=raw_material1.id,
     location_id=location4.id,
     batch_no=f'B{datetime.now().strftime("%Y%m%d")}3',
@@ -267,9 +267,9 @@ defective_product = DefectiveProduct(
     inspection_order_id=inspection_order1.id,
     remark='检验不合格'
 )
-db.session.add(defective_product)
+db.session.add(defective_inventory)
 db.session.commit()
-print("不合格商品记录创建完成")
+print("不合格商品库存记录创建完成")
 
 # 创建入库单样例（待上架状态）
 inbound_order1 = InboundOrder(
@@ -335,9 +335,9 @@ db.session.flush()
 # 添加退货明细
 return_item1 = ReturnItem(
     return_order_id=return_order1.id,
-    product_id=defective_product.product_id,
-    location_id=defective_product.location_id,
-    batch_no=defective_product.batch_no,
+    product_id=defective_inventory.product_id,
+    location_id=defective_inventory.location_id,
+    batch_no=defective_inventory.batch_no,
     quantity=2,
     unit_price=100.0,
     amount=200.0,
@@ -346,8 +346,8 @@ return_item1 = ReturnItem(
 db.session.add(return_item1)
 db.session.commit()
 
-# 更新不合格商品库位库存
-defective_product.quantity -= 2
+# 更新不合格商品库存
+defective_inventory.quantity -= 2
 db.session.commit()
 
 print("数据生成完成！")

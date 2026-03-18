@@ -2,10 +2,10 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import current_user, login_required
 from datetime import datetime
 from app import db
-from app.models.inspection import InspectionOrder, InspectionItem, DefectiveProduct
+from app.models.inspection import InspectionOrder, InspectionItem
 from app.models.purchase import PurchaseOrder
 from app.models.product import Product, Supplier
-from app.models.inventory import WarehouseLocation
+from app.models.inventory import WarehouseLocation, Inventory
 from app.utils.auth import permission_required
 from app.utils.helpers import generate_inspection_no
 
@@ -179,12 +179,12 @@ def receive(id):
                 qualified_quantity=qualified_quantity,
                 unqualified_quantity=unqualified_quantity,
                 quality_status=quality_status,
-                defect_reason=defect_reason if quality_status != 'completed' else None
+                defect_reason=defect_reason if quality_status == 'completed' else None
             )
             db.session.add(inspection_item)
             
-            # 处理不合格商品
-            if quality_status != 'completed' and actual_quantity > 0:
+            # 处理不合格商品（只有不合格商品才创建库存记录并关联检验单）
+            if quality_status == 'completed' and unqualified_quantity > 0:
                 # 获取暂存区库位
                 reject_location_id = int(defect_location_id) if defect_location_id else None
                 if not reject_location_id:
@@ -193,17 +193,33 @@ def receive(id):
                         reject_location_id = reject_location.id
                 
                 if reject_location_id:
-                    # 创建不合格商品记录
-                    defective_product = DefectiveProduct(
+                    # 创建不合格商品库存记录
+                    # 检查是否已存在相同商品、库位和批次的库存记录
+                    existing_inventory = Inventory.query.filter_by(
                         product_id=purchase_order.product_id,
                         location_id=reject_location_id,
-                        batch_no=f'B{datetime.now().strftime("%Y%m%d")}{purchase_order.id}',
-                        quantity=actual_quantity,
-                        defect_reason=defect_reason,
-                        inspection_order_id=inspection_order.id,
-                        remark='检验不合格'
-                    )
-                    db.session.add(defective_product)
+                        batch_no=f'B{datetime.now().strftime("%Y%m%d")}{purchase_order.id}'
+                    ).first()
+                    
+                    if existing_inventory:
+                        # 如果已存在，更新数量
+                        existing_inventory.quantity += unqualified_quantity
+                        existing_inventory.defect_reason = defect_reason
+                        existing_inventory.inspection_order_id = inspection_order.id
+                    else:
+                        # 如果不存在，创建新记录
+                        inventory = Inventory(
+                            product_id=purchase_order.product_id,
+                            location_id=reject_location_id,
+                            batch_no=f'B{datetime.now().strftime("%Y%m%d")}{purchase_order.id}',
+                            quantity=unqualified_quantity,
+                            defect_reason=defect_reason,
+                            inspection_order_id=inspection_order.id,
+                            remark='检验不合格'
+                        )
+                        db.session.add(inventory)
+            
+            # 注意：合格商品不在这里创建库存记录，需要通过入库流程创建入库单
         else:
             flash(f'收货完成：本次收货{actual_quantity}件，累计合格{purchase_order.qualified_quantity + qualified_quantity}件，累计不合格{purchase_order.unqualified_quantity + unqualified_quantity}件。采购单状态为收货中，允许后续再次收货。', 'info')
 

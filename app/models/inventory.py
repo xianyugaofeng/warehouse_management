@@ -1,5 +1,9 @@
 from datetime import datetime
+import logging
 from app import db
+
+# 配置日志记录器
+logger = logging.getLogger(__name__)
 
 
 class WarehouseLocation(db.Model):
@@ -30,9 +34,14 @@ class Inventory(db.Model):
     batch_no = db.Column(db.String(32))  # 批次号
     production_date = db.Column(db.Date)  # 生产日期
     expire_date = db.Column(db.Date)  # 过期日期
+    defect_reason = db.Column(db.String(64))  # 不合格原因
+    inspection_order_id = db.Column(db.Integer, db.ForeignKey('inspection_orders.id'))  # 关联检验单
+    create_time = db.Column(db.DateTime, default=datetime.utcnow)  # 创建时间
     update_time = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)  # 最后更新时间
     # 关联商品
     product = db.relationship('Product')
+    # 关联检验单
+    inspection_order = db.relationship('InspectionOrder')
 
     # 联合唯一约束（同一商品同一库位同一批次唯一）
     __table_args__ = (
@@ -48,3 +57,49 @@ class Inventory(db.Model):
         if not self.product or self.product.warning_stock is None:
             return False
         return self.quantity <= self.product.warning_stock
+    
+    # 获取库存状态
+    @property
+    def status(self):
+        """根据库位类型自动确定库存状态
+        
+        状态对应关系：
+        - waiting: 等待（对应入库管理模块的"待上架"状态）
+        - normal: 正常（已上架的正常库存）
+        - pending_inspection: 待检
+        - defective: 不合格
+        """
+        if not self.location:
+            logger.warning(f'库存记录 {self.id} 没有关联库位，返回unknown状态')
+            return 'unknown'
+        
+        location_type = self.location.location_type
+        status_map = {
+            'waiting': 'waiting',  # 等待/待上架 - 与入库管理模块的"待上架"状态一致
+            'normal': 'normal',  # 正常库存
+            'inspection': 'pending_inspection',  # 待检
+            'reject': 'defective'  # 不合格
+        }
+        
+        status = status_map.get(location_type, 'unknown')
+        logger.debug(f'库存记录 {self.id} (商品:{self.product_id}, 库位:{self.location_id}, 类型:{location_type}) 状态: {status}')
+        return status
+    
+    # 检查是否为不合格商品
+    def is_defective(self):
+        return self.status == 'defective'
+    
+    # 验证检验单关联
+    def validate_inspection_order(self):
+        """验证检验单关联：只有不合格商品库存需要关联检验单"""
+        if self.is_defective():
+            # 不合格商品必须关联检验单
+            if not self.inspection_order_id:
+                raise ValueError('不合格商品库存必须关联检验单')
+            if not self.defect_reason:
+                raise ValueError('不合格商品库存必须填写不合格原因')
+        else:
+            # 正常库存和待检库存不需要关联检验单
+            # 如果有关联检验单，则清除（可选，根据业务需求）
+            pass
+        return True

@@ -2,7 +2,8 @@ import unittest
 import uuid
 from datetime import datetime
 from app import create_app, db
-from app.models import ReturnOrder, ReturnItem, DefectiveProduct, Product, WarehouseLocation, User
+from app.models import ReturnOrder, ReturnItem, Product, WarehouseLocation, User
+from app.models.inventory import Inventory
 
 
 class TestReturn(unittest.TestCase):
@@ -83,16 +84,16 @@ class TestReturn(unittest.TestCase):
         db.session.add(inspection_order)
         db.session.commit()
         
-        # 创建不合格商品
-        self.defective_product = DefectiveProduct(
-            product=self.product,
-            location=self.location,
+        # 创建不合格商品库存记录
+        self.defective_inventory = Inventory(
+            product_id=self.product.id,
+            location_id=self.location.id,
             quantity=100,
             batch_no='BATCH001',
             defect_reason='质量问题',
             inspection_order_id=inspection_order.id
         )
-        db.session.add(self.defective_product)
+        db.session.add(self.defective_inventory)
         db.session.commit()
     
     def test_return_order_creation(self):
@@ -120,14 +121,14 @@ class TestReturn(unittest.TestCase):
         db.session.add(return_order)
         db.session.commit()
         
-        # 手动更新不合格商品数量，模拟视图函数中的逻辑
-        defective_product = DefectiveProduct.query.filter_by(
+        # 手动更新不合格商品库存数量，模拟视图函数中的逻辑
+        inventory = Inventory.query.filter_by(
             product_id=self.product.id,
             location_id=self.location.id,
             batch_no='BATCH001'
         ).first()
-        if defective_product and defective_product.quantity >= 10:
-            defective_product.quantity -= 10
+        if inventory and inventory.quantity >= 10:
+            inventory.quantity -= 10
             db.session.commit()
         
         # 验证退货单创建成功
@@ -135,13 +136,13 @@ class TestReturn(unittest.TestCase):
         self.assertEqual(return_order.order_no, 'RT202603180001')
         self.assertEqual(return_order.items.count(), 1)
         
-        # 验证不合格商品数量更新
-        updated_defective = DefectiveProduct.query.filter_by(
+        # 验证不合格商品库存数量更新
+        updated_inventory = Inventory.query.filter_by(
             product_id=self.product.id,
             location_id=self.location.id,
             batch_no='BATCH001'
         ).first()
-        self.assertEqual(updated_defective.quantity, 90)  # 100 - 10 = 90
+        self.assertEqual(updated_inventory.quantity, 90)  # 100 - 10 = 90
     
     def test_return_order_query(self):
         """测试退货单查询"""

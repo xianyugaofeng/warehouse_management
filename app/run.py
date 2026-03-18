@@ -11,7 +11,7 @@ from app.models import Inventory, WarehouseLocation
 from app.models import InboundItem, InboundOrder
 from app.models import OutboundItem, OutboundOrder
 from app.models import PurchaseOrder
-from app.models import InspectionOrder, InspectionItem, DefectiveProduct
+from app.models import InspectionOrder, InspectionItem
 from app.models import ReturnOrder, ReturnItem
 
 
@@ -29,7 +29,7 @@ def make_shell_context():   # 在命令行使用flask shell命令启动Flask交�
         InboundItem=InboundItem, InboundOrder=InboundOrder,
         OutboundItem=OutboundItem, OutboundOrder=OutboundOrder,
         PurchaseOrder=PurchaseOrder,
-        InspectionOrder=InspectionOrder, InspectionItem=InspectionItem, DefectiveProduct=DefectiveProduct,
+        InspectionOrder=InspectionOrder, InspectionItem=InspectionItem,
         ReturnOrder=ReturnOrder, ReturnItem=ReturnItem
     )
 

@@ -2,7 +2,8 @@ from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required, current_user
 from datetime import datetime
 from app import db
-from app.models import ReturnOrder, ReturnItem, DefectiveProduct, WarehouseLocation, Product
+from app.models import ReturnOrder, ReturnItem, WarehouseLocation, Product
+from app.models.inventory import Inventory
 from app.utils.helpers import generate_return_no
 
 return_bp = Blueprint('return', __name__)
@@ -111,18 +112,18 @@ def return_add():
                 remark=item_remarks[i]
             )
             
-            # 更新不合格商品数量
-            defective_product = DefectiveProduct.query.filter_by(
+            # 更新不合格商品库存数量
+            inventory = Inventory.query.filter_by(
                 product_id=int(product_id),
                 location_id=int(location_ids[i]),
                 batch_no=batch_nos[i]
             ).first()
             
-            if defective_product and defective_product.quantity >= quantity:
-                defective_product.quantity -= quantity
+            if inventory and inventory.quantity >= quantity:
+                inventory.quantity -= quantity
                 # 如果数量为0，删除记录
-                if defective_product.quantity == 0:
-                    db.session.delete(defective_product)
+                if inventory.quantity == 0:
+                    db.session.delete(inventory)
             
         # 设置总金额
         return_order.total_amount = total_amount
@@ -142,8 +143,12 @@ def return_add():
     
     defective_products = []
     for location in inspection_locations:
-        location_defective = DefectiveProduct.query.filter_by(location_id=location.id).all()
-        defective_products.extend(location_defective)
+        # 查询该库位的所有库存记录
+        location_inventories = Inventory.query.filter_by(location_id=location.id).all()
+        # 筛选出有不合格原因的库存记录
+        for inventory in location_inventories:
+            if inventory.defect_reason:
+                defective_products.append(inventory)
     
     # 不合格原因选项
     defect_reasons = [

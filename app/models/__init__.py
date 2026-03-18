@@ -8,5 +8,5 @@ from .purchase import PurchaseOrder
 from .inventory import Inventory, WarehouseLocation
 from .inbound import InboundItem, InboundOrder
 from .outbound import OutboundItem, OutboundOrder
-from .inspection import InspectionOrder, InspectionItem, DefectiveProduct
-from .return_manage import ReturnOrder, ReturnItem
+from .inspection import InspectionOrder, InspectionItem
+from .return_product import ReturnOrder, ReturnItem

@@ -113,5 +113,201 @@ class TestInventoryManagement(unittest.TestCase):
     
 
 
+    def test_inventory_status_waiting(self):
+        """测试库存状态：等待（对应入库管理模块的"待上架"状态）"""
+        # 创建等待区库位
+        waiting_location = WarehouseLocation(
+            code='WAIT-01',
+            name='等待区',
+            area='等待区',
+            location_type='waiting',
+            status=True
+        )
+        db.session.add(waiting_location)
+        db.session.flush()
+        
+        # 创建等待状态的库存记录
+        inventory = Inventory(
+            product_id=self.product.id,
+            location_id=waiting_location.id,
+            batch_no='B2026030702',
+            quantity=10,
+            remark='入库待上架'
+        )
+        db.session.add(inventory)
+        db.session.commit()
+        
+        # 验证库存状态为"等待"
+        self.assertEqual(inventory.status, 'waiting')
+        self.assertEqual(inventory.location.location_type, 'waiting')
+    
+    def test_inventory_status_normal(self):
+        """测试库存状态：正常"""
+        # 创建正常库位
+        normal_location = WarehouseLocation(
+            code='NORM-01',
+            name='正常库位',
+            area='正常区',
+            location_type='normal',
+            status=True
+        )
+        db.session.add(normal_location)
+        db.session.flush()
+        
+        # 创建正常状态的库存记录
+        inventory = Inventory(
+            product_id=self.product.id,
+            location_id=normal_location.id,
+            batch_no='B2026030703',
+            quantity=20,
+            remark='已上架'
+        )
+        db.session.add(inventory)
+        db.session.commit()
+        
+        # 验证库存状态为"正常"
+        self.assertEqual(inventory.status, 'normal')
+        self.assertEqual(inventory.location.location_type, 'normal')
+    
+    def test_inventory_status_transition_waiting_to_normal(self):
+        """测试库存状态转换：等待 -> 正常（模拟上架流程）"""
+        # 创建等待区库位
+        waiting_location = WarehouseLocation(
+            code='WAIT-02',
+            name='等待区',
+            area='等待区',
+            location_type='waiting',
+            status=True
+        )
+        db.session.add(waiting_location)
+        
+        # 创建正常库位
+        normal_location = WarehouseLocation(
+            code='NORM-02',
+            name='正常库位',
+            area='正常区',
+            location_type='normal',
+            status=True
+        )
+        db.session.add(normal_location)
+        db.session.flush()
+        
+        # 创建等待状态的库存记录（模拟入库后待上架）
+        inventory = Inventory(
+            product_id=self.product.id,
+            location_id=waiting_location.id,
+            batch_no='B2026030704',
+            quantity=15,
+            remark='入库待上架'
+        )
+        db.session.add(inventory)
+        db.session.commit()
+        
+        # 验证初始状态为"等待"
+        self.assertEqual(inventory.status, 'waiting')
+        
+        # 模拟上架操作：更新库位
+        inventory.location_id = normal_location.id
+        inventory.remark = '已上架'
+        db.session.commit()
+        
+        # 刷新库存记录
+        db.session.refresh(inventory)
+        
+        # 验证状态已自动更新为"正常"
+        self.assertEqual(inventory.status, 'normal')
+        self.assertEqual(inventory.location.location_type, 'normal')
+    
+    def test_inventory_status_defective(self):
+        """测试库存状态：不合格"""
+        # 创建不合格品库位
+        reject_location = WarehouseLocation(
+            code='REJECT-01',
+            name='不合格品区',
+            area='不合格品区',
+            location_type='reject',
+            status=True
+        )
+        db.session.add(reject_location)
+        db.session.flush()
+        
+        # 创建不合格状态的库存记录
+        inventory = Inventory(
+            product_id=self.product.id,
+            location_id=reject_location.id,
+            batch_no='B2026030705',
+            quantity=5,
+            defect_reason='质量问题',
+            remark='检验不合格'
+        )
+        db.session.add(inventory)
+        db.session.commit()
+        
+        # 验证库存状态为"不合格"
+        self.assertEqual(inventory.status, 'defective')
+        self.assertTrue(inventory.is_defective())
+        self.assertEqual(inventory.location.location_type, 'reject')
+    
+    def test_inventory_status_pending_inspection(self):
+        """测试库存状态：待检"""
+        # 创建待检区库位
+        inspection_location = WarehouseLocation(
+            code='INSP-01',
+            name='待检区',
+            area='待检区',
+            location_type='inspection',
+            status=True
+        )
+        db.session.add(inspection_location)
+        db.session.flush()
+        
+        # 创建待检状态的库存记录
+        inventory = Inventory(
+            product_id=self.product.id,
+            location_id=inspection_location.id,
+            batch_no='B2026030706',
+            quantity=8,
+            remark='待检验'
+        )
+        db.session.add(inventory)
+        db.session.commit()
+        
+        # 验证库存状态为"待检"
+        self.assertEqual(inventory.status, 'pending_inspection')
+        self.assertEqual(inventory.location.location_type, 'inspection')
+    
+    def test_inbound_order_status_consistency(self):
+        """测试入库单状态与库存状态的一致性"""
+        # 创建等待区库位
+        waiting_location = WarehouseLocation(
+            code='WAIT-03',
+            name='等待区',
+            area='等待区',
+            location_type='waiting',
+            status=True
+        )
+        db.session.add(waiting_location)
+        db.session.flush()
+        
+        # 创建入库待上架的库存记录
+        inventory = Inventory(
+            product_id=self.product.id,
+            location_id=waiting_location.id,
+            batch_no='B2026030707',
+            quantity=25,
+            remark='入库待上架'
+        )
+        db.session.add(inventory)
+        db.session.commit()
+        
+        # 验证库存状态为"等待"，与入库管理模块的"待上架"状态一致
+        self.assertEqual(inventory.status, 'waiting')
+        
+        # 模拟入库单状态为"pending"（待上架）
+        # 此时库存状态应该为"waiting"（等待）
+        # 两者语义一致，只是不同模块的表述方式不同
+        self.assertEqual(inventory.status, 'waiting')
+
+
 if __name__ == '__main__':
     unittest.main()
