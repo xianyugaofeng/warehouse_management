@@ -119,13 +119,21 @@ def receive(id):
                 return render_template('inspection/receive.html', 
                                        purchase_order=purchase_order, now=datetime.now(), 
                                        reject_locations=WarehouseLocation.query.filter_by(location_type='reject').all())
+        else:
+            # 允许部分收货，检查本次收货数量是否超过剩余数量
+            remaining_quantity = purchase_order.quantity - (purchase_order.actual_quantity or 0)
+            if actual_quantity > remaining_quantity:
+                flash(f'本次收货数量不能超过剩余数量{remaining_quantity}', 'danger')
+                return render_template('inspection/receive.html', 
+                                       purchase_order=purchase_order, now=datetime.now(), 
+                                       reject_locations=WarehouseLocation.query.filter_by(location_type='reject').all())
         
-        # 更新采购单
+        # 更新采购单（累计更新）
         purchase_order.status = 'receiving'
         purchase_order.actual_date = datetime.now().date()
-        purchase_order.actual_quantity = actual_quantity
-        purchase_order.qualified_quantity = qualified_quantity
-        purchase_order.unqualified_quantity = unqualified_quantity
+        purchase_order.actual_quantity = (purchase_order.actual_quantity or 0) + actual_quantity
+        purchase_order.qualified_quantity = (purchase_order.qualified_quantity or 0) + qualified_quantity
+        purchase_order.unqualified_quantity = (purchase_order.unqualified_quantity or 0) + unqualified_quantity
         purchase_order.quality_status = quality_status
 
         # 检查是否有不合格品需要处理
@@ -200,8 +208,8 @@ def receive(id):
             # 允许部分收货，需要用户手动标记完成
             complete_receipt = request.form.get('complete_receipt') == 'true'
         else:
-            # 不允许部分收货，实际收货数量达到计划数量时自动完成
-            complete_receipt = actual_quantity >= purchase_order.quantity
+            # 不允许部分收货，累计收货数量达到计划数量时自动完成
+            complete_receipt = purchase_order.actual_quantity >= purchase_order.quantity
         
         # 更新采购单状态
         if complete_receipt:

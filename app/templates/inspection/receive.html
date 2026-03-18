@@ -48,19 +48,27 @@ function updateTotal() {
                             </div>
                         </div>
                         <div class="row mt-2">
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <strong>送货单号:</strong> {{ purchase_order.order_no }}
                                 <small class="text-muted">（送货单号即采购单号）</small>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <strong>实际到货日期:</strong> {{ now.strftime('%Y-%m-%d') if now else '-' }}
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <strong>允许部分收货:</strong> 
                                 {% if purchase_order.allow_partial_receipt %}
                                 <span class="badge bg-success">是</span>
                                 {% else %}
                                 <span class="badge bg-secondary">否</span>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3">
+                                <strong>累计收货数量:</strong> {{ purchase_order.actual_quantity or 0 }} / {{ purchase_order.quantity }}
+                                {% if purchase_order.actual_quantity and purchase_order.actual_quantity < purchase_order.quantity %}
+                                <span class="badge bg-warning">剩余{{ purchase_order.quantity - purchase_order.actual_quantity }}</span>
+                                {% elif purchase_order.actual_quantity and purchase_order.actual_quantity >= purchase_order.quantity %}
+                                <span class="badge bg-success">已完成</span>
                                 {% endif %}
                             </div>
                         </div>
@@ -93,7 +101,10 @@ function updateTotal() {
                                         <td>{{ purchase_order.product.code }}</td>
                                         <td>{{ purchase_order.quantity }}</td>
                                         <td>
-                                            <input type="number" name="actual_quantity" id="actual_quantity" class="form-control" min="0" max="{{ purchase_order.quantity }}" value="{{ purchase_order.quantity }}" required>
+                                            <input type="number" name="actual_quantity" id="actual_quantity" class="form-control" min="0" max="{{ purchase_order.quantity - (purchase_order.actual_quantity or 0) }}" value="{{ purchase_order.quantity - (purchase_order.actual_quantity or 0) }}" required>
+                                            {% if purchase_order.allow_partial_receipt and purchase_order.actual_quantity %}
+                                            <small class="text-muted">剩余数量：{{ purchase_order.quantity - (purchase_order.actual_quantity or 0) }}</small>
+                                            {% endif %}
                                         </td>
                                         <td>
                                             <input type="number" name="qualified_quantity" id="qualified_quantity" class="form-control" min="0" max="{{ purchase_order.quantity }}" value="{{ purchase_order.quantity }}" oninput="updateTotal()" required>
