@@ -11,6 +11,7 @@ class ReturnOrder(db.Model):
     operator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # 关联操作员
     status = db.Column(db.String(16), default='pending', nullable=False)  # 状态(pending/completed)
     total_amount = db.Column(db.Float, default=0.0)  # 退货总金额
+    purchase_order_id = db.Column(db.Integer, db.ForeignKey('purchase_orders.id'))  # 关联采购单
     remark = db.Column(db.String(256))  # 备注
     create_time = db.Column(db.DateTime, default=datetime.utcnow)
     update_time = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -20,6 +21,8 @@ class ReturnOrder(db.Model):
 
     # 关联操作员
     operator = db.relationship('User', backref='return_orders')
+    # 关联采购单
+    purchase_order = db.relationship('PurchaseOrder', backref='return_orders')
 
     def __repr__(self):
         return f'<ReturnOrder {self.order_no}>'

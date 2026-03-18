@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required, current_user
 from datetime import datetime
 from app import db
-from app.models import ReturnOrder, ReturnItem, WarehouseLocation, Product
+from app.models import ReturnOrder, ReturnItem, WarehouseLocation, Product, PurchaseOrder
 from app.models.inventory import Inventory
 from app.utils.helpers import generate_return_no
 
@@ -63,12 +63,55 @@ def return_add():
             flash('退货原因不能为空', 'danger')
             return redirect(url_for('return.return_add'))
         
+        # 自动关联采购单：从退货明细中获取第一个商品的采购单信息
+        purchase_order_id = None
+        
+        # 处理退货明细
+        product_ids = request.form.getlist('product_id')
+        location_ids = request.form.getlist('location_id')
+        batch_nos = request.form.getlist('batch_no')
+        quantities = request.form.getlist('quantity')
+        unit_prices = request.form.getlist('unit_price')
+        defect_reasons = request.form.getlist('defect_reason')
+        item_remarks = request.form.getlist('item_remark')
+        
+        total_amount = 0.0
+        
+        # 首先获取采购单ID
+        for i, product_id in enumerate(product_ids):
+            if not product_id or not location_ids[i] or not quantities[i] or not unit_prices[i] or not defect_reasons[i]:
+                continue
+            
+            try:
+                quantity = int(quantities[i])
+                unit_price = float(unit_prices[i])
+                if quantity <= 0 or unit_price <= 0:
+                    continue
+            except ValueError:
+                continue
+            
+            # 查找库存记录，获取关联的检验单和采购单
+            inventory = Inventory.query.filter_by(
+                product_id=int(product_id),
+                location_id=int(location_ids[i]),
+                batch_no=batch_nos[i]
+            ).first()
+            
+            if inventory and inventory.inspection_order_id:
+                # 获取检验单
+                from app.models import InspectionOrder
+                inspection_order = InspectionOrder.query.get(inventory.inspection_order_id)
+                if inspection_order and inspection_order.purchase_order_id:
+                    purchase_order_id = inspection_order.purchase_order_id
+                    break
+        
         # 创建退货单
         order_no = generate_return_no()
         return_order = ReturnOrder(
             order_no=order_no,
             return_reason=return_reason,
             operator_id=current_user.id,
+            purchase_order_id=purchase_order_id,
             remark=remark
         )
         
@@ -155,9 +198,13 @@ def return_add():
         '质量问题', '包装损坏', '规格不符', '过期', '其他'
     ]
     
+    # 获取所有采购单
+    purchase_orders = PurchaseOrder.query.all()
+    
     return render_template('return/add.html', 
                            defective_products=defective_products, 
-                           defect_reasons=defect_reasons)
+                           defect_reasons=defect_reasons,
+                           purchase_orders=purchase_orders)
 
 
 @return_bp.route('/detail/<int:order_id>', methods=['GET'])

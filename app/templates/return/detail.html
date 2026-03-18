@@ -17,6 +17,7 @@
                             <p><strong>退货单号：</strong>{{ return_order.order_no }}</p>
                             <p><strong>退货日期：</strong>{{ return_order.return_date }}</p>
                             <p><strong>退货原因：</strong>{{ return_order.return_reason }}</p>
+                            <p><strong>关联采购单：</strong>{% if return_order.purchase_order %}{{ return_order.purchase_order.order_no }}{% else %}无{% endif %}</p>
                         </div>
                         <div class="col-md-6">
                             <p><strong>操作员：</strong>{{ return_order.operator.username }}</p>
