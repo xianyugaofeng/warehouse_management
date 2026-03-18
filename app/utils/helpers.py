@@ -68,7 +68,7 @@ def recommend_location(product_id, locations):
     # 返回任意正常库位
     return locations[0]
     
-# 库存更新函数(入库时增加库存, 出库时增加库存)
+# 库存更新函数(入库时增加库存, 出库时减少库存)
 def update_inventory(product_id, location_id, batch_no, quantity, is_bound=True):
     from app import db
     from app.models.inventory import Inventory
@@ -91,7 +91,8 @@ def update_inventory(product_id, location_id, batch_no, quantity, is_bound=True)
                 quantity=0  # 初始数量为0
             )
             db.session.add(inventory)
-        inventory.quantity += quantity
+        # 使用increase_quantity方法增加库存，触发变更日志
+        inventory.increase_quantity(quantity)
     else:
         # 出库操作
         if not inventory:
@@ -103,7 +104,8 @@ def update_inventory(product_id, location_id, batch_no, quantity, is_bound=True)
         if inventory.quantity < quantity:
             raise ValueError(f'<库存不足:商品ID{product_id},  库位ID{location_id}, 批次{batch_no}')
         
-        inventory.quantity -= quantity
+        # 使用decrease_quantity方法减少库存，触发变更日志
+        inventory.decrease_quantity(quantity)
 
     db.session.commit()
     return inventory

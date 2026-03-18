@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block title %}库存详情 - 仓库管理系统{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>库存详情</h2>
+        <div>
+            <a href="{{ url_for('inventory.list') }}" class="btn btn-sm btn-secondary">
+                <i class="fa fa-arrow-left"></i>返回列表
+            </a>
+            <a href="{{ url_for('inventory.adjust', inventory_id=inventory.id) }}" class="btn btn-sm btn-warning ms-2">
+                <i class="fa fa-edit"></i>库存调整
+            </a>
+        </div>
+    </div>
+
+    <!--库存信息卡片-->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="card-title mb-3">基本信息</h5>
+                    <table class="table table-borderless">
+                        <tbody>
+                            <tr>
+                                <th class="w-30">商品编码</th>
+                                <td>{{ inventory.product.code }}</td>
+                            </tr>
+                            <tr>
+                                <th>商品名称</th>
+                                <td>{{ inventory.product.name }}</td>
+                            </tr>
+                            <tr>
+                                <th>规格</th>
+                                <td>{{ inventory.product.spec or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>库位</th>
+                                <td>{{ inventory.location.code }} - {{ inventory.location.name }}</td>
+                            </tr>
+                            <tr>
+                                <th>批次号</th>
+                                <td>{{ inventory.batch_no or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>供应商批次号</th>
+                                <td>{{ inventory.supplier_batch_no or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>所有者</th>
+                                <td>{{ inventory.owner_id or '默认' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="card-title mb-3">库存状态</h5>
+                    <table class="table table-borderless">
+                        <tbody>
+                            <tr>
+                                <th class="w-30">物理库存</th>
+                                <td>{{ inventory.quantity }}</td>
+                            </tr>
+                            <tr>
+                                <th>锁定数量</th>
+                                <td>{{ inventory.locked_quantity }}</td>
+                            </tr>
+                            <tr>
+                                <th>冻结数量</th>
+                                <td>{{ inventory.frozen_quantity }}</td>
+                            </tr>
+                            <tr>
+                                <th>可用数量</th>
+                                <td>{{ inventory.available_quantity }}</td>
+                            </tr>
+                            <tr>
+                                <th>库存状态</th>
+                                <td>
+                                    <span class="badge {% if inventory.status == 'normal' %}bg-success{% elif inventory.status == 'pending_inspection' %}bg-warning{% elif inventory.status == 'defective' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                        {{ inventory.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>预警状态</th>
+                                <td>
+                                    {% if inventory.is_warning() %}
+                                        <span class="badge bg-danger">库存预警</span>
+                                    {% else %}
+                                        <span class="badge bg-success">库存正常</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <h5 class="card-title mb-3">批次信息</h5>
+                    <table class="table table-borderless">
+                        <tbody>
+                            <tr>
+                                <th class="w-30">生产日期</th>
+                                <td>{{ inventory.production_date.strftime('%Y-%m-%d') if inventory.production_date else '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>过期日期</th>
+                                <td>{{ inventory.expire_date.strftime('%Y-%m-%d') if inventory.expire_date else '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>不合格原因</th>
+                                <td>{{ inventory.defect_reason or '-' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="card-title mb-3">时间信息</h5>
+                    <table class="table table-borderless">
+                        <tbody>
+                            <tr>
+                                <th class="w-30">创建时间</th>
+                                <td>{{ inventory.create_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                            </tr>
+                            <tr>
+                                <th>最后更新时间</th>
+                                <td>{{ inventory.update_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--库存变更日志-->
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title mb-3">库存变更日志</h5>
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>变更类型</th>
+                            <th>变更前数量</th>
+                            <th>变更后数量</th>
+                            <th>变更前锁定</th>
+                            <th>变更后锁定</th>
+                            <th>变更前冻结</th>
+                            <th>变更后冻结</th>
+                            <th>操作人</th>
+                            <th>变更原因</th>
+                            <th>变更时间</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                            <tr>
+                                <td>{{ log.change_type }}</td>
+                                <td>{{ log.quantity_before }}</td>
+                                <td>{{ log.quantity_after }}</td>
+                                <td>{{ log.locked_quantity_before }}</td>
+                                <td>{{ log.locked_quantity_after }}</td>
+                                <td>{{ log.frozen_quantity_before }}</td>
+                                <td>{{ log.frozen_quantity_after }}</td>
+                                <td>{{ log.operator }}</td>
+                                <td>{{ log.reason or '-' }}</td>
+                                <td>{{ log.create_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="10" class="text-center">暂无变更记录</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

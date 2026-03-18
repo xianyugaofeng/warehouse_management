@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}库存调整 - 仓库管理系统{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>库存调整</h2>
+        <div>
+            <a href="{{ url_for('inventory.detail', inventory_id=inventory.id) }}" class="btn btn-sm btn-secondary">
+                <i class="fa fa-arrow-left"></i>返回详情
+            </a>
+        </div>
+    </div>
+
+    <!--库存调整表单-->
+    <div class="card">
+        <div class="card-body">
+            <form action="{{ url_for('inventory.adjust', inventory_id=inventory.id) }}" method="POST">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h5 class="card-title mb-3">当前库存信息</h5>
+                        <table class="table table-borderless">
+                            <tbody>
+                                <tr>
+                                    <th class="w-30">商品名称</th>
+                                    <td>{{ inventory.product.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>库位</th>
+                                    <td>{{ inventory.location.code }} - {{ inventory.location.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>当前物理库存</th>
+                                    <td>{{ inventory.quantity }}</td>
+                                </tr>
+                                <tr>
+                                    <th>当前可用数量</th>
+                                    <td>{{ inventory.available_quantity }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="quantity" class="form-label">调整后库存数量</label>
+                    <input type="number" class="form-control" id="quantity" name="quantity" value="{{ inventory.quantity }}" min="0" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="reason" class="form-label">调整原因</label>
+                    <textarea class="form-control" id="reason" name="reason" rows="3" required>盘点调整</textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">确认调整</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

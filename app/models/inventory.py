@@ -30,10 +30,14 @@ class Inventory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)  # 关联商品
     location_id = db.Column(db.Integer, db.ForeignKey('warehouse_locations.id'), nullable=False)  # 关联库位
-    quantity = db.Column(db.Integer, default=0, nullable=False)  # 库存数量
+    quantity = db.Column(db.Integer, default=0, nullable=False)  # 物理库存数量
+    locked_quantity = db.Column(db.Integer, default=0, nullable=False)  # 锁定数量
+    frozen_quantity = db.Column(db.Integer, default=0, nullable=False)  # 冻结数量
     batch_no = db.Column(db.String(32))  # 批次号
     production_date = db.Column(db.Date)  # 生产日期
     expire_date = db.Column(db.Date)  # 过期日期
+    supplier_batch_no = db.Column(db.String(32))  # 供应商批次号
+    owner_id = db.Column(db.Integer)  # 所有者ID，用于多货主仓库模式
     defect_reason = db.Column(db.String(64))  # 不合格原因
     inspection_order_id = db.Column(db.Integer, db.ForeignKey('inspection_orders.id'))  # 关联检验单
     create_time = db.Column(db.DateTime, default=datetime.utcnow)  # 创建时间
@@ -50,13 +54,90 @@ class Inventory(db.Model):
 
     def __repr__(self):
         product = self.product.name if self.product else '未知商品'
-        return f'<Inventory {product} - {self.location.code} - {self.quantity}>'
+        return f'<Inventory {product} - {self.location.code} - 物理库存:{self.quantity} - 可用:{self.available_quantity}>'
+    
+    # 计算可用数量
+    @property
+    def available_quantity(self):
+        """可用数量 = 物理库存 - 锁定数量 - 冻结数量"""
+        return max(0, self.quantity - self.locked_quantity - self.frozen_quantity)
 
     # 检查是否低于预警阈值
     def is_warning(self):
         if not self.product or self.product.warning_stock is None:
             return False
-        return self.quantity <= self.product.warning_stock
+        return self.available_quantity <= self.product.warning_stock
+    
+    # 锁定库存
+    @log_inventory_change('lock')
+    def lock_quantity(self, amount):
+        """锁定库存数量"""
+        if amount > self.available_quantity:
+            raise ValueError('锁定数量不能超过可用数量')
+        self.locked_quantity += amount
+        return self
+    
+    # 解锁库存
+    @log_inventory_change('unlock')
+    def unlock_quantity(self, amount):
+        """解锁库存数量"""
+        if amount > self.locked_quantity:
+            raise ValueError('解锁数量不能超过锁定数量')
+        self.locked_quantity -= amount
+        return self
+    
+    # 冻结库存
+    @log_inventory_change('freeze')
+    def freeze_quantity(self, amount):
+        """冻结库存数量"""
+        if amount > self.available_quantity:
+            raise ValueError('冻结数量不能超过可用数量')
+        self.frozen_quantity += amount
+        return self
+    
+    # 解冻库存
+    @log_inventory_change('unfreeze')
+    def unfreeze_quantity(self, amount):
+        """解冻库存数量"""
+        if amount > self.frozen_quantity:
+            raise ValueError('解冻数量不能超过冻结数量')
+        self.frozen_quantity -= amount
+        return self
+    
+    # 增加物理库存
+    @log_inventory_change('inbound')
+    def increase_quantity(self, amount):
+        """增加物理库存数量"""
+        if amount < 0:
+            raise ValueError('增加数量不能为负数')
+        self.quantity += amount
+        return self
+    
+    # 减少物理库存
+    @log_inventory_change('outbound')
+    def decrease_quantity(self, amount):
+        """减少物理库存数量"""
+        if amount < 0:
+            raise ValueError('减少数量不能为负数')
+        if amount > (self.quantity - self.frozen_quantity):
+            raise ValueError('减少数量不能超过非冻结库存数量')
+        self.quantity -= amount
+        # 如果锁定数量大于当前可用数量，自动调整锁定数量
+        if self.locked_quantity > self.available_quantity:
+            self.locked_quantity = self.available_quantity
+        return self
+    
+    # 调整库存（用于盘点）
+    @log_inventory_change('adjustment')
+    def adjust_quantity(self, new_quantity, reason='盘点调整'):
+        """调整库存数量（用于盘点）"""
+        if new_quantity < 0:
+            raise ValueError('库存数量不能为负数')
+        self.quantity = new_quantity
+        # 自动调整锁定和冻结数量
+        if self.locked_quantity > self.available_quantity:
+            self.locked_quantity = self.available_quantity
+        return self
     
     # 获取库存状态
     @property
@@ -104,3 +185,68 @@ class Inventory(db.Model):
             # 如果有关联检验单，则清除（可选，根据业务需求）
             pass
         return True
+
+
+class InventoryChangeLog(db.Model):
+    """库存变更日志"""
+    __tablename__ = 'inventory_change_logs'
+    id = db.Column(db.Integer, primary_key=True)
+    inventory_id = db.Column(db.Integer, db.ForeignKey('inventories.id'), nullable=False)  # 关联库存
+    change_type = db.Column(db.String(16), nullable=False)  # 变更类型: inbound(入库), outbound(出库), lock(锁定), unlock(解锁), freeze(冻结), unfreeze(解冻), adjustment(调整)
+    quantity_before = db.Column(db.Integer, nullable=False)  # 变更前数量
+    quantity_after = db.Column(db.Integer, nullable=False)  # 变更后数量
+    locked_quantity_before = db.Column(db.Integer, nullable=False)  # 变更前锁定数量
+    locked_quantity_after = db.Column(db.Integer, nullable=False)  # 变更后锁定数量
+    frozen_quantity_before = db.Column(db.Integer, nullable=False)  # 变更前冻结数量
+    frozen_quantity_after = db.Column(db.Integer, nullable=False)  # 变更后冻结数量
+    operator = db.Column(db.String(64))  # 操作人
+    reason = db.Column(db.String(256))  # 变更原因
+    reference_id = db.Column(db.Integer)  # 关联业务单据ID
+    reference_type = db.Column(db.String(32))  # 关联业务单据类型
+    create_time = db.Column(db.DateTime, default=datetime.utcnow)  # 创建时间
+    
+    # 关联库存
+    inventory = db.relationship('Inventory', backref=db.backref('change_logs', lazy='dynamic'))
+    
+    def __repr__(self):
+        return f'<InventoryChangeLog {self.change_type} - {self.inventory_id}>'
+
+
+# 库存变更日志记录装饰器
+def log_inventory_change(change_type, operator='system', reason='', reference_id=None, reference_type=None):
+    """记录库存变更日志的装饰器"""
+    def decorator(func):
+        def wrapper(self, *args, **kwargs):
+            # 记录变更前的状态
+            quantity_before = self.quantity
+            locked_quantity_before = self.locked_quantity
+            frozen_quantity_before = self.frozen_quantity
+            
+            # 执行原函数
+            result = func(self, *args, **kwargs)
+            
+            # 记录变更后的状态
+            quantity_after = self.quantity
+            locked_quantity_after = self.locked_quantity
+            frozen_quantity_after = self.frozen_quantity
+            
+            # 创建变更日志
+            log = InventoryChangeLog(
+                inventory_id=self.id,
+                change_type=change_type,
+                quantity_before=quantity_before,
+                quantity_after=quantity_after,
+                locked_quantity_before=locked_quantity_before,
+                locked_quantity_after=locked_quantity_after,
+                frozen_quantity_before=frozen_quantity_before,
+                frozen_quantity_after=frozen_quantity_after,
+                operator=operator,
+                reason=reason,
+                reference_id=reference_id,
+                reference_type=reference_type
+            )
+            db.session.add(log)
+            
+            return result
+        return wrapper
+    return decorator

@@ -198,6 +198,24 @@ def create_inbound_from_inspection(inspection_id, request, products, suppliers, 
                     inventory.remark = '入库待上架'
                     total_quantity += inventory.quantity
                     logger.info(f'从待处理区转移库存记录 {inventory.id} 至等待区，商品:{inventory.product_id}, 数量:{inventory.quantity}')
+                    
+                    # 虽然只是转移库位，不涉及数量变化，但为了记录操作，我们可以创建一条变更日志
+                    from app.models.inventory import InventoryChangeLog
+                    log = InventoryChangeLog(
+                        inventory_id=inventory.id,
+                        change_type='transfer',
+                        quantity_before=inventory.quantity,
+                        quantity_after=inventory.quantity,
+                        locked_quantity_before=inventory.locked_quantity,
+                        locked_quantity_after=inventory.locked_quantity,
+                        frozen_quantity_before=inventory.frozen_quantity,
+                        frozen_quantity_after=inventory.frozen_quantity,
+                        operator=current_user.username,
+                        reason='从待处理区转移到等待区',
+                        reference_id=inbound_order.id,
+                        reference_type='inbound_order'
+                    )
+                    db.session.add(log)
                 
                 # 创建入库明细
                 inbound_item = InboundItem(
@@ -212,30 +230,15 @@ def create_inbound_from_inspection(inspection_id, request, products, suppliers, 
                 db.session.add(inbound_item)
                 logger.info(f'从检验单创建入库单 {inbound_order.order_no}，商品已从待处理区转移至等待区库位 {waiting_location.code}，库存状态为"等待"')
             else:
-                # 如果待处理区没有找到库存记录，创建新的库存记录
-                # 创建入库明细
-                inbound_item = InboundItem(
-                    order_id=inbound_order.id,
-                    product_id=inspection.purchase_order.product_id,
-                    location_id=waiting_location.id,
-                    quantity=inspection.qualified_quantity,
-                    batch_no=batch_no,
-                    unit_price=unit_price,
-                    subtotal=unit_price * inspection.qualified_quantity
-                )
-                db.session.add(inbound_item)
-                
-                # 创建库存记录（处于等待状态，对应入库管理模块的"待上架"状态）
-                inventory = Inventory(
-                    product_id=inspection.purchase_order.product_id,
-                    location_id=waiting_location.id,
-                    quantity=inspection.qualified_quantity,
-                    batch_no=batch_no,
-                    inspection_order_id=inspection.id,
-                    remark='入库待上架'
-                )
-                db.session.add(inventory)
-                logger.info(f'从检验单创建入库单 {inbound_order.order_no}，商品已存放至等待区库位 {waiting_location.code}，库存状态为"等待"')
+                # 如果待处理区没有找到库存记录，提示错误
+                flash('待处理区没有找到对应库存记录，无法办理入库', 'danger')
+                return render_template('inbound/add.html',
+                                       products=products,
+                                       suppliers=suppliers,
+                                       locations=locations,
+                                       now=datetime.now(),
+                                       inspection_orders=InspectionOrder.query.filter_by(status='completed').all(),
+                                       selected_inspection=inspection)
         
         db.session.commit()
         flash('入库单创建成功，商品已入库并增加库存', 'success')
@@ -345,10 +348,21 @@ def create_inbound_manual(request, products, suppliers, locations):
         if not waiting_locations:
             flash('未设置等待区域，请先配置仓库位置', 'danger')
             return render_template('inbound/add.html',
-                                   products=products,
-                                   suppliers=suppliers,
-                                   locations=locations,
-                                   now=datetime.now()
+                                    products=products,
+                                    suppliers=suppliers,
+                                    locations=locations,
+                                    now=datetime.now()
+            )
+
+        # 查找待处理区库位
+        pending_locations = WarehouseLocation.query.filter_by(location_type='pending', status=True).all()
+        if not pending_locations:
+            flash('未设置待处理区域，请先配置仓库位置', 'danger')
+            return render_template('inbound/add.html',
+                                    products=products,
+                                    suppliers=suppliers,
+                                    locations=locations,
+                                    now=datetime.now()
             )
 
         # 如果没有指定批次号，自动生成
@@ -359,33 +373,76 @@ def create_inbound_manual(request, products, suppliers, locations):
         waiting_location = waiting_locations[0]  # 使用第一个等待区库位
         location_id = waiting_location.id
 
-        # 创建入库明细
-        item = InboundItem(
-            order_id=inbound_order.id,
-            product_id=product_id,
-            location_id=location_id,
-            quantity=quantity,
-            batch_no=batch_no,
-            production_date=production_date if production_date else None,
-            expire_date=expire_date if expire_date else None,
-            unit_price=unit_price,
-            subtotal=subtotal
-        )
-        db.session.add(item)
+        # 从待处理区查找与商品对应的库存记录
+        pending_inventories = Inventory.query.filter(
+            Inventory.product_id == product_id,
+            Inventory.location_id.in_([loc.id for loc in pending_locations])
+        ).all()
         
-        # 创建库存记录（处于等待状态，对应入库管理模块的"待上架"状态）
-        # 规则：入库单创建初期，商品存放至"等待区"库位，库存状态为"等待"
-        inventory = Inventory(
-            product_id=product_id,
-            location_id=location_id,
-            quantity=quantity,
-            batch_no=batch_no,
-            production_date=production_date if production_date else None,
-            expire_date=expire_date if expire_date else None,
-            remark='入库待上架'
-        )
-        db.session.add(inventory)
-        logger.info(f'手动创建入库单 {inbound_order.order_no}，商品已存放至等待区库位 {waiting_location.code}，库存状态为"等待"')
+        if pending_inventories:
+            # 从待处理区找到库存记录，将其全部转移到等待区
+            total_quantity = 0
+            for inventory in pending_inventories:
+                # 转移全部库存
+                total_quantity += inventory.quantity
+                old_location_id = inventory.location_id
+                inventory.location_id = waiting_location.id
+                inventory.remark = '入库待上架'
+                logger.info(f'从待处理区转移库存记录 {inventory.id} 至等待区，商品:{inventory.product_id}, 数量:{inventory.quantity}')
+                
+                # 记录库存转移的变更日志
+                try:
+                    from app.models.inventory import InventoryChangeLog
+                    log = InventoryChangeLog(
+                        inventory_id=inventory.id,
+                        change_type='transfer',
+                        quantity_before=inventory.quantity,
+                        quantity_after=inventory.quantity,
+                        locked_quantity_before=inventory.locked_quantity,
+                        locked_quantity_after=inventory.locked_quantity,
+                        frozen_quantity_before=inventory.frozen_quantity,
+                        frozen_quantity_after=inventory.frozen_quantity,
+                        operator=current_user.username if current_user.is_authenticated else 'system',
+                        reason='入库操作，从待处理区转移到等待区',
+                        reference_id=inbound_order.id,
+                        reference_type='inbound_order'
+                    )
+                    db.session.add(log)
+                    logger.info(f'入库操作：为库存记录 {inventory.id} 创建转移变更日志')
+                except Exception as e:
+                    logger.error(f'入库操作：创建库存变更日志失败: {str(e)}')
+                    # 继续执行入库操作，不因为日志记录失败而中断
+            
+            # 更新入库单的总数量为实际转移的数量
+            inbound_order.total_amount = total_quantity
+            logger.info(f'更新入库单 {inbound_order.order_no} 总数量为 {total_quantity}')
+            
+            # 更新小计为实际转移数量的金额
+            subtotal = total_quantity * unit_price
+
+            # 创建入库明细
+            item = InboundItem(
+                order_id=inbound_order.id,
+                product_id=product_id,
+                location_id=location_id,
+                quantity=total_quantity,
+                batch_no=batch_no,
+                production_date=production_date if production_date else None,
+                expire_date=expire_date if expire_date else None,
+                unit_price=unit_price,
+                subtotal=subtotal
+            )
+            db.session.add(item)
+            logger.info(f'手动创建入库单 {inbound_order.order_no}，商品已从待处理区转移至等待区库位 {waiting_location.code}，库存状态为"等待"')
+        else:
+            # 如果待处理区没有找到库存记录，提示错误
+            flash('待处理区没有找到对应库存记录，无法办理入库', 'danger')
+            return render_template('inbound/add.html',
+                                    products=products,
+                                    suppliers=suppliers,
+                                    locations=locations,
+                                    now=datetime.now()
+            )
 
         db.session.commit()
         flash('入库单创建成功，商品已入库并增加库存', 'success')

@@ -67,10 +67,38 @@ def putaway(id):
                     inventory.location_id = location_id
                     inventory.remark = '已上架'
                     logger.info(f'上架操作：库存记录 {inventory.id} 从库位 {old_location_id} 转移至库位 {location_id}，状态从"等待"变为"正常"')
+                    
+                    try:
+                        # 记录库存转移的变更日志
+                        from app.models.inventory import InventoryChangeLog
+                        log = InventoryChangeLog(
+                            inventory_id=inventory.id,
+                            change_type='transfer',
+                            quantity_before=inventory.quantity,
+                            quantity_after=inventory.quantity,
+                            locked_quantity_before=inventory.locked_quantity,
+                            locked_quantity_after=inventory.locked_quantity,
+                            frozen_quantity_before=inventory.frozen_quantity,
+                            frozen_quantity_after=inventory.frozen_quantity,
+                            operator=current_user.username if current_user.is_authenticated else 'system',
+                            reason='上架操作，从等待区转移到正常库位',
+                            reference_id=inbound_order.id,
+                            reference_type='inbound_order'
+                        )
+                        db.session.add(log)
+                        logger.info(f'上架操作：为库存记录 {inventory.id} 创建转移变更日志')
+                    except Exception as e:
+                        logger.error(f'上架操作：创建库存变更日志失败: {str(e)}')
+                        # 继续执行上架操作，不因为日志记录失败而中断
                 else:
                     # 如果库存记录不存在，创建新的库存记录
-                    update_inventory(item.product_id, location_id, item.batch_no, item.quantity, is_bound=True)
-                    logger.info(f'上架操作：创建新的库存记录，商品:{item.product_id}, 库位:{location_id}, 数量:{item.quantity}')
+                    try:
+                        # 使用update_inventory函数创建库存记录，它会自动触发库存变更日志
+                        inventory = update_inventory(item.product_id, location_id, item.batch_no, item.quantity, is_bound=True)
+                        logger.info(f'上架操作：创建新的库存记录，商品:{item.product_id}, 库位:{location_id}, 数量:{item.quantity}')
+                    except Exception as e:
+                        logger.error(f'上架操作：创建库存记录失败: {str(e)}')
+                        raise
 
             # 更新入库单状态为已完成
             inbound_order.status = 'completed'

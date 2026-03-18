@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}库存预警 - 仓库管理系统{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>库存预警</h2>
+        <div>
+            <a href="{{ url_for('inventory.list') }}" class="btn btn-sm btn-secondary">
+                <i class="fa fa-arrow-left"></i>返回库存列表
+            </a>
+        </div>
+    </div>
+
+    <!--库存预警表格-->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>商品编码</th>
+                            <th>商品名称</th>
+                            <th>规格</th>
+                            <th>库位</th>
+                            <th>批次号</th>
+                            <th>物理库存</th>
+                            <th>可用数量</th>
+                            <th>预警阈值</th>
+                            <th>库存状态</th>
+                            <th>过期日期</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inventory in inventories %}
+                            <tr class="table-danger">
+                                <td>{{ inventory.product.code }}</td>
+                                <td>{{ inventory.product.name }}</td>
+                                <td>{{ inventory.product.spec or '-' }}</td>
+                                <td>{{ inventory.location.code }} - {{ inventory.location.name }}</td>
+                                <td>{{ inventory.batch_no or '-'}}</td>
+                                <td>{{ inventory.quantity }}</td>
+                                <td>{{ inventory.available_quantity }}</td>
+                                <td>{{ inventory.product.warning_stock }}</td>
+                                <td>
+                                    <span class="badge bg-danger">库存预警</span>
+                                </td>
+                                <td>{{ inventory.expire_date.strftime('%Y-%m-%d') if inventory.expire_date else '-' }}</td>
+                                <td>
+                                    <a href="{{ url_for('inventory.detail', inventory_id=inventory.id) }}" class="btn btn-sm btn-info">
+                                        <i class="fa fa-eye"></i>查看
+                                    </a>
+                                    <a href="{{ url_for('inventory.adjust', inventory_id=inventory.id) }}" class="btn btn-sm btn-warning ms-1">
+                                        <i class="fa fa-edit"></i>调整
+                                    </a>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="11" class="text-center">暂无预警库存</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!--分页-->
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('inventory.warning', page=pagination.prev_num) }}">
+                                上一页
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">上一页</span></li>
+                    {% endif %}
+                    {% for page in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=3) %}
+                        {% if page %}
+                            {% if pagination.page == page %}
+                                <li class="page-item active"><span class="page-link">{{ page }}</span></li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('inventory.warning', page=page) }}">
+                                        {{ page }}
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    {% if pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('inventory.warning', page=pagination.next_num) }}">
+                                下一页
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">下一页</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+{% endblock %}
