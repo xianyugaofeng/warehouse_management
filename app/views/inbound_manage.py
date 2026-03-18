@@ -1,14 +1,18 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import current_user, login_required
 from datetime import datetime
+import logging
 from app import db
 from app.models.inbound import InboundOrder, InboundItem
 from app.models.product import Product, Supplier
-from app.models.inventory import WarehouseLocation
+from app.models.inventory import WarehouseLocation, Inventory
 from app.models.purchase import PurchaseOrder
 from app.models.inspection import InspectionOrder
 from app.utils.auth import permission_required
 from app.utils.helpers import generate_inbound_no, update_inventory, recommend_location
+
+# 配置日志记录器
+logger = logging.getLogger(__name__)
 
 inbound_bp = Blueprint('inbound', __name__)
 
@@ -165,28 +169,73 @@ def create_inbound_from_inspection(inspection_id, request, products, suppliers, 
             # 使用等待区库位
             waiting_location = waiting_locations[0]  # 使用第一个等待区库位
             
-            # 创建入库明细
-            inbound_item = InboundItem(
-                order_id=inbound_order.id,
-                product_id=inspection.purchase_order.product_id,
-                location_id=waiting_location.id,
-                quantity=inspection.qualified_quantity,
-                batch_no=batch_no,
-                unit_price=unit_price,
-                subtotal=unit_price * inspection.qualified_quantity
-            )
-            db.session.add(inbound_item)
+            # 查找待处理区库位
+            pending_locations = WarehouseLocation.query.filter_by(location_type='pending', status=True).all()
+            if not pending_locations:
+                flash('未设置待处理区域，请先配置仓库位置', 'danger')
+                return render_template('inbound/add.html',
+                                       products=products,
+                                       suppliers=suppliers,
+                                       locations=locations,
+                                       now=datetime.now(),
+                                       inspection_orders=InspectionOrder.query.filter_by(status='completed').all(),
+                                       selected_inspection=inspection)
             
-            # 创建库存记录（处于等待状态，对应入库管理模块的"待上架"状态）
-            from app.models.inventory import Inventory
-            inventory = Inventory(
-                product_id=inspection.purchase_order.product_id,
-                location_id=waiting_location.id,
-                quantity=inspection.qualified_quantity,
-                batch_no=batch_no,
-                remark='入库待上架'
-            )
-            db.session.add(inventory)
+            # 从待处理区查找与检验合格单关联的库存记录
+            pending_inventories = Inventory.query.filter(
+                Inventory.product_id == inspection.purchase_order.product_id,
+                Inventory.location_id.in_([loc.id for loc in pending_locations]),
+                Inventory.inspection_order_id == inspection.id
+            ).all()
+            
+            if pending_inventories:
+                # 从待处理区找到库存记录，将其转移到等待区
+                total_quantity = 0
+                for inventory in pending_inventories:
+                    # 更新库存记录的库位，从待处理区转移到等待区
+                    old_location_id = inventory.location_id
+                    inventory.location_id = waiting_location.id
+                    inventory.remark = '入库待上架'
+                    total_quantity += inventory.quantity
+                    logger.info(f'从待处理区转移库存记录 {inventory.id} 至等待区，商品:{inventory.product_id}, 数量:{inventory.quantity}')
+                
+                # 创建入库明细
+                inbound_item = InboundItem(
+                    order_id=inbound_order.id,
+                    product_id=inspection.purchase_order.product_id,
+                    location_id=waiting_location.id,
+                    quantity=total_quantity,
+                    batch_no=batch_no,
+                    unit_price=unit_price,
+                    subtotal=unit_price * total_quantity
+                )
+                db.session.add(inbound_item)
+                logger.info(f'从检验单创建入库单 {inbound_order.order_no}，商品已从待处理区转移至等待区库位 {waiting_location.code}，库存状态为"等待"')
+            else:
+                # 如果待处理区没有找到库存记录，创建新的库存记录
+                # 创建入库明细
+                inbound_item = InboundItem(
+                    order_id=inbound_order.id,
+                    product_id=inspection.purchase_order.product_id,
+                    location_id=waiting_location.id,
+                    quantity=inspection.qualified_quantity,
+                    batch_no=batch_no,
+                    unit_price=unit_price,
+                    subtotal=unit_price * inspection.qualified_quantity
+                )
+                db.session.add(inbound_item)
+                
+                # 创建库存记录（处于等待状态，对应入库管理模块的"待上架"状态）
+                inventory = Inventory(
+                    product_id=inspection.purchase_order.product_id,
+                    location_id=waiting_location.id,
+                    quantity=inspection.qualified_quantity,
+                    batch_no=batch_no,
+                    inspection_order_id=inspection.id,
+                    remark='入库待上架'
+                )
+                db.session.add(inventory)
+                logger.info(f'从检验单创建入库单 {inbound_order.order_no}，商品已存放至等待区库位 {waiting_location.code}，库存状态为"等待"')
         
         db.session.commit()
         flash('入库单创建成功，商品已入库并增加库存', 'success')
@@ -325,7 +374,7 @@ def create_inbound_manual(request, products, suppliers, locations):
         db.session.add(item)
         
         # 创建库存记录（处于等待状态，对应入库管理模块的"待上架"状态）
-        from app.models.inventory import Inventory
+        # 规则：入库单创建初期，商品存放至"等待区"库位，库存状态为"等待"
         inventory = Inventory(
             product_id=product_id,
             location_id=location_id,
@@ -336,6 +385,7 @@ def create_inbound_manual(request, products, suppliers, locations):
             remark='入库待上架'
         )
         db.session.add(inventory)
+        logger.info(f'手动创建入库单 {inbound_order.order_no}，商品已存放至等待区库位 {waiting_location.code}，库存状态为"等待"')
 
         db.session.commit()
         flash('入库单创建成功，商品已入库并增加库存', 'success')

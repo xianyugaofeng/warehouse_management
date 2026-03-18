@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import current_user, login_required
 from datetime import datetime
+import logging
 from app import db
 from app.models.inbound import InboundOrder, InboundItem
 from app.models.inventory import WarehouseLocation, Inventory
@@ -9,6 +10,9 @@ from app.models.inspection import InspectionOrder, InspectionItem
 
 from app.utils.auth import permission_required
 from app.utils.helpers import update_inventory, recommend_location
+
+# 配置日志记录器
+logger = logging.getLogger(__name__)
 
 putaway_bp = Blueprint('putaway', __name__)
 
@@ -41,8 +45,10 @@ def putaway(id):
                     # 自动推荐最佳库位
                     recommended_location = recommend_location(item.product_id, locations)
                     location_id = recommended_location.id if recommended_location else locations[0].id
+                    logger.info(f'为入库单 {inbound_order.order_no} 的商品 {item.product_id} 自动推荐库位 {location_id}')
                 else:
                     location_id = int(location_id)
+                    logger.info(f'为入库单 {inbound_order.order_no} 的商品 {item.product_id} 手动选择库位 {location_id}')
 
                 # 更新入库明细的库位和签字
                 item.location_id = location_id
@@ -57,14 +63,18 @@ def putaway(id):
                 
                 if inventory:
                     # 更新库存记录的库位，状态会自动从"等待"变为"正常"
+                    old_location_id = inventory.location_id
                     inventory.location_id = location_id
                     inventory.remark = '已上架'
+                    logger.info(f'上架操作：库存记录 {inventory.id} 从库位 {old_location_id} 转移至库位 {location_id}，状态从"等待"变为"正常"')
                 else:
                     # 如果库存记录不存在，创建新的库存记录
                     update_inventory(item.product_id, location_id, item.batch_no, item.quantity, is_bound=True)
+                    logger.info(f'上架操作：创建新的库存记录，商品:{item.product_id}, 库位:{location_id}, 数量:{item.quantity}')
 
             # 更新入库单状态为已完成
             inbound_order.status = 'completed'
+            logger.info(f'入库单 {inbound_order.order_no} 状态更新为"已完成"')
             
             db.session.commit()
             flash('上架成功，库存已更新', 'success')

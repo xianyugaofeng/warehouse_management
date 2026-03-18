@@ -189,6 +189,98 @@ class TestInspection(unittest.TestCase):
             # 验证已完成的采购单可以创建检验单
             inspection_orders = InspectionOrder.query.filter_by(purchase_order_id=order.id).all()
             self.assertEqual(len(inspection_orders), 1)
+    
+    def test_inspection_separate_inventory_records(self):
+        """测试在检验时为不合格商品和合格商品分开创建库存记录"""
+        from app.models.inventory import Inventory
+        
+        # 创建库位
+        inspection_location = WarehouseLocation(code='I001', name='待检区', location_type='inspection')
+        pending_location = WarehouseLocation(code='P001', name='待处理区', location_type='pending')
+        db.session.add(inspection_location)
+        db.session.add(pending_location)
+        db.session.commit()
+        
+        # 创建采购单
+        order = PurchaseOrder(
+            order_no='PO20260318004',
+            supplier_id=self.supplier.id,
+            product_id=self.product1.id,
+            operator_id=self.user.id,
+            expected_date=date.today(),
+            quantity=100,
+            unit_price=1.0,
+            subtotal=100.0,
+            status='pending_receipt'
+        )
+        db.session.add(order)
+        db.session.commit()
+        
+        # 模拟收货：合格数量70，不合格数量30
+        from werkzeug.datastructures import MultiDict
+        
+        post_data = MultiDict({
+            'signature': '测试管理员',
+            'actual_quantity': '100',
+            'qualified_quantity': '70',
+            'unqualified_quantity': '30',
+            'quality_status': 'completed',
+            'defect_reason': '质量问题',
+            'defect_location': str(self.reject_location.id)
+        })
+        
+        from app.views.inspection_manage import receive
+        
+        with self.app.test_request_context('/inspection/receive/1', method='POST', data=post_data):
+            from flask_login import login_user
+            login_user(self.user)
+            
+            response = receive(order.id)
+            
+            # 刷新数据库会话，确保获取最新数据
+            db.session.expire_all()
+            
+            # 验证采购单状态
+            updated_order = PurchaseOrder.query.get(order.id)
+            self.assertEqual(updated_order.status, 'completed')
+            self.assertEqual(updated_order.qualified_quantity, 70)
+            self.assertEqual(updated_order.unqualified_quantity, 30)
+            self.assertEqual(updated_order.actual_quantity, 100)
+            
+            # 验证检验单已创建
+            inspection_orders = InspectionOrder.query.filter_by(purchase_order_id=order.id).all()
+            self.assertEqual(len(inspection_orders), 1)
+            
+            inspection_order = inspection_orders[0]
+            
+            # 验证待检区库存记录（应该被删除或数量为0）
+            inspection_inventories = Inventory.query.filter_by(
+                product_id=self.product1.id,
+                location_id=inspection_location.id
+            ).all()
+            # 待检区库存应该被删除或数量为0
+            self.assertTrue(len(inspection_inventories) == 0 or all(inv.quantity == 0 for inv in inspection_inventories))
+            
+            # 验证待处理区库存记录（合格商品）
+            pending_inventories = Inventory.query.filter_by(
+                product_id=self.product1.id,
+                location_id=pending_location.id
+            ).all()
+            self.assertEqual(len(pending_inventories), 1)
+            self.assertEqual(pending_inventories[0].quantity, 70)
+            self.assertEqual(pending_inventories[0].inspection_order_id, inspection_order.id)
+            self.assertEqual(pending_inventories[0].remark, '待处理')
+            
+            # 验证不合格品区库存记录（不合格商品）
+            reject_inventories = Inventory.query.filter_by(
+                product_id=self.product1.id,
+                location_id=self.reject_location.id
+            ).all()
+            self.assertEqual(len(reject_inventories), 1)
+            self.assertEqual(reject_inventories[0].quantity, 30)
+            self.assertEqual(reject_inventories[0].inspection_order_id, inspection_order.id)
+            self.assertEqual(reject_inventories[0].remark, '检验不合格')
+            self.assertEqual(reject_inventories[0].defect_reason, '质量问题')
             
             # 验证已完成的采购单可以创建检验单
             inspection_orders = InspectionOrder.query.filter_by(purchase_order_id=order.id).all()

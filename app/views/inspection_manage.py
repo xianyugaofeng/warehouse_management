@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import current_user, login_required
 from datetime import datetime
+import logging
 from app import db
 from app.models.inspection import InspectionOrder, InspectionItem
 from app.models.purchase import PurchaseOrder
@@ -8,6 +9,9 @@ from app.models.product import Product, Supplier
 from app.models.inventory import WarehouseLocation, Inventory
 from app.utils.auth import permission_required
 from app.utils.helpers import generate_inspection_no
+
+# 配置日志记录器
+logger = logging.getLogger(__name__)
 
 inspection_bp = Blueprint('inspection', __name__)
 
@@ -131,10 +135,54 @@ def receive(id):
         complete_receipt = purchase_order.actual_quantity >= purchase_order.quantity
         
         # 更新采购单状态
+        old_status = purchase_order.status
         if complete_receipt:
             purchase_order.status = 'completed'
         else:
             purchase_order.status = 'receiving'
+        
+        # 采购单状态变更的自动化规则
+        # 规则1：当采购单处于收货状态时，创建库存记录，放到待检区，同步库存状态为待检状态
+        # 规则2：当采购单从收货中转换到已完成时，将库存放到待检区，同步库存状态为待检状态
+        # 规则3：采购单直接从待收货到已完成时，创建库存，将库存放到待检区，同步库存状态为待检状态
+        if (old_status == 'pending_receipt' and purchase_order.status == 'receiving') or \
+           (old_status == 'receiving' and purchase_order.status == 'completed') or \
+           (old_status == 'pending_receipt' and purchase_order.status == 'completed'):
+            
+            # 查找待检区库位
+            inspection_location = WarehouseLocation.query.filter_by(location_type='inspection', status=True).first()
+            if not inspection_location:
+                logger.error(f'未找到待检区库位，无法创建待检库存记录')
+                flash('未设置待检区，请先配置仓库位置', 'danger')
+                return render_template('inspection/receive.html', 
+                                       purchase_order=purchase_order, now=datetime.now(), 
+                                       reject_locations=WarehouseLocation.query.filter_by(location_type='reject').all())
+            
+            # 创建待检库存记录
+            logger.info(f'采购单 {purchase_order.order_no} 状态从 {old_status} 变更为 {purchase_order.status}，执行自动化规则：创建待检库存记录')
+            
+            batch_no = f'B{datetime.now().strftime("%Y%m%d")}{purchase_order.id}'
+            existing_inventory = Inventory.query.filter_by(
+                product_id=purchase_order.product_id,
+                location_id=inspection_location.id,
+                batch_no=batch_no
+            ).first()
+            
+            if existing_inventory:
+                # 如果已存在，更新数量
+                existing_inventory.quantity += actual_quantity
+                logger.info(f'更新待检库存记录 {existing_inventory.id}，数量增加 {actual_quantity}')
+            else:
+                # 如果不存在，创建新记录
+                inventory = Inventory(
+                    product_id=purchase_order.product_id,
+                    location_id=inspection_location.id,
+                    batch_no=batch_no,
+                    quantity=actual_quantity,
+                    remark='待检'
+                )
+                db.session.add(inventory)
+                logger.info(f'创建待检库存记录，商品:{purchase_order.product_id}, 库位:{inspection_location.id}, 数量:{actual_quantity}')
 
         # 只有已完成的采购单才能进行质检和创建检验合格单
         if purchase_order.status == 'completed':
@@ -183,43 +231,111 @@ def receive(id):
             )
             db.session.add(inspection_item)
             
-            # 处理不合格商品（只有不合格商品才创建库存记录并关联检验单）
-            if quality_status == 'completed' and unqualified_quantity > 0:
-                # 获取暂存区库位
-                reject_location_id = int(defect_location_id) if defect_location_id else None
-                if not reject_location_id:
-                    reject_location = WarehouseLocation.query.filter_by(location_type='reject').first()
-                    if reject_location:
-                        reject_location_id = reject_location.id
+            # 检验时为不合格商品和合格商品分开创建库存记录
+            if quality_status == 'completed':
+                # 查找待检区库位
+                inspection_location = WarehouseLocation.query.filter_by(location_type='inspection', status=True).first()
+                # 查找待处理区库位
+                pending_location = WarehouseLocation.query.filter_by(location_type='pending', status=True).first()
                 
-                if reject_location_id:
-                    # 创建不合格商品库存记录
-                    # 检查是否已存在相同商品、库位和批次的库存记录
-                    existing_inventory = Inventory.query.filter_by(
-                        product_id=purchase_order.product_id,
-                        location_id=reject_location_id,
-                        batch_no=f'B{datetime.now().strftime("%Y%m%d")}{purchase_order.id}'
-                    ).first()
+                if not inspection_location:
+                    logger.error(f'未找到待检区库位，无法处理检验后的库存')
+                    flash('未设置待检区，请先配置仓库位置', 'danger')
+                    return render_template('inspection/receive.html', 
+                                            purchase_order=purchase_order, now=datetime.now(), 
+                                            reject_locations=WarehouseLocation.query.filter_by(location_type='reject').all())
+                
+                if not pending_location:
+                    logger.error(f'未找到待处理区库位，无法处理检验后的库存')
+                    flash('未设置待处理区，请先配置仓库位置', 'danger')
+                    return render_template('inspection/receive.html', 
+                                            purchase_order=purchase_order, now=datetime.now(), 
+                                            reject_locations=WarehouseLocation.query.filter_by(location_type='reject').all())
+                
+                # 查找待检区的库存记录
+                batch_no = f'B{datetime.now().strftime("%Y%m%d")}{purchase_order.id}'
+                inspection_inventories = Inventory.query.filter_by(
+                    product_id=purchase_order.product_id,
+                    location_id=inspection_location.id,
+                    batch_no=batch_no
+                ).all()
+                
+                # 处理不合格商品：将不合格商品从待检区转移到不合格品区
+                if unqualified_quantity > 0:
+                    # 获取暂存区库位
+                    reject_location_id = int(defect_location_id) if defect_location_id else None
+                    if not reject_location_id:
+                        reject_location = WarehouseLocation.query.filter_by(location_type='reject').first()
+                        if reject_location:
+                            reject_location_id = reject_location.id
                     
-                    if existing_inventory:
-                        # 如果已存在，更新数量
-                        existing_inventory.quantity += unqualified_quantity
-                        existing_inventory.defect_reason = defect_reason
-                        existing_inventory.inspection_order_id = inspection_order.id
-                    else:
-                        # 如果不存在，创建新记录
-                        inventory = Inventory(
+                    if reject_location_id:
+                        # 检查是否已存在相同商品、库位和批次的库存记录
+                        existing_inventory = Inventory.query.filter_by(
                             product_id=purchase_order.product_id,
                             location_id=reject_location_id,
-                            batch_no=f'B{datetime.now().strftime("%Y%m%d")}{purchase_order.id}',
-                            quantity=unqualified_quantity,
-                            defect_reason=defect_reason,
+                            batch_no=batch_no
+                        ).first()
+                        
+                        if existing_inventory:
+                            # 如果已存在，更新数量
+                            existing_inventory.quantity += unqualified_quantity
+                            existing_inventory.defect_reason = defect_reason
+                            existing_inventory.inspection_order_id = inspection_order.id
+                            logger.info(f'更新不合格品库存记录 {existing_inventory.id}，数量增加 {unqualified_quantity}，检验单:{inspection_order.order_no}')
+                        else:
+                            # 如果不存在，创建新记录
+                            inventory = Inventory(
+                                product_id=purchase_order.product_id,
+                                location_id=reject_location_id,
+                                batch_no=batch_no,
+                                quantity=unqualified_quantity,
+                                defect_reason=defect_reason,
+                                inspection_order_id=inspection_order.id,
+                                remark='检验不合格'
+                            )
+                            db.session.add(inventory)
+                            logger.info(f'创建不合格品库存记录，商品:{purchase_order.product_id}, 库位:{reject_location_id}, 数量:{unqualified_quantity}，检验单:{inspection_order.order_no}')
+                
+                # 处理合格商品：将合格商品从待检区转移到待处理区
+                if qualified_quantity > 0:
+                    # 查找待处理区的库存记录
+                    existing_pending_inventory = Inventory.query.filter_by(
+                        product_id=purchase_order.product_id,
+                        location_id=pending_location.id,
+                        batch_no=batch_no
+                    ).first()
+                    
+                    if existing_pending_inventory:
+                        # 如果待处理区已存在库存记录，更新数量
+                        existing_pending_inventory.quantity += qualified_quantity
+                        existing_pending_inventory.inspection_order_id = inspection_order.id
+                        logger.info(f'更新待处理库存记录 {existing_pending_inventory.id}，数量增加 {qualified_quantity}，检验单:{inspection_order.order_no}')
+                    else:
+                        # 如果待处理区不存在库存记录，创建新记录
+                        pending_inventory = Inventory(
+                            product_id=purchase_order.product_id,
+                            location_id=pending_location.id,
+                            batch_no=batch_no,
+                            quantity=qualified_quantity,
                             inspection_order_id=inspection_order.id,
-                            remark='检验不合格'
+                            remark='待处理'
                         )
-                        db.session.add(inventory)
-            
-            # 注意：合格商品不在这里创建库存记录，需要通过入库流程创建入库单
+                        db.session.add(pending_inventory)
+                        logger.info(f'创建待处理库存记录，商品:{purchase_order.product_id}, 库位:{pending_location.id}, 数量:{qualified_quantity}，检验单:{inspection_order.order_no}')
+                
+                # 更新待检区库存记录的数量
+                for inv in inspection_inventories:
+                    # 计算剩余数量
+                    remaining_quantity = inv.quantity - actual_quantity
+                    if remaining_quantity <= 0:
+                        # 如果数量为0或负数，删除库存记录
+                        db.session.delete(inv)
+                        logger.info(f'删除待检库存记录 {inv.id}，数量已全部转移')
+                    else:
+                        # 如果还有剩余数量，更新库存记录
+                        inv.quantity = remaining_quantity
+                        logger.info(f'更新待检库存记录 {inv.id}，剩余数量:{remaining_quantity}')
         else:
             flash(f'收货完成：本次收货{actual_quantity}件，累计合格{purchase_order.qualified_quantity + qualified_quantity}件，累计不合格{purchase_order.unqualified_quantity + unqualified_quantity}件。采购单状态为收货中，允许后续再次收货。', 'info')
 
