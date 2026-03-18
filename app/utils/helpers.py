@@ -30,6 +30,13 @@ def generate_inspection_no():
     return f'QO{date_str}{random_str}'
 
 
+# 生成退货单号（RT+日期+3位随机数）
+def generate_return_no():
+    date_str = datetime.now().strftime('%Y%m%d')
+    random_str = str(random.randint(100, 999))
+    return f'RT{date_str}{random_str}'
+
+
 def recommend_location(product_id, locations):
     """
     根据库位状态（是否空闲、是否同品）自动推荐一个最佳库位

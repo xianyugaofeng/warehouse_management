@@ -33,6 +33,7 @@ def create_app(config_name='default'):
     from app.views.inspection_manage import inspection_bp
     from app.views.purchase_manage import purchase_bp
     from app.views.putaway_manage import putaway_bp
+    from app.views.return_manage import return_bp
     # 注册蓝图（这会注册所有蓝图中的路由）
     app.register_blueprint(user_bp, url_prefix='/user')
     app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -45,6 +46,7 @@ def create_app(config_name='default'):
     app.register_blueprint(inspection_bp, url_prefix='/inspection')
     app.register_blueprint(purchase_bp, url_prefix='/purchase')
     app.register_blueprint(putaway_bp, url_prefix='/putaway')
+    app.register_blueprint(return_bp, url_prefix='/return')
     
     # 注册根路由
     @app.route('/')

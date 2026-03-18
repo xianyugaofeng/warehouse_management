@@ -6,7 +6,7 @@ from app.models.inbound import InboundOrder, InboundItem
 from app.models.inventory import WarehouseLocation, Inventory
 from app.models.product import Product, Supplier
 from app.models.inspection import InspectionOrder, InspectionItem
-from app.models.purchase import PurchaseItem
+
 from app.utils.auth import permission_required
 from app.utils.helpers import update_inventory, recommend_location
 

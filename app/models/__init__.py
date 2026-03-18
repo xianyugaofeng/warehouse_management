@@ -4,8 +4,9 @@ from app import db
 
 from .user import User, Role, Permission
 from .product import Product, Category, Supplier
-from .purchase import PurchaseOrder, PurchaseItem
+from .purchase import PurchaseOrder
 from .inventory import Inventory, WarehouseLocation
 from .inbound import InboundItem, InboundOrder
 from .outbound import OutboundItem, OutboundOrder
-from .inspection import InspectionOrder, InspectionItem
+from .inspection import InspectionOrder, InspectionItem, DefectiveProduct
+from .return_manage import ReturnOrder, ReturnItem

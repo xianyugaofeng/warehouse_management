@@ -117,7 +117,7 @@ db.session.add_all([location1, location2, location3])
 db.session.commit()
 
 from app.models import Product, Inventory, InboundOrder, InboundItem, OutboundOrder, OutboundItem, InventoryCountTask
-from app.models import PurchaseOrder, PurchaseItem, InspectionOrder, InspectionItem
+from app.models import PurchaseOrder, InspectionOrder, InspectionItem
 from app.utils.helpers import generate_inbound_no, generate_outbound_no, update_inventory, generate_inventory_count_task_no, generate_purchase_no, generate_inspection_no, recommend_location
 from datetime import datetime, timedelta
 
@@ -200,22 +200,7 @@ purchase_order1 = PurchaseOrder(
 db.session.add(purchase_order1)
 db.session.flush()
 
-# 添加采购明细
-purchase_item1 = PurchaseItem(
-    order_id=purchase_order1.id,
-    product_id=raw_material1.id,
-    quantity=50,
-    unit_price=100.0,
-    subtotal=5000.0
-)
-purchase_item2 = PurchaseItem(
-    order_id=purchase_order1.id,
-    product_id=raw_material2.id,
-    quantity=100,
-    unit_price=20.0,
-    subtotal=2000.0
-)
-db.session.add_all([purchase_item1, purchase_item2])
+# 由于PurchaseOrder模型已经包含了商品信息，不需要单独创建PurchaseItem
 db.session.commit()
 
 # 创建检验单样例

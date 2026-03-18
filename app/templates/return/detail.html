@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}退货单详情{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <h2>退货单详情</h2>
+            <div class="card">
+                <div class="card-header">
+                    <h3>退货基本信息</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>退货单号：</strong>{{ return_order.order_no }}</p>
+                            <p><strong>退货日期：</strong>{{ return_order.return_date }}</p>
+                            <p><strong>退货原因：</strong>{{ return_order.return_reason }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>操作员：</strong>{{ return_order.operator.username }}</p>
+                            <p><strong>总金额：</strong>{{ return_order.total_amount }}</p>
+                            <p><strong>状态：</strong>{{ return_order.status }}</p>
+                            <p><strong>备注：</strong>{{ return_order.remark }}</p>
+                        </div>
+                    </div>
+                    
+                    <h3 class="mt-4">退货明细</h3>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>商品名称</th>
+                                <th>商品编码</th>
+                                <th>库位</th>
+                                <th>批次号</th>
+                                <th>退货数量</th>
+                                <th>单价</th>
+                                <th>退货金额</th>
+                                <th>不合格原因</th>
+                                <th>备注</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in return_order.items %}
+                            <tr>
+                                <td>{{ item.product.name }}</td>
+                                <td>{{ item.product.code }}</td>
+                                <td>{{ item.location.code }}</td>
+                                <td>{{ item.batch_no }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ item.unit_price }}</td>
+                                <td>{{ item.amount }}</td>
+                                <td>{{ item.defect_reason }}</td>
+                                <td>{{ item.remark }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    
+                    <a href="{{ url_for('return.return_list') }}" class="btn btn-primary">返回列表</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

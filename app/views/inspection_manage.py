@@ -112,110 +112,100 @@ def receive(id):
                                    purchase_order=purchase_order, now=datetime.now(), 
                                    reject_locations=WarehouseLocation.query.filter_by(location_type='reject').all())
         
-        # 验证部分收货逻辑
-        if not purchase_order.allow_partial_receipt:
-            if actual_quantity < purchase_order.quantity:
-                flash('该采购单不允许部分收货，实际收货数量必须大于等于采购数量', 'danger')
-                return render_template('inspection/receive.html', 
-                                       purchase_order=purchase_order, now=datetime.now(), 
-                                       reject_locations=WarehouseLocation.query.filter_by(location_type='reject').all())
-        else:
-            # 允许部分收货，检查本次收货数量是否超过剩余数量
-            remaining_quantity = purchase_order.quantity - (purchase_order.actual_quantity or 0)
-            if actual_quantity > remaining_quantity:
-                flash(f'本次收货数量不能超过剩余数量{remaining_quantity}', 'danger')
-                return render_template('inspection/receive.html', 
-                                       purchase_order=purchase_order, now=datetime.now(), 
-                                       reject_locations=WarehouseLocation.query.filter_by(location_type='reject').all())
+        # 检查本次收货数量是否超过剩余数量
+        remaining_quantity = purchase_order.quantity - (purchase_order.actual_quantity or 0)
+        if actual_quantity > remaining_quantity:
+            flash(f'本次收货数量不能超过剩余数量{remaining_quantity}', 'danger')
+            return render_template('inspection/receive.html', 
+                                   purchase_order=purchase_order, now=datetime.now(), 
+                                   reject_locations=WarehouseLocation.query.filter_by(location_type='reject').all())
         
         # 更新采购单（累计更新）
-        purchase_order.status = 'receiving'
         purchase_order.actual_date = datetime.now().date()
         purchase_order.actual_quantity = (purchase_order.actual_quantity or 0) + actual_quantity
         purchase_order.qualified_quantity = (purchase_order.qualified_quantity or 0) + qualified_quantity
         purchase_order.unqualified_quantity = (purchase_order.unqualified_quantity or 0) + unqualified_quantity
         purchase_order.quality_status = quality_status
 
-        # 检查是否有不合格品需要处理
-        if unqualified_quantity > 0:
-            # 查找不合格品暂放区域
-            reject_location = WarehouseLocation.query.filter_by(location_type='reject').first()
-            if not reject_location:
-                flash('未设置不合格品暂放区域，请先配置仓库位置', 'danger')
-                return render_template('inspection/receive.html', 
-                                        purchase_order=purchase_order, now=datetime.now(), 
-                                        reject_locations=WarehouseLocation.query.filter_by(location_type='reject').all())
-
-            flash(f'检验完成：合格{qualified_quantity}件，不合格{unqualified_quantity}件（已存放于暂放区域）', 'warning')
-        else:
-            flash(f'检验完成：全部合格{qualified_quantity}件，请到入库管理创建入库单', 'success')
-
-        # 创建检验单
-        inspection_no = generate_inspection_no()
-        inspection_order = InspectionOrder(
-            order_no=inspection_no,
-            purchase_order_id=purchase_order.id,
-            supplier_id=purchase_order.supplier_id,
-            delivery_order_no=purchase_order.order_no,
-            operator_id=current_user.id,
-            inspection_date=datetime.now().date(),
-            total_quantity=actual_quantity,
-            qualified_quantity=qualified_quantity,
-            unqualified_quantity=unqualified_quantity,
-            status='completed',
-            signature=signature,
-            remark='检验完成'
-        )
-        db.session.add(inspection_order)
-        db.session.flush()
-
-        # 创建检验明细
-        inspection_item = InspectionItem(
-            inspection_id=inspection_order.id,
-            product_id=purchase_order.product_id,
-            quantity=actual_quantity,
-            qualified_quantity=qualified_quantity,
-            unqualified_quantity=unqualified_quantity,
-            quality_status=quality_status,
-            defect_reason=defect_reason if quality_status != 'completed' else None
-        )
-        db.session.add(inspection_item)
-        
-        # 处理不合格商品
-        if quality_status != 'completed' and actual_quantity > 0:
-            # 获取暂存区库位
-            reject_location_id = int(defect_location_id) if defect_location_id else None
-            if not reject_location_id:
-                reject_location = WarehouseLocation.query.filter_by(location_type='reject').first()
-                if reject_location:
-                    reject_location_id = reject_location.id
-            
-            if reject_location_id:
-                # 创建不合格商品记录
-                defective_product = DefectiveProduct(
-                    product_id=purchase_order.product_id,
-                    location_id=reject_location_id,
-                    batch_no=f'B{datetime.now().strftime("%Y%m%d")}{purchase_order.id}',
-                    quantity=actual_quantity,
-                    defect_reason=defect_reason,
-                    inspection_order_id=inspection_order.id,
-                    remark='检验不合格'
-                )
-                db.session.add(defective_product)
-        
-        # 判断采购单是否完成
-        if purchase_order.allow_partial_receipt:
-            # 允许部分收货，需要用户手动标记完成
-            complete_receipt = request.form.get('complete_receipt') == 'true'
-        else:
-            # 不允许部分收货，累计收货数量达到计划数量时自动完成
-            complete_receipt = purchase_order.actual_quantity >= purchase_order.quantity
+        # 判断采购单是否完成：累计实际收货数量达到计划数量时自动完成
+        complete_receipt = purchase_order.actual_quantity >= purchase_order.quantity
         
         # 更新采购单状态
         if complete_receipt:
             purchase_order.status = 'completed'
         else:
             purchase_order.status = 'receiving'
+
+        # 只有已完成的采购单才能进行质检和创建检验合格单
+        if purchase_order.status == 'completed':
+            # 检查是否有不合格品需要处理
+            if unqualified_quantity > 0:
+                # 查找不合格品暂放区域
+                reject_location = WarehouseLocation.query.filter_by(location_type='reject').first()
+                if not reject_location:
+                    flash('未设置不合格品暂放区域，请先配置仓库位置', 'danger')
+                    return render_template('inspection/receive.html', 
+                                            purchase_order=purchase_order, now=datetime.now(), 
+                                            reject_locations=WarehouseLocation.query.filter_by(location_type='reject').all())
+
+                flash(f'检验完成：合格{qualified_quantity}件，不合格{unqualified_quantity}件（已存放于暂放区域）', 'warning')
+            else:
+                flash(f'检验完成：全部合格{qualified_quantity}件，请到入库管理创建入库单', 'success')
+
+            # 创建检验单
+            inspection_no = generate_inspection_no()
+            inspection_order = InspectionOrder(
+                order_no=inspection_no,
+                purchase_order_id=purchase_order.id,
+                supplier_id=purchase_order.supplier_id,
+                delivery_order_no=purchase_order.order_no,
+                operator_id=current_user.id,
+                inspection_date=datetime.now().date(),
+                total_quantity=actual_quantity,
+                qualified_quantity=qualified_quantity,
+                unqualified_quantity=unqualified_quantity,
+                status='completed',
+                signature=signature,
+                remark='检验完成'
+            )
+            db.session.add(inspection_order)
+            db.session.flush()
+
+            # 创建检验明细
+            inspection_item = InspectionItem(
+                inspection_id=inspection_order.id,
+                product_id=purchase_order.product_id,
+                quantity=actual_quantity,
+                qualified_quantity=qualified_quantity,
+                unqualified_quantity=unqualified_quantity,
+                quality_status=quality_status,
+                defect_reason=defect_reason if quality_status != 'completed' else None
+            )
+            db.session.add(inspection_item)
+            
+            # 处理不合格商品
+            if quality_status != 'completed' and actual_quantity > 0:
+                # 获取暂存区库位
+                reject_location_id = int(defect_location_id) if defect_location_id else None
+                if not reject_location_id:
+                    reject_location = WarehouseLocation.query.filter_by(location_type='reject').first()
+                    if reject_location:
+                        reject_location_id = reject_location.id
+                
+                if reject_location_id:
+                    # 创建不合格商品记录
+                    defective_product = DefectiveProduct(
+                        product_id=purchase_order.product_id,
+                        location_id=reject_location_id,
+                        batch_no=f'B{datetime.now().strftime("%Y%m%d")}{purchase_order.id}',
+                        quantity=actual_quantity,
+                        defect_reason=defect_reason,
+                        inspection_order_id=inspection_order.id,
+                        remark='检验不合格'
+                    )
+                    db.session.add(defective_product)
+        else:
+            flash(f'收货完成：本次收货{actual_quantity}件，累计合格{purchase_order.qualified_quantity + qualified_quantity}件，累计不合格{purchase_order.unqualified_quantity + unqualified_quantity}件。采购单状态为收货中，允许后续再次收货。', 'info')
 
         try:
             db.session.commit()
