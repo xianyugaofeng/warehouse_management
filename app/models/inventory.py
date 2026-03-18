@@ -78,7 +78,8 @@ class Inventory(db.Model):
             'waiting': 'waiting',  # 等待/待上架 - 与入库管理模块的"待上架"状态一致
             'normal': 'normal',  # 正常库存
             'inspection': 'pending_inspection',  # 待检
-            'reject': 'defective'  # 不合格
+            'reject': 'defective',  # 不合格
+            'pending': 'pending'  # 待处理
         }
         
         status = status_map.get(location_type, 'unknown')

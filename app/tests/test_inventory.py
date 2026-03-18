@@ -131,8 +131,7 @@ class TestInventoryManagement(unittest.TestCase):
             product_id=self.product.id,
             location_id=waiting_location.id,
             batch_no='B2026030702',
-            quantity=10,
-            remark='入库待上架'
+            quantity=10
         )
         db.session.add(inventory)
         db.session.commit()
@@ -159,8 +158,7 @@ class TestInventoryManagement(unittest.TestCase):
             product_id=self.product.id,
             location_id=normal_location.id,
             batch_no='B2026030703',
-            quantity=20,
-            remark='已上架'
+            quantity=20
         )
         db.session.add(inventory)
         db.session.commit()
@@ -197,8 +195,7 @@ class TestInventoryManagement(unittest.TestCase):
             product_id=self.product.id,
             location_id=waiting_location.id,
             batch_no='B2026030704',
-            quantity=15,
-            remark='入库待上架'
+            quantity=15
         )
         db.session.add(inventory)
         db.session.commit()
@@ -208,7 +205,6 @@ class TestInventoryManagement(unittest.TestCase):
         
         # 模拟上架操作：更新库位
         inventory.location_id = normal_location.id
-        inventory.remark = '已上架'
         db.session.commit()
         
         # 刷新库存记录
@@ -237,8 +233,7 @@ class TestInventoryManagement(unittest.TestCase):
             location_id=reject_location.id,
             batch_no='B2026030705',
             quantity=5,
-            defect_reason='质量问题',
-            remark='检验不合格'
+            defect_reason='质量问题'
         )
         db.session.add(inventory)
         db.session.commit()
@@ -266,8 +261,7 @@ class TestInventoryManagement(unittest.TestCase):
             product_id=self.product.id,
             location_id=inspection_location.id,
             batch_no='B2026030706',
-            quantity=8,
-            remark='待检验'
+            quantity=8
         )
         db.session.add(inventory)
         db.session.commit()
@@ -294,8 +288,7 @@ class TestInventoryManagement(unittest.TestCase):
             product_id=self.product.id,
             location_id=waiting_location.id,
             batch_no='B2026030707',
-            quantity=25,
-            remark='入库待上架'
+            quantity=25
         )
         db.session.add(inventory)
         db.session.commit()
@@ -307,6 +300,161 @@ class TestInventoryManagement(unittest.TestCase):
         # 此时库存状态应该为"waiting"（等待）
         # 两者语义一致，只是不同模块的表述方式不同
         self.assertEqual(inventory.status, 'waiting')
+    
+    def test_inventory_status_changes_in_workflow(self):
+        """测试库存状态在收货、质检、入库时的变化"""
+        # 创建各个区域的库位
+        # 1. 待检区库位（收货时）
+        inspection_location = WarehouseLocation(
+            code='INSP-02',
+            name='待检区',
+            area='待检区',
+            location_type='inspection',
+            status=True
+        )
+        db.session.add(inspection_location)
+        
+        # 2. 待处理区库位（质检后合格商品）
+        pending_location = WarehouseLocation(
+            code='PEND-01',
+            name='待处理区',
+            area='待处理区',
+            location_type='pending',
+            status=True
+        )
+        db.session.add(pending_location)
+        
+        # 3. 不合格品区库位（质检后不合格商品）
+        reject_location = WarehouseLocation(
+            code='REJECT-02',
+            name='不合格品区',
+            area='不合格品区',
+            location_type='reject',
+            status=True
+        )
+        db.session.add(reject_location)
+        
+        # 4. 等待区库位（入库时）
+        waiting_location = WarehouseLocation(
+            code='WAIT-04',
+            name='等待区',
+            area='等待区',
+            location_type='waiting',
+            status=True
+        )
+        db.session.add(waiting_location)
+        
+        # 5. 正常库位（上架后）
+        normal_location = WarehouseLocation(
+            code='NORM-03',
+            name='正常库位',
+            area='正常区',
+            location_type='normal',
+            status=True
+        )
+        db.session.add(normal_location)
+        
+        db.session.flush()
+        
+        # 1. 收货时：库存放到待检区，状态为待检
+        inventory = Inventory(
+            product_id=self.product.id,
+            location_id=inspection_location.id,
+            batch_no='B2026031801',
+            quantity=100
+        )
+        db.session.add(inventory)
+        db.session.commit()
+        
+        # 验证收货后的状态
+        self.assertEqual(inventory.status, 'pending_inspection')
+        self.assertEqual(inventory.location.location_type, 'inspection')
+        
+        # 2. 质检时：合格商品转移到待处理区，状态为待处理
+        inventory.location_id = pending_location.id
+        db.session.commit()
+        
+        # 刷新库存记录
+        db.session.refresh(inventory)
+        
+        # 验证质检后的状态
+        self.assertEqual(inventory.status, 'pending')
+        self.assertEqual(inventory.location.location_type, 'pending')
+        
+        # 3. 入库时：从待处理区转移到等待区，状态为等待
+        inventory.location_id = waiting_location.id
+        db.session.commit()
+        
+        # 刷新库存记录
+        db.session.refresh(inventory)
+        
+        # 验证入库后的状态
+        self.assertEqual(inventory.status, 'waiting')
+        self.assertEqual(inventory.location.location_type, 'waiting')
+        
+        # 4. 上架时：从等待区转移到正常库位，状态为正常
+        inventory.location_id = normal_location.id
+        db.session.commit()
+        
+        # 刷新库存记录
+        db.session.refresh(inventory)
+        
+        # 验证上架后的状态
+        self.assertEqual(inventory.status, 'normal')
+        self.assertEqual(inventory.location.location_type, 'normal')
+        
+    def test_inventory_status_changes_for_defective(self):
+        """测试库存状态在收货、质检（不合格）时的变化"""
+        # 创建各个区域的库位
+        # 1. 待检区库位（收货时）
+        inspection_location = WarehouseLocation(
+            code='INSP-03',
+            name='待检区',
+            area='待检区',
+            location_type='inspection',
+            status=True
+        )
+        db.session.add(inspection_location)
+        
+        # 2. 不合格品区库位（质检后不合格商品）
+        reject_location = WarehouseLocation(
+            code='REJECT-03',
+            name='不合格品区',
+            area='不合格品区',
+            location_type='reject',
+            status=True
+        )
+        db.session.add(reject_location)
+        
+        db.session.flush()
+        
+        # 1. 收货时：库存放到待检区，状态为待检
+        inventory = Inventory(
+            product_id=self.product.id,
+            location_id=inspection_location.id,
+            batch_no='B2026031802',
+            quantity=50
+        )
+        db.session.add(inventory)
+        db.session.commit()
+        
+        # 验证收货后的状态
+        self.assertEqual(inventory.status, 'pending_inspection')
+        self.assertEqual(inventory.location.location_type, 'inspection')
+        
+        # 2. 质检时：不合格商品转移到不合格品区，状态为不合格
+        inventory.location_id = reject_location.id
+        inventory.defect_reason = '质量问题'
+        db.session.commit()
+        
+        # 刷新库存记录
+        db.session.refresh(inventory)
+        
+        # 验证质检后的状态
+        self.assertEqual(inventory.status, 'defective')
+        self.assertTrue(inventory.is_defective())
+        self.assertEqual(inventory.location.location_type, 'reject')
+        self.assertEqual(inventory.defect_reason, '质量问题')
 
 
 if __name__ == '__main__':
