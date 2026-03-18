@@ -28,34 +28,35 @@ select * from categories;
 """
 # flask shell代码
 from app import db
-from app.models import Role, Permission
-from app.utils.helpers import generate_inbound_no, generate_outbound_no, generate_purchase_no, generate_inspection_no, update_inventory, recommend_location
+from app.models import Role, Permission, User, WarehouseLocation, Supplier, Category, Product, Inventory, InboundOrder, InboundItem, OutboundOrder, OutboundItem, PurchaseOrder, InspectionOrder, InspectionItem, DefectiveProduct, ReturnOrder, ReturnItem
+from app.utils.helpers import generate_inbound_no, generate_outbound_no, generate_purchase_no, generate_inspection_no, generate_return_no, update_inventory, recommend_location
+from datetime import datetime, timedelta
 
 # 创建权限
 for name, desc in Permission.PERMISSIONS.items():
-     p = Permission(name=name, desc=desc)
-     db.session.add(p)
+        p = Permission(name=name, desc=desc)
+        db.session.add(p)
 
 # 创建角色（管理员/仓库管理员/普通员工）
 admin_role = Role(name='管理员', desc='拥有所有权限')
 warehouse_role = Role(name='仓库管理员', desc='拥有商品、出入库、库存管理权限')
 staff_role = Role(name='普通员工', desc='拥有库存查询、报表查看权限')
+db.session.flush()
 
 # 分配权限
 admin_role.permissions = Permission.query.all()
-warehouse_role.permissions = Permission.query.filter(Permission.name.in_(['product_manage', 'inbound_manage', 'outbound_manage', 'inventory_manage'])).all()
+warehouse_role.permissions = Permission.query.filter(Permission.name.in_(['inbound_manage', 'outbound_manage', 'inventory_manage'])).all()
 staff_role.permissions = Permission.query.filter(Permission.name.in_(['inventory_manage', 'report_view'])).all()
 db.session.add_all([admin_role, warehouse_role, staff_role])
 
 # 创建管理员用户
-from app.models import User
 admin = User(username='admin', real_name='系统管理员')
 admin.set_password('123456')
 admin.roles.append(admin_role)
 db.session.add(admin)
 db.session.commit()
 
-from app.models import WarehouseLocation, Supplier, Category
+# 创建分类
 category1 = Category(
     name="原材料",  # 分类名称
     desc="生产用基础原材料"  # 备注（可选）
@@ -72,6 +73,7 @@ category3 = Category(
 db.session.add_all([category1, category2, category3])
 db.session.commit()
 
+# 创建供应商
 supplier1 = Supplier(
     name="北京XX商贸有限公司",
     contact_person="张三",
@@ -91,10 +93,13 @@ supplier2 = Supplier(
 db.session.add_all([supplier1, supplier2])
 db.session.commit()
 
+# 创建库位
+# 正常库位
 location1 = WarehouseLocation(
     name="A区-原材料库",
     code="A-001",
     area="原材料库",
+    location_type='normal',
     status=True,
     remark="存放金属/塑料原材料"
 )
@@ -102,6 +107,7 @@ location2 = WarehouseLocation(
     name="B区-成品库",
     code="B-001",
     area="成品库",
+    location_type='normal',
     status=True,
     remark="存放完工成品，靠近发货区"
 )
@@ -109,17 +115,32 @@ location3 = WarehouseLocation(
     name="C区-配件库",
     code="C-001",
     area="配件库",
+    location_type='normal',
     status=True,
     remark="存放各类配套配件"
 )
+# 不合格品库位
+location4 = WarehouseLocation(
+    name="D区-不合格品库",
+    code="D-001",
+    area="不合格品库",
+    location_type='reject',
+    status=True,
+    remark="存放不合格商品"
+)
+# 待检库位
+location5 = WarehouseLocation(
+    name="E区-待检库",
+    code="E-001",
+    area="待检库",
+    location_type='inspection',
+    status=True,
+    remark="存放待检验商品"
+)
 
-db.session.add_all([location1, location2, location3])
+db.session.add_all([location1, location2, location3, location4, location5])
 db.session.commit()
-
-from app.models import Product, Inventory, InboundOrder, InboundItem, OutboundOrder, OutboundItem, InventoryCountTask
-from app.models import PurchaseOrder, InspectionOrder, InspectionItem
-from app.utils.helpers import generate_inbound_no, generate_outbound_no, update_inventory, generate_inventory_count_task_no, generate_purchase_no, generate_inspection_no, recommend_location
-from datetime import datetime, timedelta
+print("库位创建/检查完成")
 
 # 创建商品样例
 # 原材料
@@ -190,10 +211,13 @@ db.session.commit()
 purchase_order1 = PurchaseOrder(
     order_no=generate_purchase_no(),
     supplier_id=supplier1.id,
+    product_id=raw_material1.id,
     operator_id=admin.id,
     expected_date=datetime.now().date() + timedelta(days=7),  # 预计到货日期
     actual_date=datetime.now().date(),  # 实际到货日期
-    total_amount=100,
+    quantity=50,
+    unit_price=100.0,
+    subtotal=5000.0,
     status='completed',
     remark='采购原材料'
 )
@@ -211,9 +235,9 @@ inspection_order1 = InspectionOrder(
     delivery_order_no=purchase_order1.order_no,  # 送货单号即采购单号
     operator_id=admin.id,
     inspection_date=datetime.now().date(),
-    total_quantity=150,
-    qualified_quantity=145,
-    unqualified_quantity=5,
+    total_quantity=50,
+    qualified_quantity=48,
+    unqualified_quantity=2,
     status='completed',
     signature='仓库管理员',
     remark='检验合格'
@@ -231,17 +255,21 @@ inspection_item1 = InspectionItem(
     quality_status='passed',
     remark='合格'
 )
-inspection_item2 = InspectionItem(
-    inspection_id=inspection_order1.id,
-    product_id=raw_material2.id,
-    quantity=100,
-    qualified_quantity=97,
-    unqualified_quantity=3,
-    quality_status='passed',
-    remark='合格'
+db.session.add(inspection_item1)
+
+# 创建不合格商品记录
+defective_product = DefectiveProduct(
+    product_id=raw_material1.id,
+    location_id=location4.id,
+    batch_no=f'B{datetime.now().strftime("%Y%m%d")}3',
+    quantity=2,
+    defect_reason='表面划痕',
+    inspection_order_id=inspection_order1.id,
+    remark='检验不合格'
 )
-db.session.add_all([inspection_item1, inspection_item2])
+db.session.add(defective_product)
 db.session.commit()
+print("不合格商品记录创建完成")
 
 # 创建入库单样例（待上架状态）
 inbound_order1 = InboundOrder(
@@ -254,7 +282,7 @@ inbound_order1 = InboundOrder(
     inspection_order_id=inspection_order1.id,
     operator_id=admin.id,
     inbound_date=datetime.now().date(),
-    total_amount=145,
+    total_amount=48,
     status='pending',  # 初始状态为待上架
     remark='原材料入库'
 )
@@ -271,21 +299,12 @@ inbound_item1 = InboundItem(
     unit_price=100.0,
     subtotal=4800.0
 )
-inbound_item2 = InboundItem(
-    order_id=inbound_order1.id,
-    product_id=raw_material2.id,
-    location_id=location1.id,  # 添加库位ID
-    quantity=97,
-    batch_no=f'B{datetime.now().strftime("%Y%m%d")}2',
-    unit_price=20.0,
-    subtotal=1940.0
-)
-db.session.add_all([inbound_item1, inbound_item2])
+db.session.add(inbound_item1)
 db.session.commit()
 
 # 模拟上架操作
-# 获取所有正常库位
-locations = WarehouseLocation.query.filter_by(status=True).all()
+# 获取所有正常库位（location_type='normal'）
+locations = WarehouseLocation.query.filter_by(status=True, location_type='normal').all()
 
 # 为每个入库明细分配库位并更新库存
 for item in inbound_order1.items:
@@ -301,10 +320,39 @@ for item in inbound_order1.items:
 inbound_order1.status = 'completed'
 db.session.commit()
 
+# 创建退货单样例
+return_order1 = ReturnOrder(
+    order_no=generate_return_no(),
+    return_date=datetime.now().date(),
+    return_reason='质量问题',
+    operator_id=admin.id,
+    status='completed',
+    remark='不合格商品退货'
+)
+db.session.add(return_order1)
+db.session.flush()
+
+# 添加退货明细
+return_item1 = ReturnItem(
+    return_order_id=return_order1.id,
+    product_id=defective_product.product_id,
+    location_id=defective_product.location_id,
+    batch_no=defective_product.batch_no,
+    quantity=2,
+    unit_price=100.0,
+    amount=200.0,
+    defect_reason='质量问题'
+)
+db.session.add(return_item1)
+db.session.commit()
+
+# 更新不合格商品库位库存
+defective_product.quantity -= 2
+db.session.commit()
+
 print("数据生成完成！")
 print(f"采购单: {purchase_order1.order_no}")
 print(f"检验单: {inspection_order1.order_no}")
 print(f"入库单: {inbound_order1.order_no}")
+print(f"退货单: {return_order1.order_no}")
 print(f"上架完成，库存已更新")
-
-
