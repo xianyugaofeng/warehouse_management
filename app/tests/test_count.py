@@ -450,11 +450,12 @@ class InventoryCountTestCase(unittest.TestCase):
         db.session.flush()
         
         # 创建一个特殊库存用于测试
+        # 可用库存=40-20-5=15，足够冻结10
         product = Product(code='P004', name='特殊商品', unit='件')
         location = WarehouseLocation(code='B-01-01', name='库位B', area='B区', location_type='normal')
         inv_special = Inventory(
             product=product, location=location,
-            quantity=30, locked_quantity=20, frozen_quantity=5, batch_no='B004'
+            quantity=40, locked_quantity=20, frozen_quantity=5, batch_no='B004'
         )
         db.session.add_all([product, location, inv_special])
         db.session.flush()
@@ -465,15 +466,22 @@ class InventoryCountTestCase(unittest.TestCase):
         
         detail = count.details.filter_by(inventory_id=inv_special.id).first()
         
-        # 盘亏10，会导致：30 - 10 = 20 < 20 + 5 = 25（负可用）
-        detail.counted_quantity = 20
+        # 盘亏10
+        detail.counted_quantity = 30
         detail.calculate_variance()
         db.session.commit()
         
-        # 生成差异单
+        # 生成差异单（冻结10后frozen_quantity=15）
         from app.views.count_manage import _create_variance_document
         losses = [detail]
         _create_variance_document(count, 'loss', losses)
+        db.session.commit()
+        
+        # 手动增加锁定数量，模拟其他业务操作导致可用不足
+        # 此时：quantity=40, locked=20, frozen=15
+        # 审核后：quantity=30, frozen=5
+        # 如果locked增加到26，则可用=30-26-5=-1（负可用）
+        inv_special.locked_quantity = 26
         db.session.commit()
         
         variance = VarianceDocument.query.filter_by(count_id=count.id, variance_type='loss').first()
@@ -485,7 +493,7 @@ class InventoryCountTestCase(unittest.TestCase):
             _approve_variance_internal(variance, force=False, approver_id=self.user.id)
             self.fail('应该抛出ValueError')
         except ValueError as e:
-            self.assertIn('负可用', str(e))
+            self.assertIn('可用数量将为负', str(e))
         
         # 强制通过应该成功
         variance.status = 'pending'  # 重置状态

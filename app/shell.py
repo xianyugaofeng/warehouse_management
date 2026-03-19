@@ -28,8 +28,8 @@ select * from categories;
 """
 # flask shell代码
 from app import db
-from app.models import Role, Permission, User, WarehouseLocation, Supplier, Category, Product, Inventory, InboundOrder, InboundItem, OutboundOrder, OutboundItem, PurchaseOrder, InspectionOrder, InspectionItem, ReturnOrder, ReturnItem
-from app.utils.helpers import generate_inbound_no, generate_outbound_no, generate_purchase_no, generate_inspection_no, generate_return_no, update_inventory, recommend_location
+from app.models import Role, Permission, User, WarehouseLocation, Supplier, Category, Product, Inventory, InboundOrder, InboundItem, OutboundOrder, OutboundItem, PurchaseOrder, InspectionOrder, InspectionItem, ReturnOrder, ReturnItem, InventoryCount, InventoryCountDetail, VarianceDocument, VarianceDetail, InventoryFreezeRecord, InventoryChangeLog
+from app.utils.helpers import generate_inbound_no, generate_outbound_no, generate_purchase_no, generate_inspection_no, generate_return_no, generate_count_no, generate_variance_no, update_inventory, recommend_location
 from datetime import datetime, timedelta
 
 # 创建权限

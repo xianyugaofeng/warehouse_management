@@ -14,6 +14,7 @@ from app.models import PurchaseOrder
 from app.models import InspectionOrder, InspectionItem
 from app.models import ReturnOrder, ReturnItem
 from app.models import InventoryCount, InventoryCountDetail, VarianceDocument, VarianceDetail, InventoryFreezeRecord
+from app.models.inventory import InventoryChangeLog, StockMoveOrder, StockMoveItem
 
 
 app = create_app()
@@ -34,7 +35,9 @@ def make_shell_context():   # 在命令行使用flask shell命令启动Flask交�
         ReturnOrder=ReturnOrder, ReturnItem=ReturnItem,
         InventoryCount=InventoryCount, InventoryCountDetail=InventoryCountDetail,
         VarianceDocument=VarianceDocument, VarianceDetail=VarianceDetail,
-        InventoryFreezeRecord=InventoryFreezeRecord
+        InventoryFreezeRecord=InventoryFreezeRecord,
+        InventoryChangeLog=InventoryChangeLog,
+        StockMoveOrder=StockMoveOrder, StockMoveItem=StockMoveItem
     )
 
 if __name__ == '__main__':
