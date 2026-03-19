@@ -24,6 +24,71 @@ class WarehouseLocation(db.Model):
         return f'<WarehouseLocation {self.code}>'
 
 
+class InventoryChangeLog(db.Model):
+    """库存变更日志"""
+    __tablename__ = 'inventory_change_logs'
+    id = db.Column(db.Integer, primary_key=True)
+    inventory_id = db.Column(db.Integer, db.ForeignKey('inventories.id'), nullable=False)  # 关联库存
+    change_type = db.Column(db.String(16), nullable=False)  # 变更类型: inbound(入库), outbound(出库), lock(锁定), unlock(解锁), freeze(冻结), unfreeze(解冻), adjustment(调整)
+    quantity_before = db.Column(db.Integer, nullable=False)  # 变更前数量
+    quantity_after = db.Column(db.Integer, nullable=False)  # 变更后数量
+    locked_quantity_before = db.Column(db.Integer, nullable=False)  # 变更前锁定数量
+    locked_quantity_after = db.Column(db.Integer, nullable=False)  # 变更后锁定数量
+    frozen_quantity_before = db.Column(db.Integer, nullable=False)  # 变更前冻结数量
+    frozen_quantity_after = db.Column(db.Integer, nullable=False)  # 变更后冻结数量
+    operator = db.Column(db.String(64))  # 操作人
+    reason = db.Column(db.String(256))  # 变更原因
+    reference_id = db.Column(db.Integer)  # 关联业务单据ID
+    reference_type = db.Column(db.String(32))  # 关联业务单据类型
+    create_time = db.Column(db.DateTime, default=datetime.utcnow)  # 创建时间
+    
+    # 关联库存
+    inventory = db.relationship('Inventory', backref=db.backref('change_logs', lazy='dynamic'))
+    
+    def __repr__(self):
+        return f'<InventoryChangeLog {self.change_type} - {self.inventory_id}>'
+
+
+# 库存变更日志记录装饰器
+def log_inventory_change(change_type, operator='system', reason='', reference_id=None, reference_type=None):
+    """记录库存变更日志的装饰器"""
+    def decorator(func):
+        def wrapper(self, *args, **kwargs):
+            # 记录变更前的状态
+            quantity_before = self.quantity
+            locked_quantity_before = self.locked_quantity
+            frozen_quantity_before = self.frozen_quantity
+            
+            # 执行原函数
+            result = func(self, *args, **kwargs)
+            
+            # 记录变更后的状态
+            quantity_after = self.quantity
+            locked_quantity_after = self.locked_quantity
+            frozen_quantity_after = self.frozen_quantity
+            
+            # 创建变更日志
+            log = InventoryChangeLog(
+                inventory_id=self.id,
+                change_type=change_type,
+                quantity_before=quantity_before,
+                quantity_after=quantity_after,
+                locked_quantity_before=locked_quantity_before,
+                locked_quantity_after=locked_quantity_after,
+                frozen_quantity_before=frozen_quantity_before,
+                frozen_quantity_after=frozen_quantity_after,
+                operator=operator,
+                reason=reason,
+                reference_id=reference_id,
+                reference_type=reference_type
+            )
+            db.session.add(log)
+            
+            return result
+        return wrapper
+    return decorator
+
+
 class Inventory(db.Model):
     # product_id相同的商品可以有不同的库位和不同的批次
     __tablename__ = 'inventories'
@@ -53,8 +118,12 @@ class Inventory(db.Model):
     )
 
     def __repr__(self):
-        product = self.product.name if self.product else '未知商品'
-        return f'<Inventory {product} - {self.location.code} - 物理库存:{self.quantity} - 可用:{self.available_quantity}>'
+        try:
+            product = self.product.name if self.product else '未知商品'
+            location_code = self.location.code if self.location else '未知库位'
+            return f'<Inventory {product} - {location_code} - 物理库存:{self.quantity} - 可用:{self.available_quantity}>'
+        except:
+            return f'<Inventory {self.id}>'
     
     # 计算可用数量
     @property
@@ -230,67 +299,3 @@ class StockMoveItem(db.Model):
         product = self.product.name if self.product else '未知商品'
         return f'<StockMoveItem {product} - {self.quantity}>'
 
-
-class InventoryChangeLog(db.Model):
-    """库存变更日志"""
-    __tablename__ = 'inventory_change_logs'
-    id = db.Column(db.Integer, primary_key=True)
-    inventory_id = db.Column(db.Integer, db.ForeignKey('inventories.id'), nullable=False)  # 关联库存
-    change_type = db.Column(db.String(16), nullable=False)  # 变更类型: inbound(入库), outbound(出库), lock(锁定), unlock(解锁), freeze(冻结), unfreeze(解冻), adjustment(调整)
-    quantity_before = db.Column(db.Integer, nullable=False)  # 变更前数量
-    quantity_after = db.Column(db.Integer, nullable=False)  # 变更后数量
-    locked_quantity_before = db.Column(db.Integer, nullable=False)  # 变更前锁定数量
-    locked_quantity_after = db.Column(db.Integer, nullable=False)  # 变更后锁定数量
-    frozen_quantity_before = db.Column(db.Integer, nullable=False)  # 变更前冻结数量
-    frozen_quantity_after = db.Column(db.Integer, nullable=False)  # 变更后冻结数量
-    operator = db.Column(db.String(64))  # 操作人
-    reason = db.Column(db.String(256))  # 变更原因
-    reference_id = db.Column(db.Integer)  # 关联业务单据ID
-    reference_type = db.Column(db.String(32))  # 关联业务单据类型
-    create_time = db.Column(db.DateTime, default=datetime.utcnow)  # 创建时间
-    
-    # 关联库存
-    inventory = db.relationship('Inventory', backref=db.backref('change_logs', lazy='dynamic'))
-    
-    def __repr__(self):
-        return f'<InventoryChangeLog {self.change_type} - {self.inventory_id}>'
-
-
-# 库存变更日志记录装饰器
-def log_inventory_change(change_type, operator='system', reason='', reference_id=None, reference_type=None):
-    """记录库存变更日志的装饰器"""
-    def decorator(func):
-        def wrapper(self, *args, **kwargs):
-            # 记录变更前的状态
-            quantity_before = self.quantity
-            locked_quantity_before = self.locked_quantity
-            frozen_quantity_before = self.frozen_quantity
-            
-            # 执行原函数
-            result = func(self, *args, **kwargs)
-            
-            # 记录变更后的状态
-            quantity_after = self.quantity
-            locked_quantity_after = self.locked_quantity
-            frozen_quantity_after = self.frozen_quantity
-            
-            # 创建变更日志
-            log = InventoryChangeLog(
-                inventory_id=self.id,
-                change_type=change_type,
-                quantity_before=quantity_before,
-                quantity_after=quantity_after,
-                locked_quantity_before=locked_quantity_before,
-                locked_quantity_after=locked_quantity_after,
-                frozen_quantity_before=frozen_quantity_before,
-                frozen_quantity_after=frozen_quantity_after,
-                operator=operator,
-                reason=reason,
-                reference_id=reference_id,
-                reference_type=reference_type
-            )
-            db.session.add(log)
-            
-            return result
-        return wrapper
-    return decorator
