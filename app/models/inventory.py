@@ -104,6 +104,7 @@ class Inventory(db.Model):
     supplier_batch_no = db.Column(db.String(32))  # 供应商批次号
     owner_id = db.Column(db.Integer)  # 所有者ID，用于多货主仓库模式
     defect_reason = db.Column(db.String(64))  # 不合格原因
+    remark = db.Column(db.String(256))  # 备注
     inspection_order_id = db.Column(db.Integer, db.ForeignKey('inspection_orders.id'))  # 关联检验单
     create_time = db.Column(db.DateTime, default=datetime.utcnow)  # 创建时间
     update_time = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)  # 最后更新时间
