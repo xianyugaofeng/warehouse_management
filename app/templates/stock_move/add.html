@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}新增移库单 - 仓库管理系统{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>新增移库单</h2>
+        <div>
+            <a href="{{ url_for('stock_move.list') }}" class="btn btn-sm btn-secondary">
+                <i class="fa fa-arrow-left"></i>返回列表
+            </a>
+        </div>
+    </div>
+
+    <!--移库单表单-->
+    <div class="card">
+        <div class="card-body">
+            <form action="{{ url_for('stock_move.add') }}" method="POST" id="stockMoveForm">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="reason" class="form-label">移动原因</label>
+                        <select class="form-select" id="reason" name="reason">
+                            <option value="">请选择移动原因</option>
+                            <option value="补货">补货</option>
+                            <option value="库位优化">库位优化</option>
+                            <option value="整理">整理</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="remark" class="form-label">备注</label>
+                        <input type="text" class="form-control" id="remark" name="remark" placeholder="请输入备注">
+                    </div>
+                </div>
+
+                <!--移库明细-->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="mb-0">移库明细</h5>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addItem()">
+                            <i class="fa fa-plus"></i>添加明细
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="itemsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>商品</th>
+                                    <th>源库位</th>
+                                    <th>目标库位</th>
+                                    <th>移库批次号</th>
+                                    <th>数量</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="itemsBody">
+                                <!--动态添加明细行-->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">创建移库单</button>
+            </form>
+        </div>
+    </div>
+
+    <!--明细行模板-->
+    <template id="itemTemplate">
+        <tr class="item-row">
+            <td>
+                <select class="form-select" name="product_id[]" required>
+                    <option value="">选择商品</option>
+                    {% for product in products %}
+                        <option value="{{ product.id }}">{{ product.name }} ({{ product.code }})</option>
+                    {% endfor %}
+                </select>
+            </td>
+            <td>
+                <select class="form-select" name="source_location_id[]" required>
+                    <option value="">选择源库位</option>
+                    {% for location in locations %}
+                        <option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+            <td>
+                <select class="form-select" name="target_location_id[]" required>
+                    <option value="">选择目标库位</option>
+                    {% for location in locations %}
+                        <option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+            <td>
+                <input type="text" class="form-control" name="batch_no[]" placeholder="移库批次号">
+            </td>
+            <td>
+                <input type="number" class="form-control" name="quantity[]" min="1" value="1" required>
+            </td>
+            <td>
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeItem(this)">
+                    <i class="fa fa-trash"></i>删除
+                </button>
+            </td>
+        </tr>
+    </template>
+
+    <script>
+        // 添加明细行
+        function addItem() {
+            const template = document.getElementById('itemTemplate');
+            const tbody = document.getElementById('itemsBody');
+            const clone = template.content.cloneNode(true);
+            tbody.appendChild(clone);
+        }
+
+        // 删除明细行
+        function removeItem(btn) {
+            const row = btn.closest('tr');
+            row.remove();
+        }
+
+        // 页面加载时添加一行
+        document.addEventListener('DOMContentLoaded', function() {
+            addItem();
+        });
+
+        // 表单提交验证
+        document.getElementById('stockMoveForm').addEventListener('submit', function(e) {
+            const rows = document.querySelectorAll('.item-row');
+            if (rows.length === 0) {
+                e.preventDefault();
+                alert('请至少添加一条移库明细');
+                return;
+            }
+
+            // 验证源库位和目标库位不能相同
+            for (let row of rows) {
+                const sourceLocation = row.querySelector('[name="source_location_id[]"]').value;
+                const targetLocation = row.querySelector('[name="target_location_id[]"]').value;
+                if (sourceLocation === targetLocation) {
+                    e.preventDefault();
+                    alert('源库位和目标库位不能相同');
+                    return;
+                }
+            }
+        });
+    </script>
+{% endblock %}

@@ -187,6 +187,50 @@ class Inventory(db.Model):
         return True
 
 
+class StockMoveOrder(db.Model):
+    """库存移动单"""
+    __tablename__ = 'stock_move_orders'
+    id = db.Column(db.Integer, primary_key=True)
+    order_no = db.Column(db.String(32), unique=True, nullable=False)  # 移库单号
+    operator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # 操作人
+    move_date = db.Column(db.Date, default=datetime.utcnow, nullable=False)  # 移库日期
+    total_quantity = db.Column(db.Integer, default=0)  # 移库总数量
+    status = db.Column(db.String(16), default='pending', nullable=False)  # 状态(pending/completed/canceled)
+    reason = db.Column(db.String(256))  # 移动原因
+    remark = db.Column(db.String(256))  # 备注
+    create_time = db.Column(db.DateTime, default=datetime.utcnow)
+    update_time = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # 关联移库明细
+    items = db.relationship('StockMoveItem', backref='order', lazy='dynamic', cascade='all, delete-orphan')
+    # 关联操作人
+    operator = db.relationship('User', backref='stock_move_orders')
+
+    def __repr__(self):
+        return f'<StockMoveOrder {self.order_no}>'
+
+
+class StockMoveItem(db.Model):
+    """库存移动明细"""
+    __tablename__ = 'stock_move_items'
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('stock_move_orders.id'), nullable=False)  # 关联移库单
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)  # 关联商品
+    source_location_id = db.Column(db.Integer, db.ForeignKey('warehouse_locations.id'), nullable=False)  # 源库位
+    target_location_id = db.Column(db.Integer, db.ForeignKey('warehouse_locations.id'), nullable=False)  # 目标库位
+    quantity = db.Column(db.Integer, nullable=False)  # 移动数量
+    move_batch_no = db.Column(db.String(32))  # 移库批次号
+
+    # 关联商品、库位
+    product = db.relationship('Product')
+    source_location = db.relationship('WarehouseLocation', foreign_keys=[source_location_id])
+    target_location = db.relationship('WarehouseLocation', foreign_keys=[target_location_id])
+
+    def __repr__(self):
+        product = self.product.name if self.product else '未知商品'
+        return f'<StockMoveItem {product} - {self.quantity}>'
+
+
 class InventoryChangeLog(db.Model):
     """库存变更日志"""
     __tablename__ = 'inventory_change_logs'

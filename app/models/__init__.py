@@ -5,7 +5,7 @@ from app import db
 from .user import User, Role, Permission
 from .product import Product, Category, Supplier
 from .purchase import PurchaseOrder
-from .inventory import Inventory, WarehouseLocation
+from .inventory import Inventory, WarehouseLocation, StockMoveOrder, StockMoveItem
 from .inbound import InboundItem, InboundOrder
 from .outbound import OutboundItem, OutboundOrder
 from .inspection import InspectionOrder, InspectionItem
