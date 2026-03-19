@@ -393,7 +393,7 @@ def freeze_list():
 @login_required
 def variance_list():
     """差异单列表"""
-    status = request.args.get('status', 'pending')
+    status = request.args.get('status', '')
     variance_type = request.args.get('variance_type', '')
     
     query = VarianceDocument.query
