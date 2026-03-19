@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+{% block title %}盘点单列表 - 仓库管理系统{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <h3 class="mb-4">盘点单管理</h3>
+
+            <!-- 查询条件 -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="GET" class="form-inline" role="search">
+                        <div class="form-group me-2 mb-2">
+                            <input type="text" class="form-control" name="keyword" 
+                                   placeholder="盘点单号" value="{{ keyword }}">
+                        </div>
+                        <div class="form-group me-2 mb-2">
+                            <select class="form-control" name="count_type">
+                                <option value="">全部方式</option>
+                                <option value="open_count" {% if count_type == 'open_count' %}selected{% endif %}>明盘</option>
+                                <option value="blind_count" {% if count_type == 'blind_count' %}selected{% endif %}>暗盘</option>
+                            </select>
+                        </div>
+                        <div class="form-group me-2 mb-2">
+                            <select class="form-control" name="status">
+                                <option value="">全部状态</option>
+                                <option value="draft" {% if status == 'draft' %}selected{% endif %}>草稿</option>
+                                <option value="in_progress" {% if status == 'in_progress' %}selected{% endif %}>进行中</option>
+                                <option value="completed" {% if status == 'completed' %}selected{% endif %}>已完成</option>
+                                <option value="closed" {% if status == 'closed' %}selected{% endif %}>已关闭</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary me-2 mb-2">查询</button>
+                        <a href="{{ url_for('count.create_count') }}" class="btn btn-success mb-2">创建盘点单</a>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 盘点单列表 -->
+            <div class="card">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>盘点单号</th>
+                                <th>盘点方式</th>
+                                <th>状态</th>
+                                <th>范围</th>
+                                <th>商品数</th>
+                                <th>已盘数</th>
+                                <th>差异数</th>
+                                <th>计划日期</th>
+                                <th>创建人</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if counts %}
+                                {% for count in counts %}
+                                <tr>
+                                    <td><strong>{{ count.count_no }}</strong></td>
+                                    <td>
+                                        {% if count.count_type == 'open_count' %}
+                                            <span class="badge bg-info">明盘</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">暗盘</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if count.status == 'draft' %}
+                                            <span class="badge bg-secondary">草稿</span>
+                                        {% elif count.status == 'in_progress' %}
+                                            <span class="badge bg-primary">进行中</span>
+                                        {% elif count.status == 'completed' %}
+                                            <span class="badge bg-success">已完成</span>
+                                        {% elif count.status == 'closed' %}
+                                            <span class="badge bg-dark">已关闭</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if count.scope_type == 'location' %}库位
+                                        {% elif count.scope_type == 'category' %}分类
+                                        {% elif count.scope_type == 'product' %}商品
+                                        {% else %}全部{% endif %}
+                                    </td>
+                                    <td>{{ count.total_items }}</td>
+                                    <td>{{ count.counted_items }}</td>
+                                    <td>
+                                        {% if count.variance_items > 0 %}
+                                            <span class="badge bg-danger">{{ count.variance_items }}</span>
+                                        {% else %}
+                                            {{ count.variance_items }}
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ count.plan_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ count.operator.real_name or count.operator.username }}</td>
+                                    <td>{{ count.create_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        <a href="{{ url_for('count.detail', count_id=count.id) }}" 
+                                           class="btn btn-sm btn-primary">详情</a>
+                                        {% if count.status == 'completed' %}
+                                            <a href="{{ url_for('count.variance_preview', count_id=count.id) }}" 
+                                               class="btn btn-sm btn-info">差异</a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="11" class="text-center text-muted">暂无盘点单</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 分页 -->
+            {% if pagination.pages > 1 %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination">
+                    {% if pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('count.count_list', page=pagination.prev_num, **request.args) }}">上一页</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for page_num in pagination.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num == pagination.page %}
+                                <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('count.count_list', page=page_num, **request.args) }}">{{ page_num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('count.count_list', page=pagination.next_num, **request.args) }}">下一页</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}创建盘点单 - 仓库管理系统{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h3 class="mb-4">创建盘点单</h3>
+
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST" id="countForm">
+                        <!-- 盘点方式 -->
+                        <div class="mb-3">
+                            <label for="count_type" class="form-label"><strong>盘点方式 *</strong></label>
+                            <select class="form-control" id="count_type" name="count_type" required>
+                                <option value="">请选择</option>
+                                <option value="open_count">明盘（展示系统库存）</option>
+                                <option value="blind_count">暗盘（隐藏系统库存）</option>
+                            </select>
+                            <small class="form-text text-muted">
+                                明盘：盘点时展示当前物理库存、锁定、冻结等数据，便于核对；
+                                暗盘：隐藏所有库存数据，确保独立计数
+                            </small>
+                        </div>
+
+                        <!-- 盘点范围 -->
+                        <div class="mb-3">
+                            <label for="scope_type" class="form-label"><strong>盘点范围 *</strong></label>
+                            <select class="form-control" id="scope_type" name="scope_type" required onchange="updateScopeOptions()">
+                                <option value="">请选择</option>
+                                <option value="location">按库位</option>
+                                <option value="category">按分类</option>
+                                <option value="product">按商品</option>
+                                <option value="all">全部库存</option>
+                            </select>
+                        </div>
+
+                        <!-- 范围条件（动态） -->
+                        <div id="scope_options" class="mb-3">
+                            <!-- 将根据scope_type动态生成 -->
+                        </div>
+
+                        <!-- 计划盘点日期 -->
+                        <div class="mb-3">
+                            <label for="plan_date" class="form-label"><strong>计划盘点日期 *</strong></label>
+                            <input type="date" class="form-control" id="plan_date" name="plan_date" required>
+                        </div>
+
+                        <!-- 备注 -->
+                        <div class="mb-3">
+                            <label for="remark" class="form-label">备注</label>
+                            <textarea class="form-control" id="remark" name="remark" rows="3"></textarea>
+                        </div>
+
+                        <!-- 确认提示 -->
+                        <div class="alert alert-warning" role="alert">
+                            <strong>创建盘点单将自动为所选范围的商品创建库存快照。</strong>
+                            <br>快照内容包括当前物理库存、锁定数量、冻结数量等数据，用于后续对比。
+                            <br>请确保范围选择正确。
+                        </div>
+
+                        <!-- 按钮 -->
+                        <div class="mb-0">
+                            <button type="submit" class="btn btn-primary">创建盘点单</button>
+                            <a href="{{ url_for('count.count_list') }}" class="btn btn-secondary">取消</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const locations = {{ locations|tojson }};
+    const categories = {{ categories|tojson }};
+    const products = {{ products|tojson }};
+
+    function updateScopeOptions() {
+        const scopeType = document.getElementById('scope_type').value;
+        const optionsDiv = document.getElementById('scope_options');
+        optionsDiv.innerHTML = '';
+
+        if (scopeType === 'location') {
+            let html = '<label class="form-label"><strong>选择库位</strong></label><div class="form-group">';
+            locations.forEach(loc => {
+                html += `<div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="location_ids" value="${loc.id}" id="loc_${loc.id}">
+                    <label class="form-check-label" for="loc_${loc.id}">${loc.code} - ${loc.name}</label>
+                </div>`;
+            });
+            html += '</div>';
+            optionsDiv.innerHTML = html;
+        } else if (scopeType === 'category') {
+            let html = '<label class="form-label"><strong>选择分类</strong></label><div class="form-group">';
+            categories.forEach(cat => {
+                html += `<div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="category_ids" value="${cat.id}" id="cat_${cat.id}">
+                    <label class="form-check-label" for="cat_${cat.id}">${cat.name}</label>
+                </div>`;
+            });
+            html += '</div>';
+            optionsDiv.innerHTML = html;
+        } else if (scopeType === 'product') {
+            let html = '<label class="form-label"><strong>选择商品</strong></label><div class="form-group" style="max-height: 300px; overflow-y: auto;">';
+            products.forEach(prod => {
+                html += `<div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="product_ids" value="${prod.id}" id="prod_${prod.id}">
+                    <label class="form-check-label" for="prod_${prod.id}">${prod.code} - ${prod.name}</label>
+                </div>`;
+            });
+            html += '</div>';
+            optionsDiv.innerHTML = html;
+        }
+    }
+
+    // 初始化plan_date为今天
+    document.getElementById('plan_date').valueAsDate = new Date();
+</script>
+{% endblock %}

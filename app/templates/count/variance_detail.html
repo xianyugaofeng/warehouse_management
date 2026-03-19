@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+
+{% block title %}差异单详情 - 仓库管理系统{% endblock %}
+
+{% block css %}
+<style>
+    .warning-box {
+        background-color: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    .metric-box {
+        text-align: center;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <h3 class="mb-3">差异单详情</h3>
+
+            <!-- 差异单头部 -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>差异单号：</strong> {{ variance.variance_no }}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>类型：</strong>
+                            {% if variance.variance_type == 'gain' %}
+                                <span class="badge bg-success">盘盈</span>
+                            {% else %}
+                                <span class="badge bg-danger">盘亏</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>状态：</strong>
+                            {% if variance.status == 'pending' %}
+                                <span class="badge bg-warning">待审核</span>
+                            {% elif variance.status == 'approved' %}
+                                <span class="badge bg-success">已通过</span>
+                            {% elif variance.status == 'rejected' %}
+                                <span class="badge bg-danger">已驳回</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>盘点单号：</strong> <a href="{{ url_for('count.detail', count_id=variance.count_id) }}">{{ variance.count.count_no }}</a>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-4 metric-box">
+                            <h6>总差异数量</h6>
+                            <h4 class="{% if variance.variance_type == 'gain' %}text-success{% else %}text-danger{% endif %}">
+                                {% if variance.variance_type == 'gain' %}+{% else %}-{% endif %}{{ variance.total_variance_qty }}
+                            </h4>
+                        </div>
+                        <div class="col-md-4 metric-box">
+                            <h6>明细项数</h6>
+                            <h4>{{ variance.total_items }}</h4>
+                        </div>
+                        <div class="col-md-4 metric-box">
+                            <h6>创建时间</h6>
+                            <p>{{ variance.create_time.strftime('%Y-%m-%d %H:%M') }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 差异明细 -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <strong>差异明细 (共 {{ details|length }} 项)</strong>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>商品编码</th>
+                                <th>商品名称</th>
+                                <th>库位</th>
+                                <th>批次</th>
+                                <th>快照数量</th>
+                                <th>实盘数量</th>
+                                <th>差异数量</th>
+                                <th>锁定</th>
+                                <th>冻结</th>
+                                <th>原因</th>
+                                <th>处理状态</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for detail in details %}
+                            <tr>
+                                <td>{{ detail.product.code }}</td>
+                                <td>{{ detail.product.name }}</td>
+                                <td>{{ detail.location.code }}</td>
+                                <td>{{ detail.batch_no or '-' }}</td>
+                                <td>{{ detail.snapshot_quantity }}</td>
+                                <td><strong>{{ detail.counted_quantity }}</strong></td>
+                                <td>
+                                    {% if detail.variance_quantity > 0 %}
+                                        <span class="badge bg-success">+{{ detail.variance_quantity }}</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">{{ detail.variance_quantity }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ detail.snapshot_locked }}</td>
+                                <td>{{ detail.snapshot_frozen }}</td>
+                                <td><small>{{ detail.variance_reason or '-' }}</small></td>
+                                <td>
+                                    {% if detail.processed %}
+                                        <span class="badge bg-success">已处理</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">待处理</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 审核操作 -->
+            {% if variance.status == 'pending' %}
+            <div class="card mb-3">
+                <div class="card-header bg-light">
+                    <strong>审核操作</strong>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info" role="alert">
+                        <strong>👤 审核须知：</strong>
+                        <br>• 审核通过后，将实际调整库存。盘盈增加物理库存；盘亏减少物理库存。
+                        <br>• 锁定和冻结数量保持不变，可用数量根据物理库存变化自动更新。
+                        <br>• 如果调整后物理库存小于锁定+冻结的和，会触发"负可用"警告，需为此选择强制通过。
+                    </div>
+
+                    <form method="POST" id="approveForm">
+                        <div class="mb-3">
+                            <label class="form-check">
+                                <input type="checkbox" class="form-check-input" name="force" value="1" id="forceCheckbox">
+                                <strong>强制通过（允许负可用）</strong>
+                                <br>
+                                <small class="text-muted">选中此项后，即使调整会导致可用数量为负，也会强制执行。需谨慎操作。</small>
+                            </label>
+                        </div>
+
+                        <button type="submit" formaction="{{ url_for('count.approve_variance', variance_id=variance.id) }}" 
+                                class="btn btn-success btn-lg me-2">
+                            <i class="fa fa-check-circle"></i> 审核通过
+                        </button>
+                    </form>
+
+                    <hr>
+
+                    <!-- 驳回表单 -->
+                    <form method="POST" action="{{ url_for('count.reject_variance', variance_id=variance.id) }}">
+                        <div class="mb-3">
+                            <label for="reject_reason" class="form-label">驳回原因 (可选)</label>
+                            <textarea class="form-control" id="reject_reason" name="reason" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-danger btn-lg">
+                            <i class="fa fa-times-circle"></i> 驳回
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <!-- 非待审状态显示结果 -->
+            <div class="card">
+                <div class="card-header bg-light">
+                    <strong>审核结果</strong>
+                </div>
+                <div class="card-body">
+                    {% if variance.status == 'approved' %}
+                    <div class="alert alert-success" role="alert">
+                        <strong>✓ 已通过</strong>
+                        <br>审批人：{{ variance.approver.real_name or variance.approver.username }}
+                        <br>审批时间：{{ variance.approved_time.strftime('%Y-%m-%d %H:%M') }}
+                        {% if variance.force_approved %}
+                        <br><span class="badge bg-warning">已强制通过（允许负可用）</span>
+                        {% endif %}
+                    </div>
+                    {% elif variance.status == 'rejected' %}
+                    <div class="alert alert-danger" role="alert">
+                        <strong>✗ 已驳回</strong>
+                        <br>驳回人：{{ variance.approver.real_name or variance.approver.username }}
+                        <br>驳回时间：{{ variance.approved_time.strftime('%Y-%m-%d %H:%M') }}
+                        <br>驳回原因：{{ variance.rejection_reason or '未填写' }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 返回按钮 -->
+            <div class="mt-4">
+                <a href="{{ url_for('count.variance_list') }}" class="btn btn-secondary">
+                    <i class="fa fa-arrow-left"></i> 返回列表
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

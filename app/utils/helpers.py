@@ -44,6 +44,20 @@ def generate_stock_move_no():
     return f'MV{date_str}{random_str}'
 
 
+# 生成盘点单号（CT+日期+3位随机数）
+def generate_count_no():
+    date_str = datetime.now().strftime('%Y%m%d')
+    random_str = str(random.randint(100, 999))
+    return f'CT{date_str}{random_str}'
+
+
+# 生成差异单号（VD+日期+3位随机数）
+def generate_variance_no():
+    date_str = datetime.now().strftime('%Y%m%d')
+    random_str = str(random.randint(100, 999))
+    return f'VD{date_str}{random_str}'
+
+
 def recommend_location(product_id, locations):
     """
     根据库位状态（是否空闲、是否同品）自动推荐一个最佳库位

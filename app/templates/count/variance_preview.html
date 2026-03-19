@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block title %}差异预览 - 仓库管理系统{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <h3 class="mb-3">差异预览 - {{ count.count_no }}</h3>
+
+            <!-- 统计摘要 -->
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body">
+                            <h6 class="card-title">盘亏数量</h6>
+                            <h4>{{ total_loss }}</h4>
+                            <small>共 {{ losses|length }} 件商品</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h6 class="card-title">盘盈数量</h6>
+                            <h4>{{ total_gain }}</h4>
+                            <small>共 {{ gains|length }} 件商品</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-secondary text-white">
+                        <div class="card-body">
+                            <h6 class="card-title">无差异</h6>
+                            <h4>{{ no_variance|length }}</h4>
+                            <small>件商品</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <h6 class="card-title">未实盘</h6>
+                            <h4>{{ uncounted|length }}</h4>
+                            <small>件商品</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 盘点状态 -->
+            {% if uncounted|length > 0 %}
+            <div class="alert alert-warning" role="alert">
+                <strong>⚠️ 注意：</strong> 还有 <strong>{{ uncounted|length }}</strong> 件商品未进行实盘计数。
+                请返回详情页面补全实盘数量，或直接生成差异单（未实盘的商品将按快照数量处理）。
+            </div>
+            {% endif %}
+
+            <!-- 盘盈明细 -->
+            {% if gains %}
+            <div class="card mb-3">
+                <div class="card-header bg-success text-white">
+                    <strong>盘盈明细 (共 {{ gains|length }} 项，总计 {{ total_gain }} 件)</strong>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>商品编码</th>
+                                <th>商品名称</th>
+                                <th>库位</th>
+                                <th>批次号</th>
+                                <th>快照数量</th>
+                                <th>实盘数量</th>
+                                <th>盘盈数量</th>
+                                <th>原因</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for detail in gains %}
+                            <tr>
+                                <td>{{ detail.product.code }}</td>
+                                <td>{{ detail.product.name }}</td>
+                                <td>{{ detail.location.code }}</td>
+                                <td>{{ detail.batch_no or '-' }}</td>
+                                <td>{{ detail.snapshot_quantity }}</td>
+                                <td><strong>{{ detail.counted_quantity }}</strong></td>
+                                <td><span class="badge bg-success">+{{ detail.variance_quantity }}</span></td>
+                                <td><small>{{ detail.variance_reason or '-' }}</small></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 盘亏明细 -->
+            {% if losses %}
+            <div class="card mb-3">
+                <div class="card-header bg-danger text-white">
+                    <strong>盘亏明细 (共 {{ losses|length }} 项，总计 {{ total_loss }} 件)</strong>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>商品编码</th>
+                                <th>商品名称</th>
+                                <th>库位</th>
+                                <th>批次号</th>
+                                <th>快照数量</th>
+                                <th>实盘数量</th>
+                                <th>盘亏数量</th>
+                                <th>原因</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for detail in losses %}
+                            <tr>
+                                <td>{{ detail.product.code }}</td>
+                                <td>{{ detail.product.name }}</td>
+                                <td>{{ detail.location.code }}</td>
+                                <td>{{ detail.batch_no or '-' }}</td>
+                                <td>{{ detail.snapshot_quantity }}</td>
+                                <td><strong>{{ detail.counted_quantity }}</strong></td>
+                                <td><span class="badge bg-danger">-{{ abs(detail.variance_quantity) }}</span></td>
+                                <td><small>{{ detail.variance_reason or '-' }}</small></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 无差异明细 -->
+            {% if no_variance %}
+            <div class="card mb-3">
+                <div class="card-header bg-secondary text-white">
+                    <strong>无差异明细 (共 {{ no_variance|length }} 项)</strong>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>商品编码</th>
+                                <th>商品名称</th>
+                                <th>库位</th>
+                                <th>快照数量</th>
+                                <th>实盘数量</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for detail in no_variance %}
+                            <tr>
+                                <td>{{ detail.product.code }}</td>
+                                <td>{{ detail.product.name }}</td>
+                                <td>{{ detail.location.code }}</td>
+                                <td>{{ detail.snapshot_quantity }}</td>
+                                <td>{{ detail.counted_quantity }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 操作按钮 -->
+            <div class="mt-4">
+                <form method="POST" action="{{ url_for('count.generate_variances', count_id=count.id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="fa fa-check-circle"></i> 生成差异单并冻结库存
+                    </button>
+                </form>
+                <a href="{{ url_for('count.detail', count_id=count.id) }}" class="btn btn-secondary btn-lg">
+                    <i class="fa fa-arrow-left"></i> 返回详情页
+                </a>
+            </div>
+
+            <!-- 警告提示 -->
+            <div class="alert alert-info mt-4" role="alert">
+                <strong>📌 说明：</strong>
+                <br>• 生成差异单后，差异数量将被冻结到库存中，防止其他业务操作误用。
+                <br>• 盘亏差异会冻结对应数量的物理库存；盘盈差异会冻结增加的数量。
+                <br>• 冻结将持续到差异单审核完毕（通过或驳回）。
+                <br>• 如需修改实盘数量，请返回详情页面编辑。
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
