@@ -5,6 +5,7 @@ from app import db
 from app.models.count import InventoryCount, InventoryCountDetail, VarianceDocument, VarianceDetail, InventoryFreezeRecord
 from app.models.inventory import Inventory, WarehouseLocation, InventoryChangeLog
 from app.models.product import Product, Category, Supplier
+from app.models.user import User
 from app.utils.auth import permission_required
 from app.utils.helpers import generate_count_no, generate_variance_no
 import json
@@ -436,10 +437,6 @@ def _approve_variance_internal(variance, force, approver_id):
         count_detail = detail.count_detail
         inventory = count_detail.inventory
         
-        quantity_before = inventory.quantity
-        locked_before = inventory.locked_quantity
-        frozen_before = inventory.frozen_quantity
-        
         new_physical = inventory.quantity + detail.variance_quantity
         min_required = inventory.locked_quantity + (inventory.frozen_quantity - abs(detail.variance_quantity))
         
@@ -454,7 +451,13 @@ def _approve_variance_internal(variance, force, approver_id):
             inventory.quantity += detail.variance_quantity
         else:
             inventory.quantity -= abs(detail.variance_quantity)
-            inventory.frozen_quantity -= abs(detail.variance_quantity)
+            
+        freeze_to_release = abs(detail.variance_quantity)
+        if freeze_to_release > inventory.frozen_quantity:
+            raise ValueError(
+                f'商品 {inventory.product.code} 冻结数量 {inventory.frozen_quantity} 不足以释放 {freeze_to_release}'
+            )
+        inventory.frozen_quantity -= freeze_to_release
         
         quantity_after = inventory.quantity
         locked_after = inventory.locked_quantity
@@ -513,6 +516,10 @@ def reject_variance(variance_id):
                     
                     # 恢复库存冻结数量
                     inventory = freeze_record.inventory
+                    if freeze_record.freeze_qty > inventory.frozen_quantity:
+                        raise ValueError(
+                            f'商品 {inventory.product.code} 冻结数量 {inventory.frozen_quantity} 不足以释放 {freeze_record.freeze_qty}'
+                        )
                     inventory.frozen_quantity -= freeze_record.freeze_qty
         
         variance.status = 'rejected'
