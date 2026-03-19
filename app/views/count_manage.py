@@ -359,6 +359,33 @@ def _create_variance_document(count, variance_type, details):
         detail.variance_doc_id = variance_doc.id
 
 
+# ==================== 冻结记录管理 ====================
+
+@count_bp.route('/freeze/list')
+@permission_required('inventory_manage')
+@login_required
+def freeze_list():
+    """冻结记录列表"""
+    status = request.args.get('status', '')
+    freeze_type = request.args.get('freeze_type', '')
+    
+    query = InventoryFreezeRecord.query
+    
+    if status:
+        query = query.filter_by(status=status)
+    if freeze_type:
+        query = query.filter_by(freeze_type=freeze_type)
+    
+    page = request.args.get('page', 1, type=int)
+    pagination = query.order_by(InventoryFreezeRecord.create_time.desc()).paginate(page=page, per_page=10)
+    
+    return render_template('count/freeze_list.html',
+                         freezes=pagination.items,
+                         pagination=pagination,
+                         status=status,
+                         freeze_type=freeze_type)
+
+
 # ==================== 差异单审核 ====================
 
 @count_bp.route('/variances/list')

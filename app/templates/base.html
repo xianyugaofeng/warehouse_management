@@ -74,6 +74,9 @@
                     {% if current_user.has_permission('inventory_manage') %}
                         <a href="{{ url_for('inventory.list') }}" class="list-group-item list-group-item-action">库存管理</a>
                         <a href="{{ url_for('stock_move.list') }}" class="list-group-item list-group-item-action">库存移动</a>
+                        <a href="{{ url_for('count.count_list') }}" class="list-group-item list-group-item-action">盘点单管理</a>
+                        <a href="{{ url_for('count.variance_list') }}" class="list-group-item list-group-item-action">差异单管理</a>
+                        <a href="{{ url_for('count.freeze_list') }}" class="list-group-item list-group-item-action">冻结记录</a>
                     {% endif %}
                     {% if current_user.has_permission('report_view') %}
                         <a href="{{ url_for('report.index') }}" class="list-group-item list-group-item-action">报表统计</a>
