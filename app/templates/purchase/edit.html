@@ -51,14 +51,7 @@
                             </div>
                         </div>
                         <div class="row mt-3">
-                            <div class="col-md-3">
-                                <label for="allow_partial_receipt" class="form-label">允许部分收货</label>
-                                <select name="allow_partial_receipt" id="allow_partial_receipt" class="form-select">
-                                    <option value="false" {% if not purchase_order.allow_partial_receipt %}selected{% endif %}>否（必须全部收货）</option>
-                                    <option value="true" {% if purchase_order.allow_partial_receipt %}selected{% endif %}>是（可以分批收货）</option>
-                                </select>
-                            </div>
-                            <div class="col-md-9">
+                            <div class="col-md-12">
                                 <label for="remark" class="form-label">备注</label>
                                 <input type="text" name="remark" id="remark" class="form-control" value="{{ purchase_order.remark or '' }}">
                             </div>
