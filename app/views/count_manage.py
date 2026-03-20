@@ -186,6 +186,9 @@ def update_item(count_id, detail_id):
     if detail.count_id != count_id:
         return jsonify({'success': False, 'message': '明细不属于该盘点单'}), 400
     
+    if count.status == 'completed':
+        return jsonify({'success': False, 'message': '已完成的盘点单无法修改'}), 400
+    
     try:
         data = request.get_json()
         counted_qty = data.get('counted_qty')
@@ -351,6 +354,7 @@ def _create_variance_document(count, variance_type, details):
             status='frozen'
         )
         db.session.add(freeze_record)
+        db.session.flush()  # 刷新会话以获取freeze_record.id
         
         # 更新库存冻结数量
         inventory.frozen_quantity += freeze_qty
@@ -496,6 +500,17 @@ def _approve_variance_internal(variance, force, approver_id):
                 freeze_record.status = 'released'
                 freeze_record.released_time = datetime.utcnow()
                 freeze_record.released_reason = 'Variance approved'
+        else:
+            freeze_record = InventoryFreezeRecord.query.filter_by(
+                variance_doc_id=variance.id,
+                product_id=count_detail.product_id,
+                location_id=count_detail.location_id,
+                status='frozen'
+            ).first()
+            if freeze_record:
+                freeze_record.status = 'released'
+                freeze_record.released_time = datetime.utcnow()
+                freeze_record.released_reason = 'Variance approved'
         
         detail.processed = True
         detail.processed_time = datetime.utcnow()
@@ -571,6 +586,10 @@ def reject_variance(variance_id):
 def import_counted(count_id):
     """导入实盘数量（Excel/CSV）"""
     count = InventoryCount.query.get_or_404(count_id)
+    
+    if count.status == 'completed':
+        flash('已完成的盘点单无法导入数据', 'danger')
+        return redirect(url_for('count.detail', count_id=count_id))
     
     if request.method == 'POST':
         # 接收AJAX请求

@@ -39,6 +39,7 @@ class InventoryCount(db.Model):
     operator = db.relationship('User', foreign_keys=[operator_id], backref='count_orders')
     approver = db.relationship('User', foreign_keys=[approver_id])
     details = db.relationship('InventoryCountDetail', backref='count', lazy='dynamic', cascade='all, delete-orphan')
+    variance_docs = db.relationship('VarianceDocument', backref='count_ref', lazy='dynamic')
     
     def __repr__(self):
         return f'<InventoryCount {self.count_no} - {self.count_type}>'
@@ -148,7 +149,7 @@ class VarianceDocument(db.Model):
     update_time = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # 关联关系
-    count = db.relationship('InventoryCount')
+    count = db.relationship('InventoryCount', back_populates='variance_docs')
     approver = db.relationship('User', backref='approved_variances')
     details = db.relationship('VarianceDetail', backref='variance_doc', cascade='all, delete-orphan')
     adjust_log = db.relationship('InventoryChangeLog', backref='variance_doc')

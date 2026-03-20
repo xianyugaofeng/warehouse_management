@@ -169,11 +169,33 @@
 
             <!-- 操作按钮 -->
             <div class="mt-4">
+                {% if count.status in ['draft', 'in_progress'] %}
                 <form method="POST" action="{{ url_for('count.generate_variances', count_id=count.id) }}" style="display: inline;">
                     <button type="submit" class="btn btn-success btn-lg">
                         <i class="fa fa-check-circle"></i> 生成差异单并冻结库存
                     </button>
                 </form>
+                {% else %}
+                <div class="alert alert-success" role="alert">
+                    <strong>✓ 差异单已生成</strong>
+                    <br>该盘点单已完成，差异单已生成并等待审核。
+                    {% if count.variance_docs %}
+                    <hr>
+                    <strong>已生成的差异单：</strong>
+                    <ul class="mb-0 mt-2">
+                        {% for v in count.variance_docs %}
+                        <li>
+                            <a href="{{ url_for('count.variance_detail', variance_id=v.id) }}">{{ v.variance_no }}</a>
+                            - {% if v.variance_type == 'gain' %}盘盈{% else %}盘亏{% endif %}
+                            - {% if v.status == 'pending' %}<span class="badge bg-warning">待审核</span>
+                            {% elif v.status == 'approved' %}<span class="badge bg-success">已通过</span>
+                            {% else %}<span class="badge bg-danger">已驳回</span>{% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+                {% endif %}
                 <a href="{{ url_for('count.detail', count_id=count.id) }}" class="btn btn-secondary btn-lg">
                     <i class="fa fa-arrow-left"></i> 返回详情页
                 </a>

@@ -96,20 +96,20 @@
 
             <!-- 操作按钮 -->
             <div class="mb-3">
+                {% if count.status != 'completed' %}
                 <a href="{{ url_for('count.import_counted', count_id=count.id) }}" 
                    class="btn btn-success" data-bs-toggle="tooltip" title="通过Excel导入批量实盘数量">
                     <i class="fa fa-upload"></i> 批量导入
                 </a>
+                {% endif %}
                 <a href="{{ url_for('count.export_template', count_id=count.id) }}" 
                    class="btn btn-info" data-bs-toggle="tooltip" title="导出包含现有数据的Excel模板">
                     <i class="fa fa-download"></i> 导出模板
                 </a>
-                {% if count.status in ['draft', 'in_progress'] %}
-                    <a href="{{ url_for('count.variance_preview', count_id=count.id) }}" 
-                       class="btn btn-warning" data-bs-toggle="tooltip" title="预览差异并生成差异单">
-                        <i class="fa fa-eye"></i> 预览差异
-                    </a>
-                {% endif %}
+                <a href="{{ url_for('count.variance_preview', count_id=count.id) }}" 
+                   class="btn btn-warning" data-bs-toggle="tooltip" title="预览差异并生成差异单">
+                    <i class="fa fa-eye"></i> 预览差异
+                </a>
                 <a href="{{ url_for('count.count_list') }}" class="btn btn-secondary">
                     <i class="fa fa-arrow-left"></i> 返回列表
                 </a>
@@ -160,7 +160,8 @@
                                         <input type="number" min="0" class="form-control form-control-sm counted-input"
                                                data-detail-id="{{ detail.id }}" data-count-id="{{ count.id }}"
                                                value="{{ detail.counted_quantity or '' }}"
-                                               placeholder="输入实盘数">
+                                               placeholder="输入实盘数"
+                                               {% if count.status == 'completed' %}disabled{% endif %}>
                                     </td>
                                     <td>
                                         {% if detail.variance_type == 'gain' %}
@@ -177,13 +178,18 @@
                                         <input type="text" class="form-control form-control-sm reason-input"
                                                data-detail-id="{{ detail.id }}" data-count-id="{{ count.id }}"
                                                value="{{ detail.variance_reason or '' }}"
-                                               placeholder="差异原因">
+                                               placeholder="差异原因"
+                                               {% if count.status == 'completed' %}disabled{% endif %}>
                                     </td>
                                     <td>
+                                        {% if count.status != 'completed' %}
                                         <button class="btn btn-sm btn-primary save-btn"
                                                 data-detail-id="{{ detail.id }}" data-count-id="{{ count.id }}">
                                             <i class="fa fa-save"></i> 保存
                                         </button>
+                                        {% else %}
+                                        <span class="text-muted small">已完成</span>
+                                        {% endif %}
                                     </td>
                                 </tr>
                                 {% endfor %}
