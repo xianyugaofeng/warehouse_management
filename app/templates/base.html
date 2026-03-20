@@ -14,6 +14,8 @@
             min-height: calc(100vh - 56px);
             background-color: #f8f9fa;
             border-right: 1px solid #dee2e6;
+            padding: 0;
+            overflow-y: auto;
         }
         .content {
             padding: 20px;
@@ -24,6 +26,107 @@
             padding: 2px 8px;
             border-radius: 12px;
             font-size: 0.8rem;
+        }
+        /* 侧边栏模块样式 */
+        .sidebar-menu {
+            padding: 0;
+            list-style: none;
+        }
+        .sidebar-module {
+            border-bottom: 1px solid #e9ecef;
+        }
+        .sidebar-module-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 20px;
+            background-color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+        .sidebar-module-header:hover {
+            background-color: #e9ecef;
+        }
+        .sidebar-module-header .module-title {
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.95rem;
+        }
+        .sidebar-module-header .module-icon {
+            margin-right: 10px;
+            font-size: 1.1rem;
+            width: 20px;
+            text-align: center;
+        }
+        .sidebar-module-header .arrow-icon {
+            transition: transform 0.3s ease;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        .sidebar-module-header.collapsed .arrow-icon {
+            transform: rotate(-90deg);
+        }
+        .sidebar-submenu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            background-color: #f8f9fa;
+            max-height: 500px;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out, opacity 0.3s ease;
+            opacity: 1;
+        }
+        .sidebar-submenu.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+        .sidebar-submenu li a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px 12px 50px;
+            color: #6c757d;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            border-left: 3px solid transparent;
+        }
+        .sidebar-submenu li a:hover {
+            background-color: #e9ecef;
+            color: #212529;
+            border-left-color: #0d6efd;
+        }
+        .sidebar-submenu li a.active {
+            background-color: #e7f1ff;
+            color: #0d6efd;
+            border-left-color: #0d6efd;
+            font-weight: 500;
+        }
+        .sidebar-submenu li a .submenu-icon {
+            margin-right: 10px;
+            font-size: 0.85rem;
+            width: 16px;
+            text-align: center;
+        }
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -100%;
+                top: 56px;
+                width: 280px;
+                height: calc(100vh - 56px);
+                z-index: 1000;
+                transition: left 0.3s ease;
+            }
+            .sidebar.show {
+                left: 0;
+            }
+            .content {
+                width: 100% !important;
+            }
         }
     </style>
     {% block css %}{% endblock %}
@@ -59,32 +162,92 @@
             <!-- 侧边栏 -->
             {% if current_user.is_authenticated %}  <!--仅当用户已登录时显示侧边栏-->
             <div class="col-md-2 sidebar">  <!--中等屏幕及以上占 2 列宽度 sidebar: 自定义 CSS 类 之前定义过的样式-->
-                <div class="list-group list-group-flush mt-4">  <!--Bootstrap 列表组 无边框样式list-group-flush mt-4：上边距 1.5rem-->
-                    {% if current_user.has_permission('inbound_manage') %}
-                        <a href="{{ url_for('product.list') }}" class="list-group-item list-group-item-action">商品管理</a>
-                        <a href="{{ url_for('purchase.list') }}" class="list-group-item list-group-item-action">采购单管理</a>
-                        <a href="{{ url_for('inspection.list') }}" class="list-group-item list-group-item-action">检验单管理</a>
-                        <a href="{{ url_for('putaway.list') }}" class="list-group-item list-group-item-action">上架单管理</a>
-                        <a href="{{ url_for('inbound.list') }}" class="list-group-item list-group-item-action">入库单管理</a>
-                        <a href="{{ url_for('return.return_list') }}" class="list-group-item list-group-item-action">退货管理</a>
-                    {% endif %}
+                <ul class="sidebar-menu">
+                    <!-- 基本信息管理模块 -->
+                    <li class="sidebar-module">
+                        <div class="sidebar-module-header" onclick="toggleModule(this)">
+                            <span class="module-title">
+                                <i class="fa fa-cog module-icon"></i>基本信息管理
+                            </span>
+                            <i class="fa fa-chevron-down arrow-icon"></i>
+                        </div>
+                        <ul class="sidebar-submenu">
+                            {% if current_user.has_permission('inbound_manage') %}
+                                <li><a href="{{ url_for('product.list') }}"><i class="fa fa-cube submenu-icon"></i>商品管理</a></li>
+                                <li><a href="{{ url_for('supplier.list') }}"><i class="fa fa-truck submenu-icon"></i>供应商管理</a></li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                    
+                    
+                    <!-- 入库管理模块 -->
+                    <li class="sidebar-module">
+                        <div class="sidebar-module-header" onclick="toggleModule(this)">
+                            <span class="module-title">
+                                <i class="fa fa-download module-icon"></i>入库管理模块
+                            </span>
+                            <i class="fa fa-chevron-down arrow-icon"></i>
+                        </div>
+                        <ul class="sidebar-submenu">
+                            {% if current_user.has_permission('inbound_manage') %}
+                                <li><a href="{{ url_for('purchase.list') }}"><i class="fa fa-shopping-cart submenu-icon"></i>采购单管理</a></li>
+                                <li><a href="{{ url_for('inspection.list') }}"><i class="fa fa-check-circle submenu-icon"></i>检验单管理</a></li>
+                                <li><a href="{{ url_for('putaway.list') }}"><i class="fa fa-level-up submenu-icon"></i>上架单管理</a></li>
+                                <li><a href="{{ url_for('inbound.list') }}"><i class="fa fa-sign-in submenu-icon"></i>入库单管理</a></li>
+                                <li><a href="{{ url_for('return.return_list') }}"><i class="fa fa-undo submenu-icon"></i>退货管理</a></li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                    
+                    <!-- 出库管理模块 -->
                     {% if current_user.has_permission('outbound_manage') %}
-                        <a href="{{ url_for('outbound.list') }}" class="list-group-item list-group-item-action">出库管理</a>
+                    <li class="sidebar-module">
+                        <div class="sidebar-module-header" onclick="toggleModule(this)">
+                            <span class="module-title">
+                                <i class="fa fa-upload module-icon"></i>出库管理模块
+                            </span>
+                            <i class="fa fa-chevron-down arrow-icon"></i>
+                        </div>
+                        <ul class="sidebar-submenu">
+                            <li><a href="{{ url_for('outbound.list') }}"><i class="fa fa-sign-out submenu-icon"></i>出库单管理</a></li>
+                        </ul>
+                    </li>
                     {% endif %}
+                    
+                    <!-- 库存管理模块 -->
                     {% if current_user.has_permission('inventory_manage') %}
-                        <a href="{{ url_for('inventory.list') }}" class="list-group-item list-group-item-action">库存管理</a>
-                        <a href="{{ url_for('stock_move.list') }}" class="list-group-item list-group-item-action">库存移动</a>
-                        <a href="{{ url_for('count.count_list') }}" class="list-group-item list-group-item-action">盘点单管理</a>
-                        <a href="{{ url_for('count.variance_list') }}" class="list-group-item list-group-item-action">差异单管理</a>
-                        <a href="{{ url_for('count.freeze_list') }}" class="list-group-item list-group-item-action">冻结记录</a>
+                    <li class="sidebar-module">
+                        <div class="sidebar-module-header" onclick="toggleModule(this)">
+                            <span class="module-title">
+                                <i class="fa fa-cubes module-icon"></i>库存管理模块
+                            </span>
+                            <i class="fa fa-chevron-down arrow-icon"></i>
+                        </div>
+                        <ul class="sidebar-submenu">
+                            <li><a href="{{ url_for('inventory.list') }}"><i class="fa fa-database submenu-icon"></i>库存查询</a></li>
+                            <li><a href="{{ url_for('stock_move.list') }}"><i class="fa fa-exchange submenu-icon"></i>库存移动</a></li>
+                            <li><a href="{{ url_for('count.count_list') }}"><i class="fa fa-list-ol submenu-icon"></i>盘点单管理</a></li>
+                            <li><a href="{{ url_for('count.variance_list') }}"><i class="fa fa-exclamation-triangle submenu-icon"></i>差异单管理</a></li>
+                            <li><a href="{{ url_for('count.freeze_list') }}"><i class="fa fa-snowflake-o submenu-icon"></i>冻结记录</a></li>
+                        </ul>
+                    </li>
                     {% endif %}
+                    
+                    <!-- 报表统计模块 -->
                     {% if current_user.has_permission('report_view') %}
-                        <a href="{{ url_for('report.index') }}" class="list-group-item list-group-item-action">报表统计</a>
+                    <li class="sidebar-module">
+                        <div class="sidebar-module-header" onclick="toggleModule(this)">
+                            <span class="module-title">
+                                <i class="fa fa-bar-chart module-icon"></i>报表统计模块
+                            </span>
+                            <i class="fa fa-chevron-down arrow-icon"></i>
+                        </div>
+                        <ul class="sidebar-submenu">
+                            <li><a href="{{ url_for('report.index') }}"><i class="fa fa-line-chart submenu-icon"></i>出入库统计报表</a></li>
+                        </ul>
+                    </li>
                     {% endif %}
-                    {% if current_user.has_permission('inbound_manage') %}
-                        <a href="{{ url_for('supplier.list') }}" class="list-group-item list-group-item-action">供应商管理</a>
-                    {% endif %}
-                </div>
+                </ul>
             </div>
             {% endif %}
             <!--主内容区-->
@@ -115,6 +278,39 @@
 
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- 侧边栏交互脚本 -->
+    <script>
+        // 切换模块展开/收缩
+        function toggleModule(header) {
+            const submenu = header.nextElementSibling;
+            const isCollapsed = submenu.classList.contains('collapsed');
+            
+            // 切换状态
+            header.classList.toggle('collapsed');
+            submenu.classList.toggle('collapsed');
+        }
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 高亮当前页面的菜单项
+            const currentPath = window.location.pathname;
+            const menuLinks = document.querySelectorAll('.sidebar-submenu li a');
+            
+            menuLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                    // 展开父级菜单
+                    const parentSubmenu = link.closest('.sidebar-submenu');
+                    const parentHeader = parentSubmenu.previousElementSibling;
+                    if (parentSubmenu && parentHeader) {
+                        parentSubmenu.classList.remove('collapsed');
+                        parentHeader.classList.remove('collapsed');
+                    }
+                }
+            });
+        });
+    </script>
 
     {% block js %}{% endblock %}
 </body>
