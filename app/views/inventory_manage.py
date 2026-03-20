@@ -67,25 +67,6 @@ def detail(inventory_id):
     logs = InventoryChangeLog.query.filter_by(inventory_id=inventory_id).order_by(InventoryChangeLog.create_time.desc()).limit(50).all()
     return render_template('inventory/detail.html', inventory=inventory, logs=logs)
 
-# 库存调整（盘点）
-@inventory_bp.route('/adjust/<int:inventory_id>', methods=['GET', 'POST'])
-@permission_required('inventory_manage')
-@login_required
-def adjust(inventory_id):
-    inventory = Inventory.query.get_or_404(inventory_id)
-    if request.method == 'POST':
-        new_quantity = int(request.form.get('quantity', 0))
-        reason = request.form.get('reason', '盘点调整')
-        try:
-            inventory.adjust_quantity(new_quantity, reason)
-            db.session.commit()
-            flash('库存调整成功', 'success')
-            return redirect(url_for('inventory.detail', inventory_id=inventory_id))
-        except ValueError as e:
-            flash(str(e), 'danger')
-            return redirect(url_for('inventory.adjust', inventory_id=inventory_id))
-    return render_template('inventory/adjust.html', inventory=inventory)
-
 # 库存预警列表
 @inventory_bp.route('/warning')
 @permission_required('inventory_manage')
