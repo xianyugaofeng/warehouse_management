@@ -124,7 +124,7 @@
                                 <td>{{ detail.batch_no or '-' }}</td>
                                 <td>{{ detail.snapshot_quantity }}</td>
                                 <td><strong>{{ detail.counted_quantity }}</strong></td>
-                                <td><span class="badge bg-danger">-{{ abs(detail.variance_quantity) }}</span></td>
+                                <td><span class="badge bg-danger">-{{ detail.variance_quantity|abs() }}</span></span>
                                 <td><small>{{ detail.variance_reason or '-' }}</small></td>
                             </tr>
                             {% endfor %}

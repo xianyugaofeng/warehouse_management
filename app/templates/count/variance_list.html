@@ -90,6 +90,10 @@
                                     <td>
                                         <a href="{{ url_for('count.variance_detail', variance_id=v.id) }}" 
                                            class="btn btn-sm btn-primary">详情</a>
+                                        {% if v.status == 'pending' %}
+                                        <a href="{{ url_for('count.variance_detail', variance_id=v.id) }}" 
+                                           class="btn btn-sm btn-success">审核</a>
+                                        {% endif %}
                                     </td>
                                 </tr>
                                 {% endfor %}
