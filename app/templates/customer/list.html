@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block title %}客户管理 - 仓库管理系统{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <h3 class="mb-4">客户管理</h3>
+
+            <!-- 查询条件 -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="GET" class="form-inline" role="search">
+                        <div class="form-group me-2 mb-2">
+                            <input type="text" class="form-control" name="keyword" 
+                                   placeholder="客户编号/名称/联系人/电话" value="{{ keyword }}">
+                        </div>
+                        <div class="form-group me-2 mb-2">
+                            <select class="form-control" name="status">
+                                <option value="">全部状态</option>
+                                <option value="active" {% if status == 'active' %}selected{% endif %}>启用</option>
+                                <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>停用</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary me-2 mb-2">查询</button>
+                        <a href="{{ url_for('customer.add') }}" class="btn btn-success mb-2">
+                            <i class="fa fa-plus"></i> 添加客户
+                        </a>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 客户列表 -->
+            <div class="card">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>客户编号</th>
+                                <th>客户名称</th>
+                                <th>联系人</th>
+                                <th>联系电话</th>
+                                <th>电子邮箱</th>
+                                <th>地址</th>
+                                <th>状态</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if customers %}
+                                {% for customer in customers %}
+                                <tr>
+                                    <td><strong>{{ customer.code }}</strong></td>
+                                    <td>{{ customer.name }}</td>
+                                    <td>{{ customer.contact_person or '-' }}</td>
+                                    <td>{{ customer.phone or '-' }}</td>
+                                    <td>{{ customer.email or '-' }}</td>
+                                    <td><small>{{ customer.address or '-' }}</small></td>
+                                    <td>
+                                        {% if customer.status %}
+                                            <span class="badge bg-success">启用</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">停用</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ customer.create_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        <a href="{{ url_for('customer.edit', id=customer.id) }}" 
+                                           class="btn btn-sm btn-primary" title="编辑">
+                                            <i class="fa fa-edit"></i>
+                                        </a>
+                                        <a href="{{ url_for('customer.toggle_status', id=customer.id) }}" 
+                                           class="btn btn-sm {% if customer.status %}btn-warning{% else %}btn-success{% endif %}" 
+                                           title="{% if customer.status %}停用{% else %}启用{% endif %}">
+                                            <i class="fa fa-{% if customer.status %}ban{% else %}check{% endif %}"></i>
+                                        </a>
+                                        <a href="{{ url_for('customer.delete', id=customer.id) }}" 
+                                           class="btn btn-sm btn-danger" 
+                                           onclick="return confirm('确定要删除该客户吗？')"
+                                           title="删除">
+                                            <i class="fa fa-trash"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted">暂无客户数据</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 分页 -->
+            {% if pagination.pages > 1 %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination">
+                    {% if pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('customer.list', page=pagination.prev_num, keyword=keyword, status=status) }}">上一页</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">上一页</span>
+                        </li>
+                    {% endif %}
+                    
+                    {% for page_num in pagination.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num == pagination.page %}
+                                <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('customer.list', page=page_num, keyword=keyword, status=status) }}">{{ page_num }}</a>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('customer.list', page=pagination.next_num, keyword=keyword, status=status) }}">下一页</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">下一页</span>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

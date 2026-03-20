@@ -175,6 +175,7 @@
                             {% if current_user.has_permission('inbound_manage') %}
                                 <li><a href="{{ url_for('product.list') }}"><i class="fa fa-cube submenu-icon"></i>商品管理</a></li>
                                 <li><a href="{{ url_for('supplier.list') }}"><i class="fa fa-truck submenu-icon"></i>供应商管理</a></li>
+                                <li><a href="{{ url_for('customer.list') }}"><i class="fa fa-users submenu-icon"></i>客户管理</a></li>
                             {% endif %}
                         </ul>
                     </li>

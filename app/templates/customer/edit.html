@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if customer %}编辑客户{% else %}添加客户{% endif %} - 仓库管理系统{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <h3 class="mb-4">{% if customer %}编辑客户{% else %}添加客户{% endif %}</h3>
+
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="code" class="form-label">客户编号 <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="code" name="code" 
+                                       value="{{ customer.code if customer else '' }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">客户名称 <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{{ customer.name if customer else '' }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="contact_person" class="form-label">联系人</label>
+                                <input type="text" class="form-control" id="contact_person" name="contact_person" 
+                                       value="{{ customer.contact_person if customer else '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="phone" class="form-label">联系电话</label>
+                                <input type="text" class="form-control" id="phone" name="phone" 
+                                       value="{{ customer.phone if customer else '' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">电子邮箱</label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ customer.email if customer else '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="status" class="form-label">状态</label>
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" type="checkbox" id="status" name="status" 
+                                           {% if not customer or customer.status %}checked{% endif %}>
+                                    <label class="form-check-label" for="status">启用</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="address" class="form-label">地址</label>
+                            <input type="text" class="form-control" id="address" name="address" 
+                                   value="{{ customer.address if customer else '' }}">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="remark" class="form-label">备注</label>
+                            <textarea class="form-control" id="remark" name="remark" rows="3">{{ customer.remark if customer else '' }}</textarea>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-save"></i> 保存
+                            </button>
+                            <a href="{{ url_for('customer.list') }}" class="btn btn-secondary">
+                                <i class="fa fa-arrow-left"></i> 返回列表
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

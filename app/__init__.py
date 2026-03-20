@@ -29,6 +29,7 @@ def create_app(config_name='default'):
     from app.views.inventory_manage import inventory_bp
     from app.views.product_manage import product_bp
     from app.views.supplier_manage import supplier_bp
+    from app.views.customer_manage import customer_bp
     from app.views.report import report_bp
     from app.views.inspection_manage import inspection_bp
     from app.views.purchase_manage import purchase_bp
@@ -44,6 +45,7 @@ def create_app(config_name='default'):
     app.register_blueprint(inventory_bp, url_prefix='/inventory')
     app.register_blueprint(product_bp, url_prefix='/product')
     app.register_blueprint(supplier_bp, url_prefix='/supplier')
+    app.register_blueprint(customer_bp, url_prefix='/customer')
     app.register_blueprint(report_bp, url_prefix='/report')
     app.register_blueprint(inspection_bp, url_prefix='/inspection')
     app.register_blueprint(purchase_bp, url_prefix='/purchase')

@@ -33,6 +33,24 @@ class Supplier(db.Model):
         return f'<Supplier {self.name}>'
 
 
+class Customer(db.Model):
+    __tablename__ = 'customers'
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(32), unique=True, nullable=False)  # 客户编号
+    name = db.Column(db.String(64), nullable=False)  # 客户名称
+    contact_person = db.Column(db.String(32))  # 联系人
+    phone = db.Column(db.String(16))  # 联系电话
+    email = db.Column(db.String(64))  # 电子邮箱
+    address = db.Column(db.String(256))  # 地址
+    status = db.Column(db.Boolean, default=True)  # 状态：True-启用, False-停用
+    remark = db.Column(db.String(256))  # 备注
+    create_time = db.Column(db.DateTime, default=datetime.utcnow)
+    update_time = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<Customer {self.name}>'
+
+
 class Product(db.Model):
     __tablename__ = 'products'
     id = db.Column(db.Integer, primary_key=True)
