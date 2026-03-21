@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block title %}新建销售单 - 仓库管理系统{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fa fa-plus-circle"></i> 新建销售单</h2>
+        <div>
+            <a href="{{ url_for('sales.list') }}" class="btn btn-sm btn-secondary">
+                <i class="fa fa-arrow-left"></i> 返回列表
+            </a>
+        </div>
+    </div>
+
+    <!-- 销售单表单 -->
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('sales.create') }}" id="salesForm">
+                <!-- 基本信息 -->
+                <h5 class="card-title mb-3">基本信息</h5>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="customer_id" class="form-label">客户 <span class="text-danger">*</span></label>
+                        <select name="customer_id" id="customer_id" class="form-select" required>
+                            <option value="">-- 请选择客户 --</option>
+                            {% for customer in customers %}
+                                <option value="{{ customer.id }}">{{ customer.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="warehouse_id" class="form-label">仓库 <span class="text-danger">*</span></label>
+                        <select name="warehouse_id" id="warehouse_id" class="form-select" required>
+                            <option value="">-- 请选择仓库 --</option>
+                            {% for warehouse in warehouses %}
+                                <option value="{{ warehouse.id }}">{{ warehouse.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="outbound_type" class="form-label">出库类型 <span class="text-danger">*</span></label>
+                        <select name="outbound_type" id="outbound_type" class="form-select" required>
+                            <option value="">-- 请选择 --</option>
+                            <option value="normal">普通出库</option>
+                            <option value="express">加急出库</option>
+                            <option value="special">特殊出库</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="expected_outbound_date" class="form-label">期望出库日期 <span class="text-danger">*</span></label>
+                        <input type="date" name="expected_outbound_date" id="expected_outbound_date" class="form-control" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="remark" class="form-label">备注</label>
+                        <input type="text" name="remark" id="remark" class="form-control" placeholder="可选备注信息">
+                    </div>
+                </div>
+
+                <!-- 销售单明细 -->
+                <h5 class="card-title mb-3 mt-4">销售单明细</h5>
+                <div class="table-responsive mb-3">
+                    <table class="table table-bordered" id="itemsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 35%">商品</th>
+                                <th style="width: 20%">数量</th>
+                                <th style="width: 20%">单价</th>
+                                <th style="width: 15%">小计</th>
+                                <th style="width: 10%">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsBody">
+                            <tr class="item-row">
+                                <td>
+                                    <select name="product_id[]" class="form-select product-select" required>
+                                        <option value="">-- 选择商品 --</option>
+                                        {% for product in products %}
+                                            <option value="{{ product.id }}">{{ product.code }} - {{ product.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="number" name="quantity[]" class="form-control quantity-input" min="1" value="1" required>
+                                </td>
+                                <td>
+                                    <input type="number" name="unit_price[]" class="form-control price-input" min="0" step="0.01" value="0" required>
+                                </td>
+                                <td>
+                                    <span class="subtotal">0.00</span>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-danger remove-row" style="display: none;">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="5">
+                                    <button type="button" class="btn btn-sm btn-secondary" id="addRowBtn">
+                                        <i class="fa fa-plus"></i> 添加明细
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr class="table-light font-weight-bold">
+                                <td colspan="3" class="text-end"><strong>合计金额：</strong></td>
+                                <td><strong id="totalAmount">0.00</strong></td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- 提交按钮 -->
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-save"></i> 创建销售单
+                    </button>
+                    <a href="{{ url_for('sales.list') }}" class="btn btn-outline-secondary">取消</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript 用于动态行管理 -->
+    <script>
+        const addRowBtn = document.getElementById('addRowBtn');
+        const itemsBody = document.getElementById('itemsBody');
+        const products = {{ products|tojson }};
+
+        function updateSubtotals() {
+            let total = 0;
+            document.querySelectorAll('.item-row').forEach(row => {
+                const qty = parseFloat(row.querySelector('.quantity-input').value) || 0;
+                const price = parseFloat(row.querySelector('.price-input').value) || 0;
+                const subtotal = qty * price;
+                row.querySelector('.subtotal').textContent = subtotal.toFixed(2);
+                total += subtotal;
+            });
+            document.getElementById('totalAmount').textContent = total.toFixed(2);
+        }
+
+        function updateRemoveButtons() {
+            const rows = document.querySelectorAll('.item-row');
+            rows.forEach(row => {
+                row.querySelector('.remove-row').style.display = rows.length > 1 ? 'block' : 'none';
+            });
+        }
+
+        addRowBtn.addEventListener('click', function() {
+            const newRow = document.querySelector('.item-row').cloneNode(true);
+            newRow.querySelector('.quantity-input').value = '1';
+            newRow.querySelector('.price-input').value = '0';
+            
+            const removeBtn = newRow.querySelector('.remove-row');
+            removeBtn.addEventListener('click', function() {
+                newRow.remove();
+                updateSubtotals();
+                updateRemoveButtons();
+            });
+
+            // 重新绑定商品选择
+            const productSelect = newRow.querySelector('.product-select');
+            productSelect.value = '';
+
+            itemsBody.appendChild(newRow);
+            updateRemoveButtons();
+        });
+
+        // 绑定第一行的事件监听
+        document.querySelectorAll('.quantity-input, .price-input').forEach(input => {
+            input.addEventListener('change', updateSubtotals);
+        });
+
+        document.querySelector('.remove-row').addEventListener('click', function() {
+            this.closest('.item-row').remove();
+            updateSubtotals();
+            updateRemoveButtons();
+        });
+
+        // 初始化
+        updateRemoveButtons();
+    </script>
+{% endblock %}

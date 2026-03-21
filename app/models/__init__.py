@@ -7,7 +7,10 @@ from .product import Product, Category, Supplier, Customer
 from .purchase import PurchaseOrder
 from .inventory import Inventory, WarehouseLocation, StockMoveOrder, StockMoveItem, InventoryChangeLog
 from .inbound import InboundItem, InboundOrder
-from .outbound import OutboundItem, OutboundOrder
+from .outbound import OutboundItem, OutboundOrder, ShippingOrder, ShippingItem
 from .inspection import InspectionOrder, InspectionItem
 from .return_product import ReturnOrder, ReturnItem
 from .count import InventoryCount, InventoryCountDetail, VarianceDocument, VarianceDetail, InventoryFreezeRecord
+from .sales_order import SalesOrder, SalesOrderItem
+from .allocation_order import AllocationOrder, AllocationItem
+from .picking_order import PickingOrder, PickingItem

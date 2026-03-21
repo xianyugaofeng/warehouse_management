@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}编辑销售单 - 仓库管理系统{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fa fa-edit"></i> 编辑销售单</h2>
+        <div>
+            <a href="{{ url_for('sales.detail', id=sales_order.id) }}" class="btn btn-sm btn-secondary">
+                <i class="fa fa-arrow-left"></i> 返回详情
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('sales.update', id=sales_order.id) }}">
+                <!-- 基本信息（只读） -->
+                <h5 class="card-title mb-3">销售单信息（仅限草稿阶段编辑）</h5>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="order_no" class="form-label">销售单号</label>
+                        <input type="text" class="form-control" id="order_no" value="{{ sales_order.order_no }}" disabled>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="customer_name" class="form-label">客户名称</label>
+                        <input type="text" class="form-control" id="customer_name" value="{{ sales_order.customer.name }}" disabled>
+                    </div>
+                </div>
+
+                <!-- 可编辑字段 -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="expected_outbound_date" class="form-label">期望出库日期 <span class="text-danger">*</span></label>
+                        <input type="date" name="expected_outbound_date" id="expected_outbound_date" class="form-control" 
+                               value="{{ sales_order.expected_outbound_date.strftime('%Y-%m-%d') if sales_order.expected_outbound_date else '' }}" 
+                               required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="remark" class="form-label">备注</label>
+                        <input type="text" name="remark" id="remark" class="form-control" 
+                               value="{{ sales_order.remark or '' }}" 
+                               placeholder="输入备注信息">
+                    </div>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle"></i> 
+                    销售单一旦分配后，将无法编辑。只有处于<strong>待分配</strong>状态的销售单可以修改。
+                </div>
+
+                <!-- 提交按钮 -->
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-save"></i> 保存修改
+                    </button>
+                    <a href="{{ url_for('sales.detail', id=sales_order.id) }}" class="btn btn-outline-secondary">取消</a>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

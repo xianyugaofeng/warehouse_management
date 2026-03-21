@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% block title %}拣货单详情 - 仓库管理系统{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fa fa-list-ul"></i> 拣货单详情</h2>
+        <div>
+            <a href="{{ url_for('picking.list') }}" class="btn btn-sm btn-secondary">
+                <i class="fa fa-arrow-left"></i> 返回列表
+            </a>
+            <a href="{{ url_for('sales.detail', id=picking_order.sales_order_id) }}" class="btn btn-sm btn-info ms-2">
+                <i class="fa fa-file-text"></i> 查看销售单
+            </a>
+        </div>
+    </div>
+
+    <!-- 拣货单基本信息 -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">拣货单信息</h5>
+                    <table class="table table-borderless">
+                        <tbody>
+                            <tr>
+                                <th style="width: 35%">拣货单号</th>
+                                <td>{{ picking_order.picking_no }}</td>
+                            </tr>
+                            <tr>
+                                <th>销售单号</th>
+                                <td>
+                                    <a href="{{ url_for('sales.detail', id=picking_order.sales_order_id) }}">
+                                        {{ picking_order.sales_order.order_no }}
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>客户名称</th>
+                                <td>{{ picking_order.sales_order.customer.name }}</td>
+                            </tr>
+                            <tr>
+                                <th>仓库</th>
+                                <td>{{ picking_order.warehouse.name if picking_order.warehouse else '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>拣货区库位</th>
+                                <td>{{ picking_order.picking_location.code if picking_order.picking_location else '-' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">拣货状态</h5>
+                    <table class="table table-borderless">
+                        <tbody>
+                            <tr>
+                                <th style="width: 35%">拣货状态</th>
+                                <td>
+                                    {% if picking_order.status == 'pending' %}
+                                        <span class="badge bg-secondary">待拣货</span>
+                                    {% elif picking_order.status == 'in_progress' %}
+                                        <span class="badge bg-warning">拣货中</span>
+                                    {% elif picking_order.status == 'completed' %}
+                                        <span class="badge bg-success">已完成</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>创建时间</th>
+                                <td>{{ picking_order.create_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                            </tr>
+                            <tr>
+                                <th>完成时间</th>
+                                <td>{{ picking_order.update_time.strftime('%Y-%m-%d %H:%M') if picking_order.update_time else '-' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    {% if picking_order.status != 'completed' %}
+                        <div class="mt-3">
+                            <p class="small text-muted">提示：完成所有拣货项后，拣货单自动标记为已完成。</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 拣货明细 -->
+    <div class="card mb-3">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                <i class="fa fa-cubes"></i> 拣货明细
+                {% set total_items = picking_order.items|length %}
+                {% set completed_items = picking_order.items|selectattr('status', 'equalto', 'completed')|list|length %}
+                <span class="badge bg-primary float-end">
+                    <i class="fa fa-check"></i> {{ completed_items }} / {{ total_items }} 项
+                </span>
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead class="table-light">
+                        <tr>
+                            <th>商品编码</th>
+                            <th>商品名称</th>
+                            <th>规格</th>
+                            <th>拣货数量</th>
+                            <th>来源库位</th>
+                            <th>目标库位</th>
+                            <th>库存快照</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for picking_item in picking_order.items %}
+                            <tr>
+                                <td>{{ picking_item.allocation_item.product.code }}</td>
+                                <td>{{ picking_item.allocation_item.product.name }}</td>
+                                <td>{{ picking_item.allocation_item.product.spec or '-' }}</td>
+                                <td>
+                                    <strong>{{ picking_item.picked_qty }}</strong>
+                                </td>
+                                <td>
+                                    {{ picking_item.inventory.location.code if picking_item.inventory and picking_item.inventory.location else '-' }}
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">
+                                        {{ picking_order.picking_location.code if picking_order.picking_location else '-' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        库存: {{ picking_item.snapshot_quantity }} 件<br>
+                                        锁定: {{ picking_item.snapshot_locked }} 件
+                                    </small>
+                                </td>
+                                <td>
+                                    {% if picking_item.status == 'pending' %}
+                                        <span class="badge bg-secondary">待拣货</span>
+                                    {% elif picking_item.status == 'in_progress' %}
+                                        <span class="badge bg-warning">拣货中</span>
+                                    {% elif picking_item.status == 'completed' %}
+                                        <span class="badge bg-success">已完成</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if picking_item.status != 'completed' %}
+                                        <form method="POST" action="{{ url_for('picking.complete_item', picking_id=picking_order.id, item_id=picking_item.id) }}" style="display: inline;" onsubmit="return confirm('确认已完成该项拣货？\n\n商品: {{ picking_item.allocation_item.product.name }}\n数量: {{ picking_item.picked_qty }} 件\n\n拣货后库存将转移至拣货区库位。');">
+                                            <button type="submit" class="btn btn-sm btn-success">
+                                                <i class="fa fa-check"></i> 完成拣货
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <span class="badge bg-success"><i class="fa fa-check-circle"></i> 已完成</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="9" class="text-center">暂无拣货明细</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 库位转移说明 -->
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <h6><i class="fa fa-info-circle"></i> 库位转移说明</h6>
+        <p style="margin: 0;">
+            拣货时，系统会自动将商品库存从<strong>正常库位</strong>转移到<strong>拣货库位</strong>：
+        </p>
+        <ul style="margin: 5px 0;">
+            <li><strong>来源库位 → 目标库位</strong>：库存账务调整</li>
+            <li><strong>锁定库存解除</strong>：分配时的锁定数量被释放</li>
+            <li><strong>库位自动清理</strong>：当来源库位库存为0时自动标记为空闲</li>
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <!-- 拣货完成操作 -->
+    {% if picking_order.status != 'completed' %}
+        {% set total_items = picking_order.items|length %}
+        {% set completed_items = picking_order.items|selectattr('status', 'equalto', 'completed')|list|length %}
+        
+        {% if completed_items == total_items %}
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h6 class="card-title text-success">
+                        <i class="fa fa-check-circle"></i> 所有拣货项已完成
+                    </h6>
+                    <p>系统将自动标记拣货单为已完成，准备进入检验阶段。</p>
+                </div>
+            </div>
+        {% else %}
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h6 class="card-title text-warning">
+                        <i class="fa fa-hourglass"></i> 拣货进行中
+                    </h6>
+                    <p>
+                        已完成 <strong>{{ completed_items }}</strong> 项，
+                        剩余 <strong>{{ total_items - completed_items }}</strong> 项
+                    </p>
+                </div>
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="card bg-light border-success">
+            <div class="card-body">
+                <h6 class="card-title text-success">
+                    <i class="fa fa-check-circle"></i> 拣货单已完成
+                </h6>
+                <p>拣货单已完成，系统已自动创建检验单准备进入检验阶段。</p>
+                {% if picking_order.sales_order.inspection_order %}
+                    <a href="{{ url_for('inspection.detail', id=picking_order.sales_order.inspection_order.id) }}" class="btn btn-sm btn-primary">
+                        <i class="fa fa-arrow-right"></i> 查看检验单
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}

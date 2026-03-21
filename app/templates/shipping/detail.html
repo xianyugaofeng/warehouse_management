@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+{% block title %}出库单详情 - 仓库管理系统{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fa fa-truck"></i> 出库单详情</h2>
+        <div>
+            <a href="{{ url_for('shipping.list') }}" class="btn btn-sm btn-secondary">
+                <i class="fa fa-arrow-left"></i> 返回列表
+            </a>
+            <a href="{{ url_for('sales.detail', id=shipping_order.sales_order_id) }}" class="btn btn-sm btn-info ms-2">
+                <i class="fa fa-file-text"></i> 查看销售单
+            </a>
+        </div>
+    </div>
+
+    <!-- 出库单基本信息 -->
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">出库单信息</h5>
+                    <table class="table table-borderless table-sm">
+                        <tbody>
+                            <tr>
+                                <th style="width: 45%">出库单号</th>
+                                <td>{{ shipping_order.shipping_no }}</td>
+                            </tr>
+                            <tr>
+                                <th>销售单号</th>
+                                <td>
+                                    <a href="{{ url_for('sales.detail', id=shipping_order.sales_order_id) }}">
+                                        {{ shipping_order.sales_order.order_no }}
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>出库单状态</th>
+                                <td>
+                                    {% if shipping_order.status == 'pending' %}
+                                        <span class="badge bg-secondary">待出库</span>
+                                    {% elif shipping_order.status == 'partialShipped' %}
+                                        <span class="badge bg-warning">部分出库</span>
+                                    {% elif shipping_order.status == 'completed' %}
+                                        <span class="badge bg-success">已出库</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">客户收货信息</h5>
+                    <table class="table table-borderless table-sm">
+                        <tbody>
+                            <tr>
+                                <th style="width: 45%">客户名称</th>
+                                <td>{{ shipping_order.sales_order.customer.name }}</td>
+                            </tr>
+                            <tr>
+                                <th>收货人</th>
+                                <td>{{ shipping_order.receiver or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>收货电话</th>
+                                <td>{{ shipping_order.receiver_phone or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>收货地址</th>
+                                <td>{{ shipping_order.receiver_address or '-' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">出库数量统计</h5>
+                    <table class="table table-borderless table-sm">
+                        <tbody>
+                            <tr>
+                                <th style="width: 45%">计划出库数量</th>
+                                <td>
+                                    <strong>{{ shipping_order.total_qty or 0 }}</strong> 件
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>已出库数量</th>
+                                <td>
+                                    <strong>{{ shipping_order.shipped_qty or 0 }}</strong> 件
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>待出库数量</th>
+                                <td>
+                                    <strong>{{ (shipping_order.total_qty or 0) - (shipping_order.shipped_qty or 0) }}</strong> 件
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>完成比例</th>
+                                <td>
+                                    <div class="progress" style="height: 20px;">
+                                        {% set percentage = (shipping_order.shipped_qty or 0) * 100 // (shipping_order.total_qty or 1) %}
+                                        <div class="progress-bar {% if percentage == 100 %}bg-success{% elif percentage > 0 %}bg-warning{% else %}bg-secondary{% endif %}" 
+                                             role="progressbar" 
+                                             style="width: {{ percentage }}%" 
+                                             aria-valuenow="{{ percentage }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                            {{ percentage }}%
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 出库明细 -->
+    <div class="card mb-3">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                <i class="fa fa-list"></i> 出库明细
+                <span class="badge bg-primary float-end">共 {{ shipping_order.items|length }} 项</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead class="table-light">
+                        <tr>
+                            <th>商品编码</th>
+                            <th>商品名称</th>
+                            <th>规格</th>
+                            <th>计划数量</th>
+                            <th>已出库</th>
+                            <th>待出库</th>
+                            <th>库位</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for shipping_item in shipping_order.items %}
+                            <tr>
+                                <td>{{ shipping_item.product.code }}</td>
+                                <td>{{ shipping_item.product.name }}</td>
+                                <td>{{ shipping_item.product.spec or '-' }}</td>
+                                <td>{{ shipping_item.planned_qty }}</td>
+                                <td>
+                                    <strong class="text-success">{{ shipping_item.shipped_qty or 0 }}</strong>
+                                </td>
+                                <td>
+                                    <strong class="text-danger">{{ (shipping_item.planned_qty or 0) - (shipping_item.shipped_qty or 0) }}</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">
+                                        {{ shipping_item.location.code if shipping_item.location else '拣货区' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if (shipping_item.planned_qty or 0) == (shipping_item.shipped_qty or 0) %}
+                                        <span class="badge bg-success">已完成</span>
+                                    {% elif (shipping_item.shipped_qty or 0) > 0 %}
+                                        <span class="badge bg-warning">部分出库</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">待出库</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if (shipping_item.planned_qty or 0) > (shipping_item.shipped_qty or 0) and shipping_order.status != 'completed' %}
+                                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#shipModal{{ shipping_item.id }}">
+                                            <i class="fa fa-check"></i> 出库
+                                        </button>
+
+                                        <!-- 出库数量模态框 -->
+                                        <div class="modal fade" id="shipModal{{ shipping_item.id }}" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog modal-sm">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">
+                                                            出库 - {{ shipping_item.product.name }}
+                                                        </h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <form method="POST" action="{{ url_for('shipping.ship_item', shipping_id=shipping_order.id, item_id=shipping_item.id) }}">
+                                                        <div class="modal-body">
+                                                            <div class="mb-3">
+                                                                <label class="form-label">计划数量</label>
+                                                                <input type="text" class="form-control" value="{{ shipping_item.planned_qty }}" disabled>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label">已出库</label>
+                                                                <input type="text" class="form-control" value="{{ shipping_item.shipped_qty or 0 }}" disabled>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label for="ship_qty_{{ shipping_item.id }}" class="form-label">
+                                                                    本次出库数量 <span class="text-danger">*</span>
+                                                                </label>
+                                                                <input type="number" 
+                                                                       id="ship_qty_{{ shipping_item.id }}" 
+                                                                       name="ship_qty" 
+                                                                       class="form-control" 
+                                                                       min="1" 
+                                                                       max="{{ (shipping_item.planned_qty or 0) - (shipping_item.shipped_qty or 0) }}"
+                                                                       value="1"
+                                                                       required>
+                                                                <small class="form-text text-muted">
+                                                                    最多可出库 {{ (shipping_item.planned_qty or 0) - (shipping_item.shipped_qty or 0) }} 件
+                                                                </small>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                                                            <button type="submit" class="btn btn-primary">
+                                                                <i class="fa fa-check"></i> 确认出库
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <span class="badge bg-success"><i class="fa fa-check-circle"></i> 已完成</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="9" class="text-center">暂无出库明细</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 部分出库说明 -->
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <h6><i class="fa fa-info-circle"></i> 部分出库说明</h6>
+        <p style="margin: 0;">
+            系统支持灵活的部分出库：可以多次执行出库操作，每次指定出库数量，直到所有商品全部出库。
+            出库时自动从库存中扣减对应数量，并记录完整的库存变更日志。
+        </p>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <!-- 出库完成状态 -->
+    {% if shipping_order.status == 'completed' %}
+        <div class="card bg-light border-success">
+            <div class="card-body">
+                <h6 class="card-title text-success">
+                    <i class="fa fa-check-circle"></i> 出库单已完成
+                </h6>
+                <p style="margin: 0;">
+                    出库单已于 <strong>{{ shipping_order.completed_time.strftime('%Y-%m-%d %H:%M') if shipping_order.completed_time else '最近' }}</strong> 完成，订单已流转到最终阶段。
+                </p>
+            </div>
+        </div>
+    {% else %}
+        <div class="card bg-light">
+            <div class="card-body">
+                {% set total = shipping_order.total_qty or 0 %}
+                {% set shipped = shipping_order.shipped_qty or 0 %}
+                <h6 class="card-title text-warning">
+                    <i class="fa fa-hourglass"></i> 出库进行中
+                </h6>
+                <p style="margin: 0;">
+                    已出库 <strong>{{ shipped }}</strong> / <strong>{{ total }}</strong> 件，
+                    剩余 <strong>{{ total - shipped }}</strong> 件待出库
+                </p>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- 时间线 -->
+    <div class="card mt-3">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">核心时间节点</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 text-center">
+                    <div class="mb-2">
+                        <i class="fa fa-file-text fa-2x text-muted"></i>
+                    </div>
+                    <h6>销售单创建</h6>
+                    <small class="text-muted">{{ shipping_order.sales_order.create_time.strftime('%m-%d %H:%M') }}</small>
+                </div>
+                <div class="col-md-3 text-center">
+                    <div class="mb-2">
+                        <i class="fa fa-check-square fa-2x text-muted"></i>
+                    </div>
+                    <h6>检验完成</h6>
+                    <small class="text-muted">
+                        {% if shipping_order.sales_order.inspection_order %}
+                            {{ shipping_order.sales_order.inspection_order.create_time.strftime('%m-%d %H:%M') }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </small>
+                </div>
+                <div class="col-md-3 text-center">
+                    <div class="mb-2">
+                        <i class="fa fa-truck fa-2x {% if shipping_order.status != 'pending' %}text-primary{% else %}text-muted{% endif %}"></i>
+                    </div>
+                    <h6>出库开始</h6>
+                    <small class="text-muted">{{ shipping_order.outbound_date.strftime('%m-%d %H:%M') if shipping_order.outbound_date else '-' }}</small>
+                </div>
+                <div class="col-md-3 text-center">
+                    <div class="mb-2">
+                        <i class="fa fa-flag-checkered fa-2x {% if shipping_order.status == 'completed' %}text-success{% else %}text-muted{% endif %}"></i>
+                    </div>
+                    <h6>出库完成</h6>
+                    <small class="text-muted">{{ shipping_order.completed_time.strftime('%m-%d %H:%M') if shipping_order.completed_time else '-' }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

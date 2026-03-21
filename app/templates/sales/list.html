@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% block title %}销售单管理 - 仓库管理系统{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fa fa-shopping-cart"></i> 销售单列表</h2>
+        <div>
+            <a href="{{ url_for('sales.create') }}" class="btn btn-primary">
+                <i class="fa fa-plus"></i> 新建销售单
+            </a>
+        </div>
+    </div>
+
+    <!-- 搜索表单 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form action="{{ url_for('sales.list') }}" method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <input type="text" name="keyword" class="form-control" placeholder="销售单号/客户名称" value="{{ keyword }}">
+                </div>
+                <div class="col-md-2">
+                    <select name="customer_id" class="form-select">
+                        <option value="">所有客户</option>
+                        {% for customer in customers %}
+                            <option value="{{ customer.id }}" {% if customer_id == customer.id|string %}selected{% endif %}>
+                                {{ customer.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="status" class="form-select">
+                        <option value="">所有状态</option>
+                        <option value="pending_allocation" {% if status == 'pending_allocation' %}selected{% endif %}>待分配</option>
+                        <option value="allocated" {% if status == 'allocated' %}selected{% endif %}>已分配</option>
+                        <option value="picked" {% if status == 'picked' %}selected{% endif %}>已拣货</option>
+                        <option value="inspected" {% if status == 'inspected' %}selected{% endif %}>已检验</option>
+                        <option value="shipped" {% if status == 'shipped' %}selected{% endif %}>已出库</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <div class="input-group input-daterange">
+                        <input type="date" name="date_from" class="form-control" placeholder="开始日期" value="{{ date_from or '' }}">
+                        <span class="input-group-text">至</span>
+                        <input type="date" name="date_to" class="form-control" placeholder="结束日期" value="{{ date_to or '' }}">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-secondary w-100">
+                        <i class="fa fa-search"></i> 搜索
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 销售单列表 -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>销售单号</th>
+                            <th>客户名称</th>
+                            <th>仓库</th>
+                            <th>出库类型</th>
+                            <th>数量</th>
+                            <th>出库状态</th>
+                            <th>期望出库日期</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sales_order in sales_orders %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('sales.detail', id=sales_order.id) }}" class="text-decoration-none">
+                                        {{ sales_order.order_no }}
+                                    </a>
+                                </td>
+                                <td>{{ sales_order.customer.name }}</td>
+                                <td>{{ sales_order.warehouse.name if sales_order.warehouse else '-' }}</td>
+                                <td>
+                                    {% if sales_order.outbound_type == 'normal' %}
+                                        <span class="badge bg-info">普通出库</span>
+                                    {% elif sales_order.outbound_type == 'express' %}
+                                        <span class="badge bg-warning">加急出库</span>
+                                    {% elif sales_order.outbound_type == 'special' %}
+                                        <span class="badge bg-danger">特殊出库</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ sales_order.total_quantity }} 件</td>
+                                <td>
+                                    {% if sales_order.status == 'pending_allocation' %}
+                                        <span class="badge bg-secondary">待分配</span>
+                                    {% elif sales_order.status == 'allocated' %}
+                                        <span class="badge bg-primary">已分配</span>
+                                    {% elif sales_order.status == 'picked' %}
+                                        <span class="badge bg-info">已拣货</span>
+                                    {% elif sales_order.status == 'inspected' %}
+                                        <span class="badge bg-warning">已检验</span>
+                                    {% elif sales_order.status == 'shipped' %}
+                                        <span class="badge bg-success">已出库</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ sales_order.expected_outbound_date.strftime('%Y-%m-%d') if sales_order.expected_outbound_date else '-' }}</td>
+                                <td>{{ sales_order.create_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    <a href="{{ url_for('sales.detail', id=sales_order.id) }}" class="btn btn-sm btn-info" title="查看详情">
+                                        <i class="fa fa-eye"></i>
+                                    </a>
+                                    {% if sales_order.status == 'pending_allocation' %}
+                                        <a href="{{ url_for('allocation.create', sales_id=sales_order.id) }}" class="btn btn-sm btn-success" title="创建分配">
+                                            <i class="fa fa-check"></i>
+                                        </a>
+                                        <a href="{{ url_for('sales.update', id=sales_order.id) }}" class="btn btn-sm btn-warning" title="编辑">
+                                            <i class="fa fa-edit"></i>
+                                        </a>
+                                        <form method="POST" action="{{ url_for('sales.delete', id=sales_order.id) }}" style="display: inline;" onsubmit="return confirm('确定删除该销售单吗？');">
+                                            <button type="submit" class="btn btn-sm btn-danger" title="删除">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="9" class="text-center">暂无销售单数据</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分页 -->
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('sales.list', page=pagination.prev_num, keyword=keyword, customer_id=customer_id, status=status, date_from=date_from, date_to=date_to) }}">
+                                上一页
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">上一页</span></li>
+                    {% endif %}
+
+                    {% for page in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=3) %}
+                        {% if page %}
+                            {% if pagination.page == page %}
+                                <li class="page-item active"><span class="page-link">{{ page }}</span></li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('sales.list', page=page, keyword=keyword, customer_id=customer_id, status=status, date_from=date_from, date_to=date_to) }}">
+                                        {{ page }}
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('sales.list', page=pagination.next_num, keyword=keyword, customer_id=customer_id, status=status, date_from=date_from, date_to=date_to) }}">
+                                下一页
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">下一页</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+{% endblock %}

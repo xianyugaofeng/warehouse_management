@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}拣货单列表 - 仓库管理系统{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fa fa-list"></i> 拣货单列表</h2>
+        <div>
+            <a href="{{ url_for('picking.list') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="fa fa-refresh"></i> 刷新
+            </a>
+        </div>
+    </div>
+
+    <!-- 搜索表单 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form action="{{ url_for('picking.list') }}" method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <input type="text" name="keyword" class="form-control" placeholder="拣货单号/销售单号" value="{{ keyword }}">
+                </div>
+                <div class="col-md-3">
+                    <select name="status" class="form-select">
+                        <option value="">所有状态</option>
+                        <option value="pending" {% if status == 'pending' %}selected{% endif %}>待拣货</option>
+                        <option value="in_progress" {% if status == 'in_progress' %}selected{% endif %}>拣货中</option>
+                        <option value="completed" {% if status == 'completed' %}selected{% endif %}>已完成</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-secondary w-100">
+                        <i class="fa fa-search"></i> 搜索
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 拣货单列表 -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>拣货单号</th>
+                            <th>销售单号</th>
+                            <th>仓库</th>
+                            <th>拣货数量</th>
+                            <th>拣货状态</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for picking_order in picking_orders %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('picking.detail', id=picking_order.id) }}" class="text-decoration-none">
+                                        {{ picking_order.picking_no }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('sales.detail', id=picking_order.sales_order_id) }}" class="text-decoration-none">
+                                        {{ picking_order.sales_order.order_no }}
+                                    </a>
+                                </td>
+                                <td>{{ picking_order.warehouse.name if picking_order.warehouse else '-' }}</td>
+                                <td>
+                                    <strong>{{ totals_by_picking.get(picking_order.id, {}).get('total', 0) }}</strong> / 
+                                    <span class="text-muted">{{ totals_by_picking.get(picking_order.id, {}).get('picked', 0) }}</span> 件
+                                </td>
+                                <td>
+                                    {% if picking_order.status == 'pending' %}
+                                        <span class="badge bg-secondary">待拣货</span>
+                                    {% elif picking_order.status == 'in_progress' %}
+                                        <span class="badge bg-warning">拣货中</span>
+                                    {% elif picking_order.status == 'completed' %}
+                                        <span class="badge bg-success">已完成</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ picking_order.create_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    <a href="{{ url_for('picking.detail', id=picking_order.id) }}" class="btn btn-sm btn-info">
+                                        <i class="fa fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center">暂无拣货单数据</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分页 -->
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('picking.list', page=pagination.prev_num, keyword=keyword, status=status) }}">
+                                上一页
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">上一页</span></li>
+                    {% endif %}
+
+                    {% for page in pagination.iter_pages() %}
+                        {% if page %}
+                            {% if pagination.page == page %}
+                                <li class="page-item active"><span class="page-link">{{ page }}</span></li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('picking.list', page=page, keyword=keyword, status=status) }}">
+                                        {{ page }}
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('picking.list', page=pagination.next_num, keyword=keyword, status=status) }}">
+                                下一页
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">下一页</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+{% endblock %}

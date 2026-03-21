@@ -1,0 +1,344 @@
+{% extends "base.html" %}
+{% block title %}销售单详情 - 仓库管理系统{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fa fa-file-text"></i> 销售单详情</h2>
+        <div>
+            <a href="{{ url_for('sales.list') }}" class="btn btn-sm btn-secondary">
+                <i class="fa fa-arrow-left"></i> 返回列表
+            </a>
+            {% if sales_order.status == 'pending_allocation' %}
+                <a href="{{ url_for('sales.update', id=sales_order.id) }}" class="btn btn-sm btn-warning ms-2">
+                    <i class="fa fa-edit"></i> 编辑
+                </a>
+                <form method="POST" action="{{ url_for('sales.delete', id=sales_order.id) }}" style="display: inline;" onsubmit="return confirm('确定删除该销售单吗？');">
+                    <button type="submit" class="btn btn-sm btn-danger">
+                        <i class="fa fa-trash"></i> 删除
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 销售单基本信息 -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">销售单信息</h5>
+                    <table class="table table-borderless">
+                        <tbody>
+                            <tr>
+                                <th style="width: 30%">销售单号</th>
+                                <td>{{ sales_order.order_no }}</td>
+                            </tr>
+                            <tr>
+                                <th>客户名称</th>
+                                <td>{{ sales_order.customer.name }}</td>
+                            </tr>
+                            <tr>
+                                <th>仓库</th>
+                                <td>{{ sales_order.warehouse.name if sales_order.warehouse else '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>出库类型</th>
+                                <td>
+                                    {% if sales_order.outbound_type == 'normal' %}
+                                        <span class="badge bg-info">普通出库</span>
+                                    {% elif sales_order.outbound_type == 'express' %}
+                                        <span class="badge bg-warning">加急出库</span>
+                                    {% elif sales_order.outbound_type == 'special' %}
+                                        <span class="badge bg-danger">特殊出库</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>期望出库日期</th>
+                                <td>{{ sales_order.expected_outbound_date.strftime('%Y-%m-%d') if sales_order.expected_outbound_date else '-' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">订单状态</h5>
+                    <table class="table table-borderless">
+                        <tbody>
+                            <tr>
+                                <th style="width: 30%">出库状态</th>
+                                <td>
+                                    {% if sales_order.status == 'pending_allocation' %}
+                                        <span class="badge bg-secondary">待分配</span>
+                                    {% elif sales_order.status == 'allocated' %}
+                                        <span class="badge bg-primary">已分配</span>
+                                    {% elif sales_order.status == 'picked' %}
+                                        <span class="badge bg-info">已拣货</span>
+                                    {% elif sales_order.status == 'inspected' %}
+                                        <span class="badge bg-warning">已检验</span>
+                                    {% elif sales_order.status == 'shipped' %}
+                                        <span class="badge bg-success">已出库</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>订单总数量</th>
+                                <td>{{ sales_order.total_quantity }} 件</td>
+                            </tr>
+                            <tr>
+                                <th>已分配数量</th>
+                                <td>{{ sales_order.allocated_quantity or 0 }} 件</td>
+                            </tr>
+                            <tr>
+                                <th>已拣货数量</th>
+                                <td>{{ sales_order.picked_quantity or 0 }} 件</td>
+                            </tr>
+                            <tr>
+                                <th>已出库数量</th>
+                                <td>{{ sales_order.shipped_quantity or 0 }} 件</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 明细行 -->
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5 class="mb-0">销售单明细</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead class="table-light">
+                        <tr>
+                            <th>商品编码</th>
+                            <th>商品名称</th>
+                            <th>规格</th>
+                            <th>数量</th>
+                            <th>单价</th>
+                            <th>小计</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in sales_order.items %}
+                            <tr>
+                                <td>{{ item.product.code }}</td>
+                                <td>{{ item.product.name }}</td>
+                                <td>{{ item.product.spec or '-' }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ item.unit_price }}</td>
+                                <td>{{ (item.quantity * item.unit_price)|round(2) }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 流程进度 -->
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5 class="mb-0">流程进度</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-2 text-center">
+                    <div class="mb-2">
+                        <i class="fa fa-shopping-cart fa-2x" style="color: #6c757d;"></i>
+                    </div>
+                    <h6>销售单创建</h6>
+                    <small class="text-muted">{{ sales_order.create_time.strftime('%m-%d %H:%M') }}</small>
+                </div>
+                <div class="col-md-2 text-center">
+                    <div class="mb-2">
+                        <i class="fa fa-cubes fa-2x" style="color: {% if sales_order.status in ['allocated', 'picked', 'inspected', 'shipped'] %}#0d6efd{% else %}#6c757d{% endif %};"></i>
+                    </div>
+                    <h6>库存分配</h6>
+                    {% if sales_order.allocation_order %}
+                        <small class="text-muted">{{ sales_order.allocation_order.create_time.strftime('%m-%d %H:%M') }}</small>
+                    {% else %}
+                        <small class="text-muted">-</small>
+                    {% endif %}
+                </div>
+                <div class="col-md-2 text-center">
+                    <div class="mb-2">
+                        <i class="fa fa-list-ul fa-2x" style="color: {% if sales_order.status in ['picked', 'inspected', 'shipped'] %}#0d6efd{% else %}#6c757d{% endif %};"></i>
+                    </div>
+                    <h6>商品拣货</h6>
+                    {% if sales_order.picking_order %}
+                        <small class="text-muted">{{ sales_order.picking_order.create_time.strftime('%m-%d %H:%M') }}</small>
+                    {% else %}
+                        <small class="text-muted">-</small>
+                    {% endif %}
+                </div>
+                <div class="col-md-2 text-center">
+                    <div class="mb-2">
+                        <i class="fa fa-check-square fa-2x" style="color: {% if sales_order.status in ['inspected', 'shipped'] %}#0d6efd{% else %}#6c757d{% endif %};"></i>
+                    </div>
+                    <h6>订单复核</h6>
+                    {% if sales_order.inspection_order %}
+                        <small class="text-muted">{{ sales_order.inspection_order.create_time.strftime('%m-%d %H:%M') }}</small>
+                    {% else %}
+                        <small class="text-muted">-</small>
+                    {% endif %}
+                </div>
+                <div class="col-md-2 text-center">
+                    <div class="mb-2">
+                        <i class="fa fa-truck fa-2x" style="color: {% if sales_order.status == 'shipped' %}#0d6efd{% else %}#6c757d{% endif %};"></i>
+                    </div>
+                    <h6>最终出库</h6>
+                    {% if sales_order.shipping_order %}
+                        <small class="text-muted">{{ sales_order.shipping_order.create_time.strftime('%m-%d %H:%M') }}</small>
+                    {% else %}
+                        <small class="text-muted">-</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 相关单据 -->
+    <div class="row">
+        {% if sales_order.allocation_order %}
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">分配单信息</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless table-sm">
+                            <tbody>
+                                <tr>
+                                    <th style="width: 40%">分配单号</th>
+                                    <td>
+                                        <a href="{{ url_for('allocation.detail', id=sales_order.allocation_order.id) }}">
+                                            {{ sales_order.allocation_order.allocation_no }}
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>分配策略</th>
+                                    <td>
+                                        {% if sales_order.allocation_order.allocation_strategy == 'fifo' %}
+                                            <span class="badge bg-info">先进先出(FIFO)</span>
+                                        {% elif sales_order.allocation_order.allocation_strategy == 'near_expiry' %}
+                                            <span class="badge bg-warning">临近过期优先</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>分配状态</th>
+                                    <td>
+                                        {% if sales_order.allocation_order.status == 'pending' %}
+                                            <span class="badge bg-secondary">待审批</span>
+                                        {% elif sales_order.allocation_order.status == 'completed' %}
+                                            <span class="badge bg-success">已完成</span>
+                                        {% elif sales_order.allocation_order.status == 'failed' %}
+                                            <span class="badge bg-danger">已拒绝</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>分配总数量</th>
+                                    <td>{{ sales_order.allocation_order.total_allocated_qty or 0 }} 件</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <a href="{{ url_for('allocation.detail', id=sales_order.allocation_order.id) }}" class="btn btn-sm btn-primary">
+                            <i class="fa fa-external-link"></i> 查看分配详情
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if sales_order.picking_order %}
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">拣货单信息</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless table-sm">
+                            <tbody>
+                                <tr>
+                                    <th style="width: 40%">拣货单号</th>
+                                    <td>
+                                        <a href="{{ url_for('picking.detail', id=sales_order.picking_order.id) }}">
+                                            {{ sales_order.picking_order.picking_no }}
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>拣货状态</th>
+                                    <td>
+                                        {% if sales_order.picking_order.status == 'pending' %}
+                                            <span class="badge bg-secondary">待拣货</span>
+                                        {% elif sales_order.picking_order.status == 'in_progress' %}
+                                            <span class="badge bg-warning">拣货中</span>
+                                        {% elif sales_order.picking_order.status == 'completed' %}
+                                            <span class="badge bg-success">已完成</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <a href="{{ url_for('picking.detail', id=sales_order.picking_order.id) }}" class="btn btn-sm btn-primary">
+                            <i class="fa fa-external-link"></i> 查看拣货详情
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if sales_order.shipping_order %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">出库单信息</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tbody>
+                        <tr>
+                            <th style="width: 20%">出库单号</th>
+                            <td>
+                                <a href="{{ url_for('shipping.detail', id=sales_order.shipping_order.id) }}">
+                                    {{ sales_order.shipping_order.shipping_no }}
+                                </a>
+                            </td>
+                            <th style="width: 20%">出库状态</th>
+                            <td>
+                                {% if sales_order.shipping_order.status == 'pending' %}
+                                    <span class="badge bg-secondary">待出库</span>
+                                {% elif sales_order.shipping_order.status == 'partialShipped' %}
+                                    <span class="badge bg-warning">部分出库</span>
+                                {% elif sales_order.shipping_order.status == 'completed' %}
+                                    <span class="badge bg-success">已出库</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>出库总数量</th>
+                            <td>{{ sales_order.shipping_order.total_qty or 0 }} 件</td>
+                            <th>已出库数量</th>
+                            <td>{{ sales_order.shipping_order.shipped_qty or 0 }} 件</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <a href="{{ url_for('shipping.detail', id=sales_order.shipping_order.id) }}" class="btn btn-sm btn-primary">
+                    <i class="fa fa-external-link"></i> 查看出库详情
+                </a>
+            </div>
+        </div>
+    {% endif %}
+
+{% endblock %}

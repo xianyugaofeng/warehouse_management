@@ -101,8 +101,6 @@ class Inventory(db.Model):
     batch_no = db.Column(db.String(32))  # 批次号
     production_date = db.Column(db.Date)  # 生产日期
     expire_date = db.Column(db.Date)  # 过期日期
-    supplier_batch_no = db.Column(db.String(32))  # 供应商批次号
-    owner_id = db.Column(db.Integer)  # 所有者ID，用于多货主仓库模式
     defect_reason = db.Column(db.String(64))  # 不合格原因
     remark = db.Column(db.String(256))  # 备注
     inspection_order_id = db.Column(db.Integer, db.ForeignKey('inspection_orders.id'))  # 关联检验单

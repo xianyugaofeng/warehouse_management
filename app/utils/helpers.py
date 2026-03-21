@@ -58,6 +58,34 @@ def generate_variance_no():
     return f'VD{date_str}{random_str}'
 
 
+# 生成销售单号（SO+日期+3位随机数）
+def generate_sales_order_no():
+    date_str = datetime.now().strftime('%Y%m%d')
+    random_str = str(random.randint(100, 999))
+    return f'SO{date_str}{random_str}'
+
+
+# 生成分配单号（AL+日期+3位随机数）
+def generate_allocation_order_no():
+    date_str = datetime.now().strftime('%Y%m%d')
+    random_str = str(random.randint(100, 999))
+    return f'AL{date_str}{random_str}'
+
+
+# 生成拣货单号（PI+日期+3位随机数）
+def generate_picking_order_no():
+    date_str = datetime.now().strftime('%Y%m%d')
+    random_str = str(random.randint(100, 999))
+    return f'PI{date_str}{random_str}'
+
+
+# 生成出库单号（SH+日期+3位随机数）
+def generate_shipping_order_no():
+    date_str = datetime.now().strftime('%Y%m%d')
+    random_str = str(random.randint(100, 999))
+    return f'SH{date_str}{random_str}'
+
+
 def recommend_location(product_id, locations):
     """
     根据库位状态（是否空闲、是否同品）自动推荐一个最佳库位

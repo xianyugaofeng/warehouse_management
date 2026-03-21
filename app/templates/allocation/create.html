@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block title %}创建分配单 - 仓库管理系统{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fa fa-plus-circle"></i> 创建分配单</h2>
+        <div>
+            <a href="{{ url_for('sales.detail', id=sales_order.id) }}" class="btn btn-sm btn-secondary">
+                <i class="fa fa-arrow-left"></i> 返回销售单
+            </a>
+        </div>
+    </div>
+
+    <!-- 销售单摘要 -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">销售单摘要</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <strong>销售单号：</strong> {{ sales_order.order_no }}
+                </div>
+                <div class="col-md-3">
+                    <strong>客户：</strong> {{ sales_order.customer.name }}
+                </div>
+                <div class="col-md-3">
+                    <strong>仓库：</strong> {{ sales_order.warehouse.name }}
+                </div>
+                <div class="col-md-3">
+                    <strong>订单总数：</strong> {{ sales_order.total_quantity }} 件
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 库存验证结果 -->
+    {% if validation_result %}
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">库存验证结果</h5>
+            </div>
+            <div class="card-body">
+                {% if validation_result.can_allocate %}
+                    <div class="alert alert-success">
+                        <i class="fa fa-check-circle"></i> <strong>库存验证成功：</strong> 仓库中库存充足，可以进行分配。
+                    </div>
+                {% else %}
+                    <div class="alert alert-danger">
+                        <i class="fa fa-exclamation-circle"></i> <strong>库存不足：</strong> 以下商品库存不足：
+                    </div>
+                    <ul>
+                        {% for detail in validation_result.missing_details %}
+                            <li>
+                                <strong>{{ detail.product_name }}</strong> - 需求：{{ detail.required_qty }} 件，
+                                可用：{{ detail.available_qty }} 件
+                                {% if detail.available_qty > 0 %}
+                                    <span class="badge bg-warning">缺少 {{ detail.required_qty - detail.available_qty }} 件</span>
+                                {% else %}
+                                    <span class="badge bg-danger">库位无库存</span>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    <p style="margin-top: 10px;">
+                        <strong>说明：</strong> {{ validation_result.message }}
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- 分配策略选择（仅在库存充足时显示） -->
+    {% if not validation_result or validation_result.can_allocate %}
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">选择分配策略</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('allocation.create', sales_id=sales_order.id) }}" id="allocationForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card border-primary mb-3" style="cursor: pointer;" onclick="selectStrategy('fifo')">
+                                <input type="radio" name="allocation_strategy" value="fifo" id="fifo" class="form-check-input" required onchange="updateDescription()">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <label for="fifo" style="cursor: pointer; margin: 0;">先进先出（FIFO）</label>
+                                    </h5>
+                                    <p class="card-text">
+                                        按照商品的生产日期和创建时间排序，优先使用最早生产的库存。
+                                        适用于需要保证库存周转秩序的场景。
+                                    </p>
+                                    <ul class="small">
+                                        <li>优先级排序：生产日期(早) → 创建时间(早)</li>
+                                        <li>适用场景：日用品、食品等</li>
+                                        <li>特点：防止库存积压</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card border-warning mb-3" style="cursor: pointer;" onclick="selectStrategy('near_expiry')">
+                                <input type="radio" name="allocation_strategy" value="near_expiry" id="near_expiry" class="form-check-input" required onchange="updateDescription()">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <label for="near_expiry" style="cursor: pointer; margin: 0;">临近过期优先</label>
+                                    </h5>
+                                    <p class="card-text">
+                                        按照商品的过期日期排序，优先使用即将过期的库存。
+                                        适用于有保质期要求的商品。
+                                    </p>
+                                    <ul class="small">
+                                        <li>优先级排序：过期日期(早) → 生产日期(早)</li>
+                                        <li>适用场景：药品、食品、化妆品等</li>
+                                        <li>特点：防止过期损失</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 分配明细预览 -->
+                    <div class="mt-4">
+                        <h5>分配数量预览</h5>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-sm">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>商品编码</th>
+                                        <th>商品名称</th>
+                                        <th>需求数量</th>
+                                        <th>可用库存</th>
+                                        <th>分配数量</th>
+                                        <th>分配状态</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in sales_order.items %}
+                                        <tr>
+                                            <td>{{ item.product.code }}</td>
+                                            <td>{{ item.product.name }}</td>
+                                            <td>{{ item.quantity }}</td>
+                                            <td>
+                                                {% set available = available_qty_by_product.get(item.product_id, 0) %}
+                                                {{ available }}
+                                            </td>
+                                            <td>
+                                                {% set available = available_qty_by_product.get(item.product_id, 0) %}
+                                                {% if available >= item.quantity %}
+                                                    {{ item.quantity }}
+                                                {% else %}
+                                                    {{ available }}
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% set available = available_qty_by_product.get(item.product_id, 0) %}
+                                                {% if available >= item.quantity %}
+                                                    <span class="badge bg-success">可分配</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">库存不足</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 提交按钮 -->
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                            <i class="fa fa-save"></i> 创建分配单
+                        </button>
+                        <a href="{{ url_for('sales.detail', id=sales_order.id) }}" class="btn btn-outline-secondary">取消</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-warning">
+            <i class="fa fa-exclamation-triangle"></i> 
+            由于库存不足，无法进行分配。请检查库存或联系仓库管理员。
+        </div>
+    {% endif %}
+
+    <!-- JavaScript -->
+    <script>
+        function selectStrategy(strategy) {
+            document.getElementById(strategy).checked = true;
+            updateDescription();
+        }
+
+        function updateDescription() {
+            const selected = document.querySelector('input[name="allocation_strategy"]:checked');
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = !selected;
+            
+            // 更新卡片样式
+            document.getElementById('fifo').checked ? 
+                document.getElementById('fifo').closest('.card').classList.add('border-2') :
+                document.getElementById('fifo').closest('.card').classList.remove('border-2');
+                
+            document.getElementById('near_expiry').checked ? 
+                document.getElementById('near_expiry').closest('.card').classList.add('border-2') :
+                document.getElementById('near_expiry').closest('.card').classList.remove('border-2');
+        }
+    </script>
+{% endblock %}

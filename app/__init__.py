@@ -37,6 +37,10 @@ def create_app(config_name='default'):
     from app.views.return_manage import return_bp
     from app.views.stock_move_manage import stock_move_bp
     from app.views.count_manage import count_bp
+    from app.views.sales_manage import sales_bp
+    from app.views.allocation_manage import allocation_bp
+    from app.views.picking_manage import picking_bp
+    from app.views.shipping_manage import shipping_bp
     # 注册蓝图（这会注册所有蓝图中的路由）
     app.register_blueprint(user_bp, url_prefix='/user')
     app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -53,6 +57,10 @@ def create_app(config_name='default'):
     app.register_blueprint(return_bp, url_prefix='/return')
     app.register_blueprint(stock_move_bp, url_prefix='/stock_move')
     app.register_blueprint(count_bp, url_prefix='/count')
+    app.register_blueprint(sales_bp, url_prefix='/sales')
+    app.register_blueprint(allocation_bp, url_prefix='/allocation')
+    app.register_blueprint(picking_bp, url_prefix='/picking')
+    app.register_blueprint(shipping_bp, url_prefix='/shipping')
     
     # 注册根路由
     @app.route('/')
