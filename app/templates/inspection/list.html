@@ -31,7 +31,8 @@
                         <div class="col-md-3">
                             <div class="d-flex gap-2">
                                 <button type="submit" class="btn btn-primary flex-fill">搜索</button>
-                                <a href="{{ url_for('inspection.receive_list') }}" class="btn btn-success flex-fill">收货与质检</a>
+                                <a href="{{ url_for('inspection.receive_list') }}" class="btn btn-success flex-fill">收货管理</a>
+                                <a href="{{ url_for('inspection.pending_inspection_list') }}" class="btn btn-warning flex-fill">待质检</a>
                             </div>
                         </div>
                     </form>

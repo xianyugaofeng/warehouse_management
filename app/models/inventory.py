@@ -238,22 +238,6 @@ class Inventory(db.Model):
     # 检查是否为不合格商品
     def is_defective(self):
         return self.status == 'defective'
-    
-    # 验证检验单关联
-    def validate_inspection_order(self):
-        """验证检验单关联：只有不合格商品库存需要关联检验单"""
-        if self.is_defective():
-            # 不合格商品必须关联检验单
-            if not self.inspection_order_id:
-                raise ValueError('不合格商品库存必须关联检验单')
-            if not self.defect_reason:
-                raise ValueError('不合格商品库存必须填写不合格原因')
-        else:
-            # 正常库存和待检库存不需要关联检验单
-            # 如果有关联检验单，则清除（可选，根据业务需求）
-            pass
-        return True
-
 
 class StockMoveOrder(db.Model):
     """库存移动单"""

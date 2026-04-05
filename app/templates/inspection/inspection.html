@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block js %}
+<script>
+function toggleDefectFields() {
+    const unqualified = parseInt(document.getElementById('unqualified_quantity').value) || 0;
+    const defectReasonCell = document.getElementById('defect_reason_cell');
+    const defectLocationCell = document.getElementById('defect_location_cell');
+    
+    if (unqualified > 0) {
+        defectReasonCell.style.display = 'table-cell';
+        defectLocationCell.style.display = 'table-cell';
+    } else {
+        defectReasonCell.style.display = 'none';
+        defectLocationCell.style.display = 'none';
+    }
+}
+
+function updateTotal() {
+    const qualified = parseInt(document.getElementById('qualified_quantity').value) || 0;
+    const unqualified = parseInt(document.getElementById('unqualified_quantity').value) || 0;
+    const total = qualified + unqualified;
+    document.getElementById('total_display').textContent = total;
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <h2 class="mt-4 mb-4">质检</h2>
+            
+            <form method="post" class="mb-4">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">采购单信息</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <strong>采购单号:</strong> {{ purchase_order.order_no }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>供应商:</strong> {{ purchase_order.supplier.name if purchase_order.supplier else '未知' }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>实际到货日期:</strong> {{ purchase_order.actual_date.strftime('%Y-%m-%d') if purchase_order.actual_date else '-' }}
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-4">
+                                <strong>商品名称:</strong> {{ purchase_order.product.name }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>商品编码:</strong> {{ purchase_order.product.code }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>收货总数量:</strong> {{ purchase_order.actual_quantity or 0 }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">质检明细</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>收货总数量</th>
+                                        <th>合格数量</th>
+                                        <th>不合格数量</th>
+                                        <th>不合格原因</th>
+                                        <th>暂存区库位</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td id="total_display">{{ purchase_order.actual_quantity or 0 }}</td>
+                                        <td>
+                                            <input type="number" name="qualified_quantity" id="qualified_quantity" class="form-control" min="0" max="{{ purchase_order.actual_quantity or 0 }}" value="{{ purchase_order.actual_quantity or 0 }}" oninput="updateTotal()" required>
+                                        </td>
+                                        <td>
+                                            <input type="number" name="unqualified_quantity" id="unqualified_quantity" class="form-control" min="0" max="{{ purchase_order.actual_quantity or 0 }}" value="0" oninput="updateTotal(); toggleDefectFields()" required>
+                                        </td>
+                                        <td id="defect_reason_cell" style="display:none;">
+                                            <select name="defect_reason" class="form-control">
+                                                <option value="">请选择不合格原因</option>
+                                                <option value="破损">破损</option>
+                                                <option value="变质">变质</option>
+                                                <option value="规格不符">规格不符</option>
+                                                <option value="包装损坏">包装损坏</option>
+                                                <option value="其他">其他</option>
+                                            </select>
+                                        </td>
+                                        <td id="defect_location_cell" style="display:none;">
+                                            <select name="defect_location" class="form-control">
+                                                <option value="">请选择暂存区库位</option>
+                                                {% for location in reject_locations %}
+                                                <option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card shadow-sm mt-4">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="signature" class="form-label">仓库管理员签字<span class="text-danger">*</span></label>
+                                <input type="text" name="signature" id="signature" class="form-control" placeholder="请输入仓库管理员姓名" required>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">确认质检</button>
+                            <a href="{{ url_for('inspection.pending_inspection_list') }}" class="btn btn-outline-secondary">取消</a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

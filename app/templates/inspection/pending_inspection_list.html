@@ -4,25 +4,17 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-12">
-            <h2 class="mt-4 mb-4">收货与质检</h2>
+            <h2 class="mt-4 mb-4">待质检采购单</h2>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{{ url_for('inspection.list') }}">检验单管理</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">收货与质检</li>
+                    <li class="breadcrumb-item active" aria-current="page">待质检列表</li>
                 </ol>
             </nav>
             
-            <div class="row mb-3">
-                <div class="col-md-12">
-                    <a href="{{ url_for('inspection.pending_inspection_list') }}" class="btn btn-warning">
-                        <i class="fa fa-check-circle"></i> 待质检列表
-                    </a>
-                </div>
-            </div>
-            
             <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">待收货采购单</h5>
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">待质检采购单列表</h5>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -32,10 +24,9 @@
                                     <th>采购单号</th>
                                     <th>供应商</th>
                                     <th>商品名称</th>
-                                    <th>预计到货日期</th>
                                     <th>计划数量</th>
-                                    <th>已收货数量</th>
-                                    <th>状态</th>
+                                    <th>实际收货数量</th>
+                                    <th>实际到货日期</th>
                                     <th>操作</th>
                                 </tr>
                             </thead>
@@ -45,32 +36,19 @@
                                     <td>{{ order.order_no }}</td>
                                     <td>{{ order.supplier.name if order.supplier else '未知' }}</td>
                                     <td>{{ order.product.name if order.product else '-' }}</td>
-                                    <td>{{ order.expected_date.strftime('%Y-%m-%d') if order.expected_date else '-' }}</td>
                                     <td>{{ order.quantity }}</td>
                                     <td>{{ order.actual_quantity or 0 }}</td>
-                                    <td>
-                                        {% if order.status == 'pending_receipt' %}
-                                        <span class="badge bg-secondary">待收货</span>
-                                        {% elif order.status == 'receiving' %}
-                                        <span class="badge bg-warning">收货中</span>
-                                        {% elif order.status == 'completed' %}
-                                        <span class="badge bg-success">已完成</span>
-                                        {% endif %}
-                                    </td>
+                                    <td>{{ order.actual_date.strftime('%Y-%m-%d') if order.actual_date else '-' }}</td>
                                     <td>
                                         <div class="d-flex gap-1">
                                             <a href="{{ url_for('purchase.detail', id=order.id) }}" class="btn btn-sm btn-info">详情</a>
-                                            {% if order.status != 'completed' %}
-                                            <a href="{{ url_for('inspection.receive_goods', id=order.id) }}" class="btn btn-sm btn-success">收货</a>
-                                            {% else %}
-                                            <a href="{{ url_for('inspection.inspect', id=order.id) }}" class="btn btn-sm btn-primary">质检</a>
-                                            {% endif %}
+                                            <a href="{{ url_for('inspection.inspect', id=order.id) }}" class="btn btn-sm btn-success">开始质检</a>
                                         </div>
                                     </td>
                                 </tr>
                                 {% else %}
                                 <tr>
-                                    <td colspan="8" class="text-center">暂无待收货的采购单</td>
+                                    <td colspan="7" class="text-center">暂无待质检的采购单</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

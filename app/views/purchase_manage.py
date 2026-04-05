@@ -68,7 +68,6 @@ def add():
         supplier_id = request.form.get('supplier_id')
         product_id = request.form.get('product_id')
         expected_date = request.form.get('expected_date', datetime.now().strftime('%Y-%m-%d'))
-        allow_partial_receipt = request.form.get('allow_partial_receipt') == 'true'
         quantity = int(request.form.get('quantity', 0))
         unit_price = float(request.form.get('unit_price', 0))
         remark = request.form.get('remark')
@@ -102,7 +101,6 @@ def add():
             quantity=quantity,
             unit_price=unit_price,
             subtotal=subtotal,
-            allow_partial_receipt=allow_partial_receipt,
             status='pending_receipt',  # 初始状态为待收货
             remark=remark
         )
@@ -140,7 +138,6 @@ def edit(id):
         supplier_id = request.form.get('supplier_id')
         product_id = request.form.get('product_id')
         expected_date = request.form.get('expected_date')
-        allow_partial_receipt = request.form.get('allow_partial_receipt') == 'true'
         quantity = int(request.form.get('quantity', 0))
         unit_price = float(request.form.get('unit_price', 0))
         remark = request.form.get('remark')
@@ -166,7 +163,6 @@ def edit(id):
         purchase_order.supplier_id = supplier_id
         purchase_order.product_id = product_id
         purchase_order.expected_date = expected_date
-        purchase_order.allow_partial_receipt = allow_partial_receipt
         purchase_order.quantity = quantity
         purchase_order.unit_price = unit_price
         purchase_order.subtotal = quantity * unit_price
@@ -201,6 +197,10 @@ def detail(id):
 def receive(id):
     purchase_order = PurchaseOrder.query.get_or_404(id)
     if purchase_order.status == 'completed':
-        flash('该采购单已完成', 'info')
-        return redirect(url_for('purchase.detail', id=id))
-    return redirect(url_for('inspection.receive', id=id))
+        if purchase_order.quality_status == 'completed':
+            flash('该采购单已完成收货和质检', 'info')
+            return redirect(url_for('purchase.detail', id=id))
+        else:
+            flash('该采购单已完成收货，请进行质检', 'info')
+            return redirect(url_for('inspection.pending_inspection_list'))
+    return redirect(url_for('inspection.receive_goods', id=id))

@@ -1,34 +1,10 @@
 {% extends "base.html" %}
 
-{% block js %}
-<script>
-function toggleDefectFields(selectElement) {
-    const defectReasonCell = document.getElementById('defect_reason_cell');
-    const defectLocationCell = document.getElementById('defect_location_cell');
-    
-    if (selectElement.value !== 'completed') {
-        defectReasonCell.style.display = 'table-cell';
-        defectLocationCell.style.display = 'table-cell';
-    } else {
-        defectReasonCell.style.display = 'none';
-        defectLocationCell.style.display = 'none';
-    }
-}
-
-function updateTotal() {
-    const qualified = parseInt(document.getElementById('qualified_quantity').value) || 0;
-    const unqualified = parseInt(document.getElementById('unqualified_quantity').value) || 0;
-    const total = qualified + unqualified;
-    document.getElementById('actual_quantity').value = total;
-}
-</script>
-{% endblock %}
-
 {% block content %}
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-12">
-            <h2 class="mt-4 mb-4">收货与质检</h2>
+            <h2 class="mt-4 mb-4">收货</h2>
             
             <form method="post" class="mb-4">
                 <div class="card shadow-sm mb-4">
@@ -48,28 +24,25 @@ function updateTotal() {
                             </div>
                         </div>
                         <div class="row mt-2">
-                            <div class="col-md-3">
-                                <strong>送货单号:</strong> {{ purchase_order.order_no }}
-                                <small class="text-muted">（送货单号即采购单号）</small>
+                            <div class="col-md-4">
+                                <strong>商品名称:</strong> {{ purchase_order.product.name }}
                             </div>
-                            <div class="col-md-3">
-                                <strong>实际到货日期:</strong> {{ now.strftime('%Y-%m-%d') if now else '-' }}
+                            <div class="col-md-4">
+                                <strong>商品编码:</strong> {{ purchase_order.product.code }}
                             </div>
-                            <div class="col-md-3">
-                                <strong>允许部分收货:</strong> 
-                                {% if purchase_order.allow_partial_receipt %}
-                                <span class="badge bg-success">是</span>
-                                {% else %}
-                                <span class="badge bg-secondary">否</span>
-                                {% endif %}
+                            <div class="col-md-4">
+                                <strong>计划数量:</strong> {{ purchase_order.quantity }}
                             </div>
-                            <div class="col-md-3">
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6">
                                 <strong>累计收货数量:</strong> {{ purchase_order.actual_quantity or 0 }} / {{ purchase_order.quantity }}
                                 {% if purchase_order.actual_quantity and purchase_order.actual_quantity < purchase_order.quantity %}
                                 <span class="badge bg-warning">剩余{{ purchase_order.quantity - purchase_order.actual_quantity }}</span>
-                                {% elif purchase_order.actual_quantity and purchase_order.actual_quantity >= purchase_order.quantity %}
-                                <span class="badge bg-success">已完成</span>
                                 {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>实际到货日期:</strong> {{ now.strftime('%Y-%m-%d') if now else '-' }}
                             </div>
                         </div>
                     </div>
@@ -77,7 +50,7 @@ function updateTotal() {
                 
                 <div class="card shadow-sm">
                     <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">收货与质检明细</h5>
+                        <h5 class="mb-0">收货明细</h5>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -86,13 +59,8 @@ function updateTotal() {
                                     <tr>
                                         <th>商品名称</th>
                                         <th>商品编码</th>
-                                        <th>采购数量</th>
-                                        <th>实际收货数量</th>
-                                        <th>合格数量</th>
-                                        <th>不合格数量</th>
-                                        <th>质检状态</th>
-                                        <th>不合格原因</th>
-                                        <th>暂存区库位</th>
+                                        <th>计划数量</th>
+                                        <th>本次收货数量</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -101,41 +69,10 @@ function updateTotal() {
                                         <td>{{ purchase_order.product.code }}</td>
                                         <td>{{ purchase_order.quantity }}</td>
                                         <td>
-                                            <input type="number" name="actual_quantity" id="actual_quantity" class="form-control" min="0" max="{{ purchase_order.quantity - (purchase_order.actual_quantity or 0) }}" value="{{ purchase_order.quantity - (purchase_order.actual_quantity or 0) }}" required>
-                                            {% if purchase_order.allow_partial_receipt and purchase_order.actual_quantity %}
+                                            <input type="number" name="actual_quantity" id="actual_quantity" class="form-control" min="1" max="{{ purchase_order.quantity - (purchase_order.actual_quantity or 0) }}" value="{{ purchase_order.quantity - (purchase_order.actual_quantity or 0) }}" required>
+                                            {% if purchase_order.actual_quantity %}
                                             <small class="text-muted">剩余数量：{{ purchase_order.quantity - (purchase_order.actual_quantity or 0) }}</small>
                                             {% endif %}
-                                        </td>
-                                        <td>
-                                            <input type="number" name="qualified_quantity" id="qualified_quantity" class="form-control" min="0" max="{{ purchase_order.quantity }}" value="{{ purchase_order.quantity }}" oninput="updateTotal()" required>
-                                        </td>
-                                        <td>
-                                            <input type="number" name="unqualified_quantity" id="unqualified_quantity" class="form-control" min="0" max="{{ purchase_order.quantity }}" value="0" oninput="updateTotal()" required>
-                                        </td>
-                                        <td>
-                                            <select name="quality_status" class="form-control" required onchange="toggleDefectFields(this)">
-                                                <option value="pending">待质检</option>
-                                                <option value="completed">合格</option>
-                                                <option value="rejected">不合格</option>
-                                            </select>
-                                        </td>
-                                        <td id="defect_reason_cell" style="display:none;">
-                                            <select name="defect_reason" class="form-control">
-                                                <option value="">请选择不合格原因</option>
-                                                <option value="破损">破损</option>
-                                                <option value="变质">变质</option>
-                                                <option value="规格不符">规格不符</option>
-                                                <option value="包装损坏">包装损坏</option>
-                                                <option value="其他">其他</option>
-                                            </select>
-                                        </td>
-                                        <td id="defect_location_cell" style="display:none;">
-                                            <select name="defect_location" class="form-control">
-                                                <option value="">请选择暂存区库位</option>
-                                                {% for location in reject_locations %}
-                                                <option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>
-                                                {% endfor %}
-                                            </select>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -151,21 +88,10 @@ function updateTotal() {
                                 <label for="signature" class="form-label">仓库管理员签字<span class="text-danger">*</span></label>
                                 <input type="text" name="signature" id="signature" class="form-control" placeholder="请输入仓库管理员姓名" required>
                             </div>
-                            {% if purchase_order.allow_partial_receipt %}
-                            <div class="col-md-6">
-                                <label class="form-label">完成采购单</label>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="complete_receipt" value="true" id="completeReceipt">
-                                    <label class="form-check-label" for="completeReceipt">
-                                        标记采购单为已完成（允许部分收货时使用）
-                                    </label>
-                                </div>
-                            </div>
-                            {% endif %}
                         </div>
                         <div class="mt-4">
                             <button type="submit" class="btn btn-primary">确认收货</button>
-                            <a href="{{ url_for('purchase.list') }}" class="btn btn-outline-secondary">取消</a>
+                            <a href="{{ url_for('inspection.receive_list') }}" class="btn btn-outline-secondary">取消</a>
                         </div>
                     </div>
                 </div>

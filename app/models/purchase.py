@@ -11,14 +11,13 @@ class PurchaseOrder(db.Model):
     operator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # 关联操作员
     expected_date = db.Column(db.Date, nullable=False)  # 预计到货日期
     actual_date = db.Column(db.Date)  # 实际到货日期
-    quantity = db.Column(db.Integer, nullable=False)   # 采购数量
+    quantity = db.Column(db.Integer, nullable=False)   # 计划数量
     unit_price = db.Column(db.Float, nullable=False)    # 单价
     subtotal = db.Column(db.Float, nullable=False)     # 小计
     actual_quantity = db.Column(db.Integer, default=0)   # 实际收货数量
     qualified_quantity = db.Column(db.Integer, default=0)   # 合格数量
     unqualified_quantity = db.Column(db.Integer, default=0)   # 不合格数量
     quality_status = db.Column(db.String(16), default='pending')  # 质检状态(pending/completed)
-    allow_partial_receipt = db.Column(db.Boolean, default=False)  # 是否允许部分收货
     status = db.Column(db.String(16), default='pending_receipt', nullable=False)  # 状态(pending_receipt/receiving/completed)
     remark = db.Column(db.String(256))  # 备注
     create_time = db.Column(db.DateTime, default=datetime.utcnow)
