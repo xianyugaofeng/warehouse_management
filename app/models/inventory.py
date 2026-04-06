@@ -12,7 +12,8 @@ class WarehouseLocation(db.Model):
     code = db.Column(db.String(32), unique=True, nullable=False)  # 库位编码(如A1-01-02)
     name = db.Column(db.String(64), nullable=False)  # 库位名称
     area = db.Column(db.String(32))  # 所属区域
-    location_type = db.Column(db.String(16), default='normal')  # 库位类型: normal(正常), inspection(待检), reject(不合格品)
+    location_type = db.Column(db.String(16), default='normal')  
+    # 库位类型: normal(正常), inspection(待检), reject(不合格品), waiting(等待), pending(待处理)
     status = db.Column(db.Boolean, default=True)  # 状态(启用/禁用)
     remark = db.Column(db.String(256))  # 备注
     inventories = db.relationship('Inventory', backref='location', lazy='dynamic')  # 关联库存
@@ -127,7 +128,24 @@ class Inventory(db.Model):
     # 计算可用数量
     @property
     def available_quantity(self):
-        """可用数量 = 物理库存 - 锁定数量 - 冻结数量"""
+        """可用数量 = 物理库存 - 锁定数量 - 冻结数量
+        
+        注意：只有正常库位和等待区的库存才计入可用库存
+        - normal: 正常库存（已上架）
+        - waiting: 等待（待上架）
+        
+        以下状态的库存不计入可用库存：
+        - pending: 待处理（质检通过但未入库）
+        - inspection: 待检
+        - defective: 不合格
+        """
+        if not self.location:
+            return 0
+        
+        location_type = self.location.location_type
+        if location_type in ['pending', 'inspection', 'reject']:
+            return 0
+        
         return max(0, self.quantity - self.locked_quantity - self.frozen_quantity)
 
     # 检查是否低于预警阈值

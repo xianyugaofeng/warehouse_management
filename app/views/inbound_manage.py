@@ -9,7 +9,7 @@ from app.models.inventory import WarehouseLocation, Inventory
 from app.models.purchase import PurchaseOrder
 from app.models.inspection import InspectionOrder
 from app.utils.auth import permission_required
-from app.utils.helpers import generate_inbound_no, update_inventory, recommend_location
+from app.utils.helpers import generate_inbound_no
 
 # 配置日志记录器
 logger = logging.getLogger(__name__)
@@ -71,194 +71,21 @@ def add():
     products = Product.query.all()
     suppliers = Supplier.query.all()
     locations = WarehouseLocation.query.filter_by(status=True).all()
-    
-    # 获取已完成的检验单（用于选择检验单创建入库单）
-    inspection_orders = InspectionOrder.query.filter_by(status='completed').all()
-
-    # 检查是否选择了检验单
-    selected_inspection_id = request.args.get('inspection_id') or request.form.get('inspection_id')
-    selected_inspection = None
-    if selected_inspection_id:
-        selected_inspection = InspectionOrder.query.get(selected_inspection_id)
 
     if request.method == 'POST':
-        # 检查是否从检验单创建入库
-        inspection_id = request.form.get('inspection_id')
-        if inspection_id:
-            return create_inbound_from_inspection(inspection_id, request, products, suppliers, locations)
-        
-        # 手动创建入库单
         return create_inbound_manual(request, products, suppliers, locations)
 
     return render_template('inbound/add.html',
                            products=products,
                            suppliers=suppliers,
                            locations=locations,
-                           now=datetime.now(),
-                           inspection_orders=inspection_orders,
-                           selected_inspection=selected_inspection
+                           now=datetime.now()
     )
 
-
-def create_inbound_from_inspection(inspection_id, request, products, suppliers, locations):
-    """从检验单创建入库单"""
-    inspection = InspectionOrder.query.get_or_404(inspection_id)
-    
-    # 验证单据是否齐全
-    if not inspection.delivery_order_no:
-        flash('送货单号缺失，无法办理入库', 'danger')
-        return render_template('inbound/add.html',
-                               products=products,
-                               suppliers=suppliers,
-                               locations=locations,
-                               now=datetime.now(),
-                               inspection_orders=InspectionOrder.query.filter_by(status='completed').all(),
-                               selected_inspection=inspection)
-    
-    # 验证采购单状态
-    if inspection.purchase_order and inspection.purchase_order.status != 'completed':
-        flash('采购单未完成，无法办理入库', 'danger')
-        return render_template('inbound/add.html',
-                               products=products,
-                               suppliers=suppliers,
-                               locations=locations,
-                               now=datetime.now(),
-                               inspection_orders=InspectionOrder.query.filter_by(status='completed').all(),
-                               selected_inspection=inspection)
-    
-    # 查找等待区库位
-    waiting_locations = WarehouseLocation.query.filter_by(location_type='waiting', status=True).all()
-    if not waiting_locations:
-        flash('未设置等待区域，请先配置仓库位置', 'danger')
-        return render_template('inbound/add.html',
-                               products=products,
-                               suppliers=suppliers,
-                               locations=locations,
-                               now=datetime.now(),
-                               inspection_orders=InspectionOrder.query.filter_by(status='completed').all(),
-                               selected_inspection=inspection)
-    
-    # 创建入库单
-    order_no = generate_inbound_no()
-    inbound_order = InboundOrder(
-        order_no=order_no,
-        supplier_id=inspection.supplier_id,
-        related_order=inspection.purchase_order.order_no if inspection.purchase_order else '',
-        delivery_order_no=inspection.purchase_order.order_no if inspection.purchase_order else '',  # 送货单号即采购单号
-        inspection_cert_no=inspection.order_no,
-        purchase_order_id=inspection.purchase_order_id,
-        inspection_order_id=inspection.id,
-        operator_id=current_user.id,
-        inbound_date=datetime.now().date(),
-        total_amount=inspection.qualified_quantity,
-        status='pending',  # 初始状态为待上架
-        remark=request.form.get('remark', '')
-    )
-    db.session.add(inbound_order)
-    db.session.flush()
-    
-    try:
-        # 处理检验合格的商品（一个采购单对应一种商品）
-        if inspection.qualified_quantity > 0:
-            # 获取采购单中商品的单价
-            unit_price = inspection.purchase_order.unit_price if inspection.purchase_order else 0
-            
-            # 创建批次号
-            batch_no = f'B{datetime.now().strftime("%Y%m%d")}{inspection.id}'
-            
-            # 使用等待区库位
-            waiting_location = waiting_locations[0]  # 使用第一个等待区库位
-            
-            # 查找待处理区库位
-            pending_locations = WarehouseLocation.query.filter_by(location_type='pending', status=True).all()
-            if not pending_locations:
-                flash('未设置待处理区域，请先配置仓库位置', 'danger')
-                return render_template('inbound/add.html',
-                                       products=products,
-                                       suppliers=suppliers,
-                                       locations=locations,
-                                       now=datetime.now(),
-                                       inspection_orders=InspectionOrder.query.filter_by(status='completed').all(),
-                                       selected_inspection=inspection)
-            
-            # 从待处理区查找与检验合格单关联的库存记录
-            pending_inventories = Inventory.query.filter(
-                Inventory.product_id == inspection.purchase_order.product_id,
-                Inventory.location_id.in_([loc.id for loc in pending_locations]),
-                Inventory.inspection_order_id == inspection.id
-            ).all()
-            
-            if pending_inventories:
-                # 从待处理区找到库存记录，将其转移到等待区
-                total_quantity = 0
-                for inventory in pending_inventories:
-                    # 更新库存记录的库位，从待处理区转移到等待区
-                    old_location_id = inventory.location_id
-                    inventory.location_id = waiting_location.id
-                    inventory.remark = '入库待上架'
-                    total_quantity += inventory.quantity
-                    logger.info(f'从待处理区转移库存记录 {inventory.id} 至等待区，商品:{inventory.product_id}, 数量:{inventory.quantity}')
-                    
-                    # 虽然只是转移库位，不涉及数量变化，但为了记录操作，我们可以创建一条变更日志
-                    from app.models.inventory import InventoryChangeLog
-                    log = InventoryChangeLog(
-                        inventory_id=inventory.id,
-                        change_type='transfer',
-                        quantity_before=inventory.quantity,
-                        quantity_after=inventory.quantity,
-                        locked_quantity_before=inventory.locked_quantity,
-                        locked_quantity_after=inventory.locked_quantity,
-                        frozen_quantity_before=inventory.frozen_quantity,
-                        frozen_quantity_after=inventory.frozen_quantity,
-                        operator=current_user.username,
-                        reason='从待处理区转移到等待区',
-                        reference_id=inbound_order.id,
-                        reference_type='inbound_order'
-                    )
-                    db.session.add(log)
-                
-                # 创建入库明细
-                inbound_item = InboundItem(
-                    order_id=inbound_order.id,
-                    product_id=inspection.purchase_order.product_id,
-                    location_id=waiting_location.id,
-                    quantity=total_quantity,
-                    batch_no=batch_no,
-                    unit_price=unit_price,
-                    subtotal=unit_price * total_quantity
-                )
-                db.session.add(inbound_item)
-                logger.info(f'从检验单创建入库单 {inbound_order.order_no}，商品已从待处理区转移至等待区库位 {waiting_location.code}，库存状态为"等待"')
-            else:
-                # 如果待处理区没有找到库存记录，提示错误
-                flash('待处理区没有找到对应库存记录，无法办理入库', 'danger')
-                return render_template('inbound/add.html',
-                                       products=products,
-                                       suppliers=suppliers,
-                                       locations=locations,
-                                       now=datetime.now(),
-                                       inspection_orders=InspectionOrder.query.filter_by(status='completed').all(),
-                                       selected_inspection=inspection)
-        
-        db.session.commit()
-        flash('入库单创建成功，商品已入库并增加库存', 'success')
-        return redirect(url_for('inbound.list'))
-    except Exception as e:
-        db.session.rollback()
-        flash(f'创建失败:{str(e)}', 'danger')
-    
-    return render_template('inbound/add.html',
-                           products=products,
-                           suppliers=suppliers,
-                           locations=locations,
-                           now=datetime.now(),
-                           inspection_orders=InspectionOrder.query.filter_by(status='completed').all(),
-                           selected_inspection=inspection)
 
 
 def create_inbound_manual(request, products, suppliers, locations):
     """手动创建入库单"""
-    # 接收表单数据
     supplier_id = request.form.get('supplier_id')
     product_id = request.form.get('product_id')
     related_order = request.form.get('related_order')
@@ -272,7 +99,6 @@ def create_inbound_manual(request, products, suppliers, locations):
     expire_date = request.form.get('expire_date')
     remark = request.form.get('remark')
 
-    # 验证数据
     if not product_id:
         flash('请选择商品', 'danger')
         return render_template('inbound/add.html',
@@ -291,7 +117,6 @@ def create_inbound_manual(request, products, suppliers, locations):
                                now=datetime.now()
         )
 
-    # 验证单据是否齐全
     if not related_order or not delivery_order_no or not inspection_cert_no:
         flash('入库所需单据不齐全（采购单号、送货单号、检验合格单号），暂停办理入库手续', 'danger')
         return render_template('inbound/add.html',
@@ -301,12 +126,18 @@ def create_inbound_manual(request, products, suppliers, locations):
                                now=datetime.now()
         )
 
-    # 查找采购单
     purchase_order = None
     if related_order:
         purchase_order = PurchaseOrder.query.filter_by(order_no=related_order).first()
-        # 验证采购单状态
-        if purchase_order and purchase_order.status != 'completed':
+        if not purchase_order:
+            flash(f'采购单号 {related_order} 不存在', 'danger')
+            return render_template('inbound/add.html',
+                                   products=products,
+                                   suppliers=suppliers,
+                                   locations=locations,
+                                   now=datetime.now()
+            )
+        if purchase_order.status != 'completed':
             flash('采购单未完成，无法办理入库', 'danger')
             return render_template('inbound/add.html',
                                    products=products,
@@ -315,10 +146,33 @@ def create_inbound_manual(request, products, suppliers, locations):
                                    now=datetime.now()
             )
     
-    # 查找检验合格单
     inspection_order = None
     if inspection_cert_no:
         inspection_order = InspectionOrder.query.filter_by(order_no=inspection_cert_no).first()
+        if not inspection_order:
+            flash(f'检验合格单号 {inspection_cert_no} 不存在', 'danger')
+            return render_template('inbound/add.html',
+                                   products=products,
+                                   suppliers=suppliers,
+                                   locations=locations,
+                                   now=datetime.now()
+            )
+        if inspection_order.status != 'completed':
+            flash('检验单未完成，无法办理入库', 'danger')
+            return render_template('inbound/add.html',
+                                   products=products,
+                                   suppliers=suppliers,
+                                   locations=locations,
+                                   now=datetime.now()
+            )
+        if purchase_order and inspection_order.purchase_order_id != purchase_order.id:
+            flash('检验单与采购单不匹配，无法办理入库', 'danger')
+            return render_template('inbound/add.html',
+                                   products=products,
+                                   suppliers=suppliers,
+                                   locations=locations,
+                                   now=datetime.now()
+            )
     
     # 创建入库单
     order_no = generate_inbound_no()
@@ -328,14 +182,14 @@ def create_inbound_manual(request, products, suppliers, locations):
         order_no=order_no,
         supplier_id=supplier_id,
         related_order=related_order,
-        delivery_order_no=related_order,  # 送货单号即采购单号
+        delivery_order_no=delivery_order_no,
         inspection_cert_no=inspection_cert_no,
         purchase_order_id=purchase_order.id if purchase_order else None,
         inspection_order_id=inspection_order.id if inspection_order else None,
         operator_id=current_user.id,
         inbound_date=inbound_date,
         total_amount=quantity,
-        status='pending',  # 初始状态为待上架
+        status='pending',
         remark=remark
     )
     db.session.add(inbound_order)
@@ -365,7 +219,6 @@ def create_inbound_manual(request, products, suppliers, locations):
                                     now=datetime.now()
             )
 
-        # 如果没有指定批次号，自动生成
         if not batch_no:
             batch_no = f'B{datetime.now().strftime("%Y%m%d")}{inbound_order.id}'
 
@@ -376,7 +229,8 @@ def create_inbound_manual(request, products, suppliers, locations):
         # 从待处理区查找与商品对应的库存记录
         pending_inventories = Inventory.query.filter(
             Inventory.product_id == product_id,
-            Inventory.location_id.in_([loc.id for loc in pending_locations])
+            Inventory.location_id.in_([loc.id for loc in pending_locations]),
+            Inventory.inspection_order_id == inspection_order.id if inspection_order else None
         ).all()
         
         if pending_inventories:
@@ -435,8 +289,7 @@ def create_inbound_manual(request, products, suppliers, locations):
             db.session.add(item)
             logger.info(f'手动创建入库单 {inbound_order.order_no}，商品已从待处理区转移至等待区库位 {waiting_location.code}，库存状态为"等待"')
         else:
-            # 如果待处理区没有找到库存记录，提示错误
-            flash('待处理区没有找到对应库存记录，无法办理入库', 'danger')
+            flash('待处理区没有找到对应库存记录，请确认质检流程是否完成', 'danger')
             return render_template('inbound/add.html',
                                     products=products,
                                     suppliers=suppliers,
