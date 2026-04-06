@@ -129,7 +129,6 @@ def receive_goods(id):
         else:
             purchase_order.status = 'receiving'
         
-        batch_no = f'B{datetime.now().strftime("%Y%m%d")}{purchase_order.id}'
         existing_inventory = Inventory.query.join(WarehouseLocation).filter(
             Inventory.product_id == purchase_order.product_id,
             WarehouseLocation.location_type == 'inspection'
@@ -142,7 +141,6 @@ def receive_goods(id):
             inventory = Inventory(
                 product_id=purchase_order.product_id,
                 location_id=inspection_location.id,
-                batch_no=batch_no,
                 quantity=actual_quantity,
                 remark='待检'
             )
@@ -227,7 +225,6 @@ def inspect(id):
                                    now=datetime.now(),
                                    reject_locations=reject_locations)
         
-        batch_no = f'B{datetime.now().strftime("%Y%m%d")}{purchase_order.id}'
         inspection_inventory = Inventory.query.join(WarehouseLocation).filter(
             Inventory.product_id == purchase_order.product_id,
             WarehouseLocation.location_type == 'inspection'
@@ -282,7 +279,6 @@ def inspect(id):
                 reject_inventory = Inventory(
                     product_id=purchase_order.product_id,
                     location_id=reject_location_id,
-                    batch_no=batch_no,
                     quantity=unqualified_quantity,
                     defect_reason=defect_reason,
                     inspection_order_id=inspection_order.id,
@@ -305,7 +301,6 @@ def inspect(id):
                 pending_inventory = Inventory(
                     product_id=purchase_order.product_id,
                     location_id=pending_location.id,
-                    batch_no=batch_no,
                     quantity=qualified_quantity,
                     inspection_order_id=inspection_order.id,
                     remark='待处理'

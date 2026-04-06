@@ -89,7 +89,8 @@ def generate_shipping_order_no():
 def recommend_location(product_id, locations):
     """
     根据库位状态（是否空闲、是否同品）自动推荐一个最佳库位
-    优先级: 1. 同品且有库存的库位 2. 空闲库位 3. 任意正常库位
+    优先级: 1. 同品且有库存的库位 2. 空闲库位
+    如果没有合适的库位，返回None，由调用方处理
     """
     from app.models.inventory import Inventory
     
@@ -114,19 +115,18 @@ def recommend_location(product_id, locations):
     if free_locations:
         return free_locations[0]
 
-    # 返回任意正常库位
-    return locations[0]
+    # 没有合适的库位，返回None
+    return None
     
 # 库存更新函数(入库时增加库存, 出库时减少库存)
-def update_inventory(product_id, location_id, batch_no, quantity, is_bound=True):
+def update_inventory(product_id, location_id, quantity, is_bound=True):
     from app import db
     from app.models.inventory import Inventory
     
-    # 查询是否存在该商品-库位-批次的库存记录
+    # 查询是否存在该商品-库位的库存记录
     inventory = Inventory.query.filter_by(
         product_id=product_id,
-        location_id=location_id,
-        batch_no=batch_no
+        location_id=location_id
     ).first()   # 返回一个inventory对象
     
     # 入库操作
@@ -136,7 +136,6 @@ def update_inventory(product_id, location_id, batch_no, quantity, is_bound=True)
             inventory = Inventory(
                 product_id=product_id,
                 location_id=location_id,
-                batch_no=batch_no,
                 quantity=0  # 初始数量为0
             )
             db.session.add(inventory)
@@ -145,13 +144,13 @@ def update_inventory(product_id, location_id, batch_no, quantity, is_bound=True)
     else:
         # 出库操作
         if not inventory:
-            raise ValueError(f'<库存不足:商品ID{product_id},  库位ID{location_id}, 批次{batch_no}')
+            raise ValueError(f'库存不足:商品ID{product_id}, 库位ID{location_id}')
         
         if not inventory.quantity:
-            raise ValueError(f'<系统账面库存不存在:商品ID{product_id},  库位ID{location_id}, 批次{batch_no}')
+            raise ValueError(f'系统账面库存不存在:商品ID{product_id}, 库位ID{location_id}')
         
         if inventory.quantity < quantity:
-            raise ValueError(f'<库存不足:商品ID{product_id},  库位ID{location_id}, 批次{batch_no}')
+            raise ValueError(f'库存不足:商品ID{product_id}, 库位ID{location_id}')
         
         # 使用decrease_quantity方法减少库存，触发变更日志
         inventory.decrease_quantity(quantity)

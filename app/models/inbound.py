@@ -47,7 +47,6 @@ class InboundItem(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)   # 关联商品
     location_id = db.Column(db.Integer, db.ForeignKey('warehouse_locations.id'), nullable=False)   # 关联库位
     quantity = db.Column(db.Integer, nullable=False)   # 入库数量
-    batch_no = db.Column(db.String(32), nullable=False)   # 批次号
     production_date = db.Column(db.Date)   # 生产日期
     expire_date = db.Column(db.Date)    # 过期日期
     unit_price = db.Column(db.Float, nullable=False)    # 单价

@@ -158,7 +158,6 @@
                                             <tr>
                                                 <th>商品名称</th>
                                                 <th>库位</th>
-                                                <th>批次号</th>
                                                 <th>数量</th>
                                                 <th>生产日期</th>
                                                 <th>过期日期</th>
@@ -169,14 +168,13 @@
                                                 <tr>
                                                     <td>{{ item.product.name }}({{ item.product.code }})</td>
                                                     <td>{{ item.location.code }}</td>
-                                                    <td>{{ item.batch_no or '-' }}</td>
                                                     <td>{{ item.quantity }}</td>
                                                     <td>{{ item.production_date.strftime('%Y-%m-%d') if item.production_date else '-' }}</td>
                                                     <td>{{ item.expire_date.strftime('%Y-%m-%d') if item.expire_date else '-' }}</td>
                                                 </tr>
                                             {% else %}
                                                 <tr>
-                                                    <td colspan="6" class="text-center">暂无明细</td>
+                                                    <td colspan="5" class="text-center">暂无明细</td>
                                                 </tr>
                                             {% endfor %}
                                         </tbody>

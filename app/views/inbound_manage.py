@@ -94,9 +94,6 @@ def create_inbound_manual(request, products, suppliers, locations):
     inbound_date = request.form.get('inbound_date', datetime.now().strftime('%Y-%m-%d'))
     quantity = int(request.form.get('quantity', 0))
     unit_price = float(request.form.get('unit_price', 0))
-    batch_no = request.form.get('batch_no', '')
-    production_date = request.form.get('production_date')
-    expire_date = request.form.get('expire_date')
     remark = request.form.get('remark')
 
     if not product_id:
@@ -219,53 +216,47 @@ def create_inbound_manual(request, products, suppliers, locations):
                                     now=datetime.now()
             )
 
-        if not batch_no:
-            batch_no = f'B{datetime.now().strftime("%Y%m%d")}{inbound_order.id}'
-
         # 使用等待区库位
         waiting_location = waiting_locations[0]  # 使用第一个等待区库位
         location_id = waiting_location.id
 
         # 从待处理区查找与商品对应的库存记录
-        pending_inventories = Inventory.query.filter(
+        pending_inventory = Inventory.query.filter(
             Inventory.product_id == product_id,
             Inventory.location_id.in_([loc.id for loc in pending_locations]),
             Inventory.inspection_order_id == inspection_order.id if inspection_order else None
-        ).all()
+        ).first()
         
-        if pending_inventories:
-            # 从待处理区找到库存记录，将其全部转移到等待区
-            total_quantity = 0
-            for inventory in pending_inventories:
-                # 转移全部库存
-                total_quantity += inventory.quantity
-                old_location_id = inventory.location_id
-                inventory.location_id = waiting_location.id
-                inventory.remark = '入库待上架'
-                logger.info(f'从待处理区转移库存记录 {inventory.id} 至等待区，商品:{inventory.product_id}, 数量:{inventory.quantity}')
-                
-                # 记录库存转移的变更日志
-                try:
-                    from app.models.inventory import InventoryChangeLog
-                    log = InventoryChangeLog(
-                        inventory_id=inventory.id,
-                        change_type='inbound',
-                        quantity_before=inventory.quantity,
-                        quantity_after=inventory.quantity,
-                        locked_quantity_before=inventory.locked_quantity,
-                        locked_quantity_after=inventory.locked_quantity,
-                        frozen_quantity_before=inventory.frozen_quantity,
-                        frozen_quantity_after=inventory.frozen_quantity,
-                        operator=current_user.username if current_user.is_authenticated else 'system',
-                        reason='入库操作，从待处理区转移到等待区',
-                        reference_id=inbound_order.id,
-                        reference_type='inbound_order'
-                    )
-                    db.session.add(log)
-                    logger.info(f'入库操作：为库存记录 {inventory.id} 创建转移变更日志')
-                except Exception as e:
-                    logger.error(f'入库操作：创建库存变更日志失败: {str(e)}')
-                    # 继续执行入库操作，不因为日志记录失败而中断
+        if pending_inventory:
+            # 从待处理区找到库存记录，将其转移到等待区
+            total_quantity = pending_inventory.quantity
+            old_location_id = pending_inventory.location_id
+            pending_inventory.location_id = waiting_location.id
+            pending_inventory.remark = '入库待上架'
+            
+            logger.info(f'从待处理区转移库存记录 {pending_inventory.id} 至等待区，商品:{pending_inventory.product_id}, 数量:{pending_inventory.quantity}')
+            
+            # 记录库存转移的变更日志
+            try:
+                from app.models.inventory import InventoryChangeLog
+                log = InventoryChangeLog(
+                    inventory_id=pending_inventory.id,
+                    change_type='inbound',
+                    quantity_before=pending_inventory.quantity,
+                    quantity_after=pending_inventory.quantity,
+                    locked_quantity_before=pending_inventory.locked_quantity,
+                    locked_quantity_after=pending_inventory.locked_quantity,
+                    frozen_quantity_before=pending_inventory.frozen_quantity,
+                    frozen_quantity_after=pending_inventory.frozen_quantity,
+                    operator=current_user.username if current_user.is_authenticated else 'system',
+                    reason='入库操作，从待处理区转移到等待区',
+                    reference_id=inbound_order.id,
+                    reference_type='inbound_order'
+                )
+                db.session.add(log)
+                logger.info(f'入库操作：为库存记录 {pending_inventory.id} 创建转移变更日志')
+            except Exception as e:
+                logger.error(f'入库操作：创建库存变更日志失败: {str(e)}')
             
             # 更新入库单的总数量为实际转移的数量
             inbound_order.total_amount = total_quantity
@@ -280,9 +271,8 @@ def create_inbound_manual(request, products, suppliers, locations):
                 product_id=product_id,
                 location_id=location_id,
                 quantity=total_quantity,
-                batch_no=batch_no,
-                production_date=production_date if production_date else None,
-                expire_date=expire_date if expire_date else None,
+                production_date=pending_inventory.production_date,
+                expire_date=pending_inventory.expire_date,
                 unit_price=unit_price,
                 subtotal=subtotal
             )

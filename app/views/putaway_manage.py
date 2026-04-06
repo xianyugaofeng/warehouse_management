@@ -6,10 +6,10 @@ from app import db
 from app.models.inbound import InboundOrder, InboundItem
 from app.models.inventory import WarehouseLocation, Inventory
 from app.models.product import Product, Supplier
-from app.models.inspection import InspectionOrder, InspectionItem
+from app.models.inspection import InspectionOrder
 
 from app.utils.auth import permission_required
-from app.utils.helpers import update_inventory, recommend_location
+from app.utils.helpers import recommend_location
 
 # 配置日志记录器
 logger = logging.getLogger(__name__)
@@ -44,7 +44,13 @@ def putaway(id):
                 if not location_id:
                     # 自动推荐最佳库位
                     recommended_location = recommend_location(item.product_id, locations)
-                    location_id = recommended_location.id if recommended_location else locations[0].id
+                    if not recommended_location:
+                        # 如果没有合适的库位，要求用户手动选择
+                        error_msg = f'无法为商品ID {item.product_id} 自动推荐库位，所有正常库位已被占用，请手动选择库位'
+                        logger.warning(error_msg)
+                        flash(error_msg, 'warning')
+                        return render_template('putaway/putaway.html', inbound_order=inbound_order, locations=locations)
+                    location_id = recommended_location.id
                     logger.info(f'为入库单 {inbound_order.order_no} 的商品 {item.product_id} 自动推荐库位 {location_id}')
                 else:
                     location_id = int(location_id)
@@ -56,49 +62,47 @@ def putaway(id):
                 
                 # 查找并更新库存记录的库位（从等待区转移到正常库位）
                 # 库存状态会根据库位类型自动更新：waiting -> normal
-                inventory = Inventory.query.filter_by(
-                    product_id=item.product_id,
-                    batch_no=item.batch_no
+                waiting_location_ids = [loc.id for loc in WarehouseLocation.query.filter_by(location_type='waiting', status=True).all()]
+                inventory = Inventory.query.filter(
+                    Inventory.product_id == item.product_id,
+                    Inventory.location_id.in_(waiting_location_ids)
                 ).first()
                 
-                if inventory:
-                    # 更新库存记录的库位，状态会自动从"等待"变为"正常"
-                    old_location_id = inventory.location_id
-                    inventory.location_id = location_id
-                    inventory.remark = '已上架'
-                    logger.info(f'上架操作：库存记录 {inventory.id} 从库位 {old_location_id} 转移至库位 {location_id}，状态从"等待"变为"正常"')
-                    
-                    try:
-                        # 记录库存转移的变更日志
-                        from app.models.inventory import InventoryChangeLog
-                        log = InventoryChangeLog(
-                            inventory_id=inventory.id,
-                            change_type='transfer',
-                            quantity_before=inventory.quantity,
-                            quantity_after=inventory.quantity,
-                            locked_quantity_before=inventory.locked_quantity,
-                            locked_quantity_after=inventory.locked_quantity,
-                            frozen_quantity_before=inventory.frozen_quantity,
-                            frozen_quantity_after=inventory.frozen_quantity,
-                            operator=current_user.username if current_user.is_authenticated else 'system',
-                            reason='上架操作，从等待区转移到正常库位',
-                            reference_id=inbound_order.id,
-                            reference_type='inbound_order'
-                        )
-                        db.session.add(log)
-                        logger.info(f'上架操作：为库存记录 {inventory.id} 创建转移变更日志')
-                    except Exception as e:
-                        logger.error(f'上架操作：创建库存变更日志失败: {str(e)}')
-                        # 继续执行上架操作，不因为日志记录失败而中断
-                else:
-                    # 如果库存记录不存在，创建新的库存记录
-                    try:
-                        # 使用update_inventory函数创建库存记录，它会自动触发库存变更日志
-                        inventory = update_inventory(item.product_id, location_id, item.batch_no, item.quantity, is_bound=True)
-                        logger.info(f'上架操作：创建新的库存记录，商品:{item.product_id}, 库位:{location_id}, 数量:{item.quantity}')
-                    except Exception as e:
-                        logger.error(f'上架操作：创建库存记录失败: {str(e)}')
-                        raise
+                if not inventory:
+                    # 如果在等待区查找不到库存记录，说明入库流程存在问题
+                    error_msg = f'上架失败：在等待区未找到商品ID {item.product_id} 的库存记录，请检查入库流程是否正确执行'
+                    logger.error(error_msg)
+                    flash(error_msg, 'danger')
+                    raise ValueError(error_msg)
+                
+                # 更新库存记录的库位，状态会自动从"等待"变为"正常"
+                old_location_id = inventory.location_id
+                inventory.location_id = location_id
+                inventory.remark = '已上架'
+                logger.info(f'上架操作：库存记录 {inventory.id} 从库位 {old_location_id} 转移至库位 {location_id}，状态从"等待"变为"正常"')
+                
+                try:
+                    # 记录库存转移的变更日志
+                    from app.models.inventory import InventoryChangeLog
+                    log = InventoryChangeLog(
+                        inventory_id=inventory.id,
+                        change_type='transfer',
+                        quantity_before=inventory.quantity,
+                        quantity_after=inventory.quantity,
+                        locked_quantity_before=inventory.locked_quantity,
+                        locked_quantity_after=inventory.locked_quantity,
+                        frozen_quantity_before=inventory.frozen_quantity,
+                        frozen_quantity_after=inventory.frozen_quantity,
+                        operator=current_user.username if current_user.is_authenticated else 'system',
+                        reason='上架操作，从等待区转移到正常库位',
+                        reference_id=inbound_order.id,
+                        reference_type='inbound_order'
+                    )
+                    db.session.add(log)
+                    logger.info(f'上架操作：为库存记录 {inventory.id} 创建转移变更日志')
+                except Exception as e:
+                    logger.error(f'上架操作：创建库存变更日志失败: {str(e)}')
+                    # 继续执行上架操作，不因为日志记录失败而中断
 
             # 更新入库单状态为已完成
             inbound_order.status = 'completed'

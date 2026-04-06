@@ -101,7 +101,6 @@ class Inventory(db.Model):
     quantity = db.Column(db.Integer, default=0, nullable=False)  # 物理库存数量
     locked_quantity = db.Column(db.Integer, default=0, nullable=False)  # 锁定数量
     frozen_quantity = db.Column(db.Integer, default=0, nullable=False)  # 冻结数量
-    batch_no = db.Column(db.String(32))  # 批次号
     production_date = db.Column(db.Date)  # 生产日期
     expire_date = db.Column(db.Date)  # 过期日期
     defect_reason = db.Column(db.String(64))  # 不合格原因
@@ -114,9 +113,9 @@ class Inventory(db.Model):
     # 关联检验单
     inspection_order = db.relationship('InspectionOrder')
 
-    # 联合唯一约束（同一商品同一库位同一批次唯一）
+    # 联合唯一约束（同一商品同一库位唯一，确保一个库位只能存放一种商品）
     __table_args__ = (
-        db.UniqueConstraint('product_id', 'location_id', 'batch_no', name='_product_location_batch_uc'),
+        db.UniqueConstraint('product_id', 'location_id', name='_product_location_uc'),
     )
 
     def __repr__(self):
