@@ -21,7 +21,7 @@ inbound_bp = Blueprint('inbound', __name__)
 @permission_required('inbound_manage')
 @login_required
 def list():
-    keyword = request.args.get('keyword', '')     # 接收参数keyword supplier_id start_date end_date page
+    keyword = request.args.get('keyword', '')     
     supplier_id = request.args.get('supplier_id', '')
     status = request.args.get('status', '')
     start_date = request.args.get('start_date', '')
@@ -249,7 +249,7 @@ def create_inbound_manual(request, products, suppliers, locations):
                     from app.models.inventory import InventoryChangeLog
                     log = InventoryChangeLog(
                         inventory_id=inventory.id,
-                        change_type='transfer',
+                        change_type='inbound',
                         quantity_before=inventory.quantity,
                         quantity_after=inventory.quantity,
                         locked_quantity_before=inventory.locked_quantity,

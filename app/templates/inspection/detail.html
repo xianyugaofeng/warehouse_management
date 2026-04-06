@@ -65,48 +65,19 @@
             
             <div class="card shadow-sm">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">质检明细</h5>
+                    <h5 class="mb-0">商品信息</h5>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover table-bordered">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>商品名称</th>
-                                    <th>商品编码</th>
-                                    <th>检验数量</th>
-                                    <th>合格数量</th>
-                                    <th>不合格数量</th>
-                                    <th>质检状态</th>
-                                    <th>备注</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for item in inspection_order.items %}
-                                <tr>
-                                    <td>{{ item.product.name }}</td>
-                                    <td>{{ item.product.code }}</td>
-                                    <td>{{ item.quantity }}</td>
-                                    <td>{{ item.qualified_quantity }}</td>
-                                    <td>{{ item.unqualified_quantity }}</td>
-                                    <td>
-                                        {% if item.quality_status == 'pending' %}
-                                        <span class="badge bg-secondary">待质检</span>
-                                        {% elif item.quality_status == 'passed' %}
-                                        <span class="badge bg-success">合格</span>
-                                        {% elif item.quality_status == 'failed' %}
-                                        <span class="badge bg-danger">不合格</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ item.remark if item.remark else '-' }}</td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="7" class="text-center">暂无质检明细</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>商品名称:</strong> {{ inspection_order.product.name if inspection_order.product else '-' }}</p>
+                            <p><strong>商品编码:</strong> {{ inspection_order.product.code if inspection_order.product else '-' }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>检验总数量:</strong> {{ inspection_order.total_quantity }}</p>
+                            <p><strong>合格数量:</strong> <span class="text-success">{{ inspection_order.qualified_quantity }}</span></p>
+                            <p><strong>不合格数量:</strong> <span class="text-danger">{{ inspection_order.unqualified_quantity }}</span></p>
+                        </div>
                     </div>
                 </div>
             </div>

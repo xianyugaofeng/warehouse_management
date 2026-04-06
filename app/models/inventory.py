@@ -30,7 +30,9 @@ class InventoryChangeLog(db.Model):
     __tablename__ = 'inventory_change_logs'
     id = db.Column(db.Integer, primary_key=True)
     inventory_id = db.Column(db.Integer, db.ForeignKey('inventories.id'), nullable=False)  # 关联库存
-    change_type = db.Column(db.String(16), nullable=False)  # 变更类型: inbound(入库), outbound(出库), lock(锁定), unlock(解锁), freeze(冻结), unfreeze(解冻), adjustment(调整)
+    change_type = db.Column(db.String(16), nullable=False)  
+    # 变更类型: inbound(入库), outbound(出库), lock(锁定), unlock(解锁)
+    # freeze(冻结), unfreeze(解冻), adjustment(调整)
     quantity_before = db.Column(db.Integer, nullable=False)  # 变更前数量
     quantity_after = db.Column(db.Integer, nullable=False)  # 变更后数量
     locked_quantity_before = db.Column(db.Integer, nullable=False)  # 变更前锁定数量

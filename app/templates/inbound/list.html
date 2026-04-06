@@ -82,14 +82,18 @@
                                 <td>{{ order.total_amount }}</td>
                                 <td>{{ order.operator.real_name or order.operator.username }}</td>      <!--优先显示操作员的真实姓名-->
                                 <td>
-                                    {% if order.status == 'completed' %}
+                                    {% if order.status == 'pending' %}
+                                        <span class="badge bg-info">待上架</span>
+                                    {% elif order.status == 'completed' %}
                                         <span class="badge bg-success">已完成</span>
                                     {% elif order.status == 'draft' %}
                                         <span class="badge bg-warning">草稿</span>
-                                    {% elif order.status == 'pending' %}
-                                        <span class="badge bg-info">待上架</span>
-                                    {% else %}
+                                    {% elif order.status == 'canceled' %}
                                         <span class="badge bg-danger">已取消</span>
+                                    {% elif order.status == 'rejected' %}
+                                        <span class="badge bg-danger">已拒绝</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">未知</span>
                                     {% endif %}
                                 </td>
                                 <td>{{ order.create_time.strftime('%Y-%m-%d %H-%M') }}</td>
@@ -122,17 +126,25 @@
                                     <div class="col-md-6">
                                         <p><strong>供应商:</strong> {{ order.supplier.name if order.supplier else '-' }}</p>
                                         <p><strong>关联采购单:</strong> {{ order.related_order or '-' }}</p>
-                                        <p><strong>入库日期:</strong> {{ order.inbound_date.strftime('%Y-%m-%d') }}</p>
+                                        <p><strong>送货单号:</strong> {{ order.delivery_order_no or '-' }}</p>
+                                        <p><strong>检验合格单号:</strong> {{ order.inspection_cert_no or '-' }}</p>
                                     </div>
                                     <div class="col-md-6">
+                                        <p><strong>入库日期:</strong> {{ order.inbound_date.strftime('%Y-%m-%d') }}</p>
                                         <p><strong>操作员:</strong> {{ order.operator.real_name or order.operator.username }}</p>
                                         <p><strong>状态:</strong>
-                                            {% if order.status == 'completed' %}
+                                            {% if order.status == 'pending' %}
+                                                <span class="badge bg-info">待上架</span>
+                                            {% elif order.status == 'completed' %}
                                                 <span class="badge bg-success">已完成</span>
                                             {% elif order.status == 'draft' %}
                                                 <span class="badge bg-warning">草稿</span>
-                                            {% else %}
+                                            {% elif order.status == 'canceled' %}
                                                 <span class="badge bg-danger">已取消</span>
+                                            {% elif order.status == 'rejected' %}
+                                                <span class="badge bg-danger">已拒绝</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">未知</span>
                                             {% endif %}
                                         </p>
                                         <p><strong>备注:</strong> {{ order.remark or '-' }}</p>
