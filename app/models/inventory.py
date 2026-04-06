@@ -32,7 +32,7 @@ class InventoryChangeLog(db.Model):
     inventory_id = db.Column(db.Integer, db.ForeignKey('inventories.id'), nullable=False)  # 关联库存
     change_type = db.Column(db.String(16), nullable=False)  
     # 变更类型: inbound(入库), outbound(出库), lock(锁定), unlock(解锁)
-    # freeze(冻结), unfreeze(解冻), adjustment(调整)
+    # freeze(冻结), unfreeze(解冻), adjustment(调整), move(移库)
     quantity_before = db.Column(db.Integer, nullable=False)  # 变更前数量
     quantity_after = db.Column(db.Integer, nullable=False)  # 变更后数量
     locked_quantity_before = db.Column(db.Integer, nullable=False)  # 变更前锁定数量
@@ -290,7 +290,6 @@ class StockMoveItem(db.Model):
     source_location_id = db.Column(db.Integer, db.ForeignKey('warehouse_locations.id'), nullable=False)  # 源库位
     target_location_id = db.Column(db.Integer, db.ForeignKey('warehouse_locations.id'), nullable=False)  # 目标库位
     quantity = db.Column(db.Integer, nullable=False)  # 移动数量
-    move_batch_no = db.Column(db.String(32))  # 移库批次号
 
     # 关联商品、库位
     product = db.relationship('Product')

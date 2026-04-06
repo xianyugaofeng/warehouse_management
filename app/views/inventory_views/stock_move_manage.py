@@ -68,7 +68,6 @@ def add():
         product_ids = request.form.getlist('product_id[]')
         source_location_ids = request.form.getlist('source_location_id[]')
         target_location_ids = request.form.getlist('target_location_id[]')
-        batch_nos = request.form.getlist('batch_no[]')
         quantities = request.form.getlist('quantity[]')
 
         # 验证数据
@@ -123,7 +122,6 @@ def add():
                 )
 
             # 检查源库位库存是否充足
-            move_batch_no = batch_nos[i] if i < len(batch_nos) else None
             inventory = Inventory.query.filter_by(
                 product_id=product_id,
                 location_id=source_location_id
@@ -136,6 +134,23 @@ def add():
                                        locations=locations,
                                        now=datetime.now()
                 )
+            
+            # 检查目标库位是否有其他商品的库存
+            target_inventory = Inventory.query.filter_by(
+                product_id=product_id,
+                location_id=target_location_id
+            ).first()
+            if not target_inventory:
+                existing_inventory = Inventory.query.filter_by(
+                    location_id=target_location_id
+                ).first()
+                if existing_inventory:
+                    flash(f'第{i+1}行：目标库位已存在其他商品 {existing_inventory.product.name if existing_inventory.product else "未知"}，无法移库', 'danger')
+                    return render_template('stock_move/add.html',
+                                           products=products,
+                                           locations=locations,
+                                           now=datetime.now()
+                    )
 
         # 创建移库单
         order_no = generate_stock_move_no()
@@ -158,7 +173,6 @@ def add():
                 product_id = product_ids[i]
                 source_location_id = source_location_ids[i]
                 target_location_id = target_location_ids[i]
-                move_batch_no = batch_nos[i] if i < len(batch_nos) else None
                 quantity = int(quantities[i]) if quantities[i].isdigit() else 0
 
                 if quantity <= 0:
@@ -170,8 +184,7 @@ def add():
                     product_id=product_id,
                     source_location_id=source_location_id,
                     target_location_id=target_location_id,
-                    quantity=quantity,
-                    move_batch_no=move_batch_no
+                    quantity=quantity
                 )
                 db.session.add(item)
 
@@ -224,8 +237,14 @@ def confirm(order_id):
                 location_id=item.target_location_id
             ).first()
 
+            # 检查目标库位库存商品是否一致
+            if target_inventory and target_inventory.product_id != item.product_id:
+                flash(f'商品 {item.product.name if item.product else "未知"} 的目标库位已存在其他商品，无法移库', 'danger')
+                return redirect(url_for('stock_move.list'))
+
             # 记录变更前的数量
             source_quantity_before = source_inventory.quantity
+            source_inventory_id = source_inventory.id  # 保存ID，删除后无法访问
             target_quantity_before = target_inventory.quantity if target_inventory else 0
             
             if target_inventory:
@@ -238,10 +257,8 @@ def confirm(order_id):
                     product_id=item.product_id,
                     location_id=item.target_location_id,
                     quantity=item.quantity,
-                    batch_no=source_inventory.batch_no,
                     production_date=source_inventory.production_date,
                     expire_date=source_inventory.expire_date,
-                    supplier_batch_no=source_inventory.supplier_batch_no,
                     remark='移库创建'
                 )
                 db.session.add(target_inventory)
@@ -251,24 +268,25 @@ def confirm(order_id):
             source_inventory.quantity -= item.quantity
             logger.info(f'移库确认：源库位库存减少，商品:{item.product_id}, 数量:{item.quantity}')
             
-            # 如果源库位库存减少到0，删除该库存记录
-            if source_inventory.quantity == 0:
+            # 判断是否需要删除源库位库存记录
+            should_delete_source = source_inventory.quantity == 0
+            if should_delete_source:
                 db.session.delete(source_inventory)
-                logger.info(f'移库确认：源库位库存减少到0，删除库存记录 {source_inventory.id}')
+                logger.info(f'移库确认：源库位库存减少到0，删除库存记录 {source_inventory_id}')
 
             # 记录源库位库存变更日志
             try:
                 log = InventoryChangeLog(
-                    inventory_id=source_inventory.id if source_inventory.quantity > 0 else None,
-                    change_type='move_out',
+                    inventory_id=source_inventory_id if not should_delete_source else None,
+                    change_type='move',
                     quantity_before=source_quantity_before,
-                    quantity_after=source_inventory.quantity if source_inventory.quantity > 0 else 0,
+                    quantity_after=0 if should_delete_source else source_inventory.quantity,
                     locked_quantity_before=source_inventory.locked_quantity,
-                    locked_quantity_after=source_inventory.locked_quantity,
+                    locked_quantity_after=0 if should_delete_source else source_inventory.locked_quantity,
                     frozen_quantity_before=source_inventory.frozen_quantity,
-                    frozen_quantity_after=source_inventory.frozen_quantity,
+                    frozen_quantity_after=0 if should_delete_source else source_inventory.frozen_quantity,
                     operator=current_user.username if current_user.is_authenticated else 'system',
-                    reason=f'移库出库：{stock_move_order.reason or "库位调拨"}',
+                    reason=f'移库：{stock_move_order.reason or "库位调拨"}',
                     reference_id=stock_move_order.id,
                     reference_type='stock_move_order'
                 )

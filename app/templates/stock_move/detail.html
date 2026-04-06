@@ -86,7 +86,6 @@
                                     <th>规格</th>
                                     <th>源库位</th>
                                     <th>目标库位</th>
-                                    <th>移库批次号</th>
                                     <th>数量</th>
                                 </tr>
                             </thead>
@@ -98,12 +97,11 @@
                                 <td>{{ item.product.spec if item.product else '-' }}</td>
                                 <td>{{ item.source_location.code if item.source_location else '-' }} - {{ item.source_location.name if item.source_location else '-' }}</td>
                                 <td>{{ item.target_location.code if item.target_location else '-' }} - {{ item.target_location.name if item.target_location else '-' }}</td>
-                                <td>{{ item.move_batch_no or '-' }}</td>
                                 <td>{{ item.quantity }}</td>
                             </tr>
                         {% else %}
                             <tr>
-                                <td colspan="7" class="text-center">暂无移库明细</td>
+                                <td colspan="6" class="text-center">暂无移库明细</td>
                             </tr>
                         {% endfor %}
                     </tbody>

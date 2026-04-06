@@ -47,7 +47,6 @@
                                     <th>商品</th>
                                     <th>源库位</th>
                                     <th>目标库位</th>
-                                    <th>移库批次号</th>
                                     <th>数量</th>
                                     <th>操作</th>
                                 </tr>
@@ -90,9 +89,6 @@
                         <option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>
                     {% endfor %}
                 </select>
-            </td>
-            <td>
-                <input type="text" class="form-control" name="batch_no[]" placeholder="移库批次号">
             </td>
             <td>
                 <input type="number" class="form-control" name="quantity[]" min="1" value="1" required>
