@@ -102,7 +102,7 @@ class InventoryCountTestCase(unittest.TestCase):
         db.session.flush()
         
         # 生成快照
-        from app.views.count_manage import _create_snapshot
+        from app.views.inventory_views.count_manage import _create_snapshot
         _create_snapshot(count, 'all', {})
         
         db.session.commit()
@@ -134,7 +134,7 @@ class InventoryCountTestCase(unittest.TestCase):
         db.session.add(count)
         db.session.flush()
         
-        from app.views.count_manage import _create_snapshot
+        from app.views.inventory_views.count_manage import _create_snapshot
         _create_snapshot(count, 'location', {'location_ids': [self.location1.id]})
         
         db.session.commit()
@@ -160,7 +160,7 @@ class InventoryCountTestCase(unittest.TestCase):
         db.session.add(count)
         db.session.flush()
         
-        from app.views.count_manage import _create_snapshot
+        from app.views.inventory_views.count_manage import _create_snapshot
         _create_snapshot(count, 'all', {})
         db.session.commit()
         
@@ -188,7 +188,7 @@ class InventoryCountTestCase(unittest.TestCase):
         db.session.add(count)
         db.session.flush()
         
-        from app.views.count_manage import _create_snapshot
+        from app.views.inventory_views.count_manage import _create_snapshot
         _create_snapshot(count, 'all', {})
         db.session.commit()
         
@@ -216,7 +216,7 @@ class InventoryCountTestCase(unittest.TestCase):
         db.session.add(count)
         db.session.flush()
         
-        from app.views.count_manage import _create_snapshot
+        from app.views.inventory_views.count_manage import _create_snapshot
         _create_snapshot(count, 'all', {})
         db.session.commit()
         
@@ -246,7 +246,7 @@ class InventoryCountTestCase(unittest.TestCase):
         db.session.add(count)
         db.session.flush()
         
-        from app.views.count_manage import _create_snapshot
+        from app.views.inventory_views.count_manage import _create_snapshot
         _create_snapshot(count, 'all', {})
         db.session.commit()
         
@@ -266,7 +266,7 @@ class InventoryCountTestCase(unittest.TestCase):
         db.session.commit()
         
         # 生成差异单
-        from app.views.count_manage import _create_variance_document
+        from app.views.inventory_views.count_manage import _create_variance_document
         
         losses = [detail1]
         gains = [detail3]
@@ -309,7 +309,7 @@ class InventoryCountTestCase(unittest.TestCase):
         db.session.add(count)
         db.session.flush()
         
-        from app.views.count_manage import _create_snapshot, _create_variance_document
+        from app.views.inventory_views.count_manage import _create_snapshot, _create_variance_document
         _create_snapshot(count, 'all', {})
         db.session.commit()
         
@@ -327,7 +327,7 @@ class InventoryCountTestCase(unittest.TestCase):
         variance = VarianceDocument.query.filter_by(count_id=count.id, variance_type='gain').first()
         
         # 审核通过
-        from app.views.count_manage import _approve_variance_internal
+        from app.views.inventory_views.count_manage import _approve_variance_internal
         original_qty = self.inv1.quantity
         _approve_variance_internal(variance, False, self.user.id)
         db.session.commit()
@@ -351,7 +351,7 @@ class InventoryCountTestCase(unittest.TestCase):
         db.session.add(count)
         db.session.flush()
         
-        from app.views.count_manage import _create_snapshot, _create_variance_document
+        from app.views.inventory_views.count_manage import _create_snapshot, _create_variance_document
         _create_snapshot(count, 'all', {})
         db.session.commit()
         
@@ -369,7 +369,7 @@ class InventoryCountTestCase(unittest.TestCase):
         variance = VarianceDocument.query.filter_by(count_id=count.id, variance_type='loss').first()
         
         # 审核通过
-        from app.views.count_manage import _approve_variance_internal
+        from app.views.inventory_views.count_manage import _approve_variance_internal
         original_qty = self.inv1.quantity
         original_frozen = self.inv1.frozen_quantity
         _approve_variance_internal(variance, False, self.user.id)
@@ -395,7 +395,7 @@ class InventoryCountTestCase(unittest.TestCase):
         db.session.add(count)
         db.session.flush()
         
-        from app.views.count_manage import _create_snapshot, _create_variance_document
+        from app.views.inventory_views.count_manage import _create_snapshot, _create_variance_document
         _create_snapshot(count, 'all', {})
         db.session.commit()
         
@@ -460,7 +460,7 @@ class InventoryCountTestCase(unittest.TestCase):
         db.session.add_all([product, location, inv_special])
         db.session.flush()
         
-        from app.views.count_manage import _create_snapshot
+        from app.views.inventory_views.count_manage import _create_snapshot
         _create_snapshot(count, 'all', {})
         db.session.commit()
         
@@ -472,7 +472,7 @@ class InventoryCountTestCase(unittest.TestCase):
         db.session.commit()
         
         # 生成差异单（冻结10后frozen_quantity=15）
-        from app.views.count_manage import _create_variance_document
+        from app.views.inventory_views.count_manage import _create_variance_document
         losses = [detail]
         _create_variance_document(count, 'loss', losses)
         db.session.commit()
@@ -487,7 +487,7 @@ class InventoryCountTestCase(unittest.TestCase):
         variance = VarianceDocument.query.filter_by(count_id=count.id, variance_type='loss').first()
         
         # 尝试审核不强制通过
-        from app.views.count_manage import _approve_variance_internal
+        from app.views.inventory_views.count_manage import _approve_variance_internal
         
         try:
             _approve_variance_internal(variance, force=False, approver_id=self.user.id)
@@ -519,7 +519,7 @@ class InventoryCountTestCase(unittest.TestCase):
         db.session.add(count)
         db.session.flush()
         
-        from app.views.count_manage import _create_snapshot
+        from app.views.inventory_views.count_manage import _create_snapshot
         _create_snapshot(count, 'all', {})
         db.session.commit()
         
@@ -545,7 +545,7 @@ class InventoryCountTestCase(unittest.TestCase):
         db.session.add(count)
         db.session.flush()
         
-        from app.views.count_manage import _create_snapshot
+        from app.views.inventory_views.count_manage import _create_snapshot
         _create_snapshot(count, 'all', {})
         db.session.commit()
         

@@ -25,7 +25,7 @@ db.session.add(count_order)
 db.session.flush()
 
 # 创建快照
-from app.views.count_manage import _create_snapshot
+from app.views.inventory_views.count_manage import _create_snapshot
 _create_snapshot(count_order, 'all', {})
 db.session.commit()
 print(f"   盘点单创建成功: {count_order.count_no}")
@@ -66,7 +66,7 @@ print(f"   无差异: {len(no_variance)} 项")
 
 # 4. 生成差异单
 print("\n4. 生成差异单...")
-from app.views.count_manage import _create_variance_document
+from app.views.inventory_views.count_manage import _create_variance_document
 
 try:
     if gains:
@@ -96,7 +96,7 @@ for inv in all_inventories:
 
 # 7. 审核差异单
 print("\n7. 审核差异单...")
-from app.views.count_manage import _approve_variance_internal
+from app.views.inventory_views.count_manage import _approve_variance_internal
 
 variance_docs = VarianceDocument.query.filter_by(count_id=count_order.id).all()
 for variance in variance_docs:
