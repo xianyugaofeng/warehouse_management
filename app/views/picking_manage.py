@@ -21,9 +21,9 @@ from flask import Blueprint, render_template, request, flash, redirect, url_for,
 from flask_login import login_required, current_user
 from datetime import datetime
 from app import db
-from app.models.allocation_order import AllocationOrder, AllocationItem
-from app.models.picking_order import PickingOrder, PickingItem
-from app.models.sales_order import SalesOrder
+from app.models.allocation import AllocationOrder, AllocationItem
+from app.models.picking import PickingOrder, PickingItem
+from app.models.sales import SalesOrder
 from app.models.inventory import Inventory, WarehouseLocation, InventoryChangeLog
 from app.models.user import User
 from app.utils.auth import permission_required

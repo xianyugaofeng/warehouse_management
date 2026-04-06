@@ -11,6 +11,6 @@ from .outbound import OutboundItem, OutboundOrder, ShippingOrder, ShippingItem
 from .inspection import InspectionOrder, InspectionItem
 from .return_product import ReturnOrder, ReturnItem
 from .count import InventoryCount, InventoryCountDetail, VarianceDocument, VarianceDetail, InventoryFreezeRecord
-from .sales_order import SalesOrder, SalesOrderItem
-from .allocation_order import AllocationOrder, AllocationItem
-from .picking_order import PickingOrder, PickingItem
+from .sales import SalesOrder, SalesOrderItem
+from .allocation import AllocationOrder, AllocationItem
+from .picking import PickingOrder, PickingItem

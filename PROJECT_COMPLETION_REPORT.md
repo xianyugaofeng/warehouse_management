@@ -157,9 +157,9 @@
 ### 新创建的关键文件 (18个)
 
 **数据模型** (5个)
-- `app/models/sales_order.py` - 销售单
-- `app/models/allocation_order.py` - 分配单
-- `app/models/picking_order.py` - 拣货单
+- `app/models/sales.py` - 销售单
+- `app/models/allocation.py` - 分配单
+- `app/models/picking.py` - 拣货单
 - `app/models/outbound.py` - 出库单（重构）
 - `app/models/inspection.py` - 检验单（扩展）
 
@@ -200,8 +200,9 @@ flask db upgrade
 ### 2. 验证文件部署
 ```bash
 # 检查模型文件
-ls app/models/sales_order.py
-ls app/models/allocation_order.py
+ls app/models/sales.py
+ls app/models/allocation.py
+ls app/models/picking.py
 
 # 检查视图文件
 ls app/views/sales_manage.py

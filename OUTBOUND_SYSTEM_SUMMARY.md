@@ -272,7 +272,7 @@ InventoryChangeLog(
 
 | 组件 | 行数 | 文件 |
 |-----|------|------|
-| 数据模型 | 700+ | sales_order.py, allocation_order.py, picking_order.py, outbound.py, inspection.py |
+| 数据模型 | 700+ | sales.py, allocation.py, picking.py, outbound.py, inspection.py |
 | 业务逻辑 | 1200+ | sales_manage.py, allocation_manage.py, picking_manage.py, shipping_manage.py |
 | 辅助函数 | 60+ | helpers.py |
 | API文档 | 650+ | OUTBOUND_SYSTEM_GUIDE.md |
@@ -330,7 +330,7 @@ app/templates/
 ```python
 from app import create_app, db
 from app.models import *
-from app.models.sales_order import SalesOrder, SalesOrderItem
+from app.models.sales import SalesOrder, SalesOrderItem
 
 app = create_app('development')
 with app.app_context():
@@ -467,9 +467,9 @@ http://localhost:5000
 ## 文件清单
 
 ### 新增文件 (9个)
-1. `app/models/sales_order.py` - 销售单模型 (200+ 行)
-2. `app/models/allocation_order.py` - 分配单模型 (200+ 行)
-3. `app/models/picking_order.py` - 拣货单模型 (200+ 行)
+1. `app/models/sales.py` - 销售单模型 (200+ 行)
+2. `app/models/allocation.py` - 分配单模型 (200+ 行)
+3. `app/models/picking.py` - 拣货单模型 (200+ 行)
 4. `app/views/sales_manage.py` - 销售单视图 (200+ 行)
 5. `app/views/allocation_manage.py` - 分配单视图 (400+ 行, 含分配算法)
 6. `app/views/picking_manage.py` - 拣货单视图 (300+ 行)

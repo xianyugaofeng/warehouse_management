@@ -21,8 +21,8 @@ from flask_login import login_required, current_user
 from datetime import datetime
 from sqlalchemy import and_, or_
 from app import db
-from app.models.sales_order import SalesOrder, SalesOrderItem
-from app.models.allocation_order import AllocationOrder, AllocationItem
+from app.models.sales import SalesOrder, SalesOrderItem
+from app.models.allocation import AllocationOrder, AllocationItem
 from app.models.inventory import Inventory, WarehouseLocation, InventoryChangeLog
 from app.models.product import Product
 from app.models.user import User
