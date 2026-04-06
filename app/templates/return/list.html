@@ -6,62 +6,137 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-12">
-            <h2>退货单列表</h2>
-            <div class="card">
-                <div class="card-header">
-                    <form method="get" class="form-inline">
-                        <div class="form-group mr-3">
-                            <label for="order_no" class="mr-2">退货单号</label>
-                            <input type="text" class="form-control" id="order_no" name="order_no" value="{{ order_no }}">
-                        </div>
-                        <div class="form-group mr-3">
-                            <label for="start_date" class="mr-2">开始日期</label>
-                            <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date }}">
-                        </div>
-                        <div class="form-group mr-3">
-                            <label for="end_date" class="mr-2">结束日期</label>
-                            <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date }}">
-                        </div>
-                        <button type="submit" class="btn btn-primary">查询</button>
-                        <a href="{{ url_for('return.return_add') }}" class="btn btn-success ml-3">创建退货单</a>
-                    </form>
+            <h2 class="mt-4 mb-4">退货单管理</h2>
+            
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">搜索条件</h5>
                 </div>
                 <div class="card-body">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>退货单号</th>
-                                <th>退货日期</th>
-                                <th>操作员</th>
-                                <th>总金额</th>
-                                <th>状态</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for return_order in return_orders %}
-                            <tr>
-                                <td>{{ return_order.order_no }}</td>
-                                <td>{{ return_order.return_date }}</td>
-                                <td>{{ return_order.operator.username }}</td>
-                                <td>{{ return_order.total_amount }}</td>
-                                <td>{{ return_order.status }}</td>
-                                <td>
-                                    <a href="{{ url_for('return.return_detail', order_id=return_order.id) }}" class="btn btn-info btn-sm">查看</a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    <div class="pagination justify-content-center">
-                        {% if pagination.has_prev %}
-                        <a href="{{ url_for('return.return_list', page=pagination.prev_num, order_no=order_no, start_date=start_date, end_date=end_date) }}" class="btn btn-outline-primary">上一页</a>
-                        {% endif %}
-                        <span class="mx-2">第 {{ pagination.page }} 页，共 {{ pagination.pages }} 页</span>
-                        {% if pagination.has_next %}
-                        <a href="{{ url_for('return.return_list', page=pagination.next_num, order_no=order_no, start_date=start_date, end_date=end_date) }}" class="btn btn-outline-primary">下一页</a>
-                        {% endif %}
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="order_no" class="form-label">退货单号</label>
+                            <input type="text" class="form-control" id="order_no" name="order_no" value="{{ order_no }}" placeholder="输入单号搜索">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="start_date" class="form-label">开始日期</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="end_date" class="form-label">结束日期</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date }}">
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end gap-2">
+                            <button type="submit" class="btn btn-primary flex-fill">
+                                <i class="fa fa-search"></i> 查询
+                            </button>
+                            <a href="{{ url_for('return.return_add') }}" class="btn btn-success flex-fill">
+                                <i class="fa fa-plus"></i> 创建退货单
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>退货单列表（共 {{ return_orders | length }} 条记录）</span>
+                    <small class="text-muted">不合格商品退货</small>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>序号</th>
+                                    <th>退货单号</th>
+                                    <th>退货日期</th>
+                                    <th>操作员</th>
+                                    <th>总金额</th>
+                                    <th>状态</th>
+                                    <th>创建时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for return_order in return_orders %}
+                                <tr>
+                                    <td>{{ loop.index + (pagination.page - 1) * pagination.per_page }}</td>
+                                    <td><strong>{{ return_order.order_no }}</strong></td>
+                                    <td>{{ return_order.return_date.strftime('%Y-%m-%d') if return_order.return_date else '-' }}</td>
+                                    <td>{{ return_order.operator.username if return_order.operator else '-' }}</td>
+                                    <td class="fw-bold text-danger">¥{{ '%.2f' | format(return_order.total_amount) }}</td>
+                                    <td>
+                                        {% if return_order.status == 'completed' %}
+                                        <span class="badge bg-success">已完成</span>
+                                        {% elif return_order.status == 'pending' %}
+                                        <span class="badge bg-warning">待处理</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">{{ return_order.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ return_order.create_time.strftime('%Y-%m-%d %H:%M') if return_order.create_time else '-' }}</td>
+                                    <td>
+                                        <a href="{{ url_for('return.return_detail', order_id=return_order.id) }}" 
+                                           class="btn btn-info btn-sm" title="查看详情">
+                                            <i class="fa fa-eye"></i> 查看
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-4">
+                                        <i class="fa fa-inbox fa-2x mb-2 d-block"></i>
+                                        暂无退货单数据
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
+                    
+                    {% if pagination.pages > 1 %}
+                    <nav aria-label="Page navigation" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if pagination.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('return.return_list', page=pagination.prev_num, order_no=order_no, start_date=start_date, end_date=end_date) }}">
+                                    上一页
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled"><span class="page-link">上一页</span></li>
+                            {% endif %}
+                            {% for page in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=3) %}
+                                {% if page %}
+                                    {% if pagination.page == page %}
+                                    <li class="page-item active"><span class="page-link">{{ page }}</span></li>
+                                    {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('return.return_list', page=page, order_no=order_no, start_date=start_date, end_date=end_date) }}">
+                                            {{ page }}
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                {% else %}
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                                {% endif %}
+                            {% endfor %}
+                            {% if pagination.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('return.return_list', page=pagination.next_num, order_no=order_no, start_date=start_date, end_date=end_date) }}">
+                                    下一页
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled"><span class="page-link">下一页</span></li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    <p class="text-center text-muted mt-2">
+                        第 {{ pagination.page }} 页，共 {{ pagination.pages }} 页，共 {{ pagination.total }} 条记录
+                    </p>
+                    {% endif %}
                 </div>
             </div>
         </div>

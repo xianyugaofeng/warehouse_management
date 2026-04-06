@@ -1,12 +1,17 @@
-from datetime import datetime
+from datetime import datetime, date
 from app import db
+
+
+def get_current_date():
+    """获取当前日期作为退货日期的默认值"""
+    return date.today()
 
 
 class ReturnOrder(db.Model):
     __tablename__ = 'return_orders'
     id = db.Column(db.Integer, primary_key=True)
     order_no = db.Column(db.String(32), unique=True, nullable=False)
-    return_date = db.Column(db.Date, default=datetime.utcnow, nullable=False)
+    return_date = db.Column(db.Date, default=get_current_date, nullable=False)
     operator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     status = db.Column(db.String(16), default='pending', nullable=False)
     total_amount = db.Column(db.Float, default=0.0)

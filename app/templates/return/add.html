@@ -6,74 +6,104 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-12">
-            <h2>创建退货单</h2>
-            <div class="card">
-                <div class="card-header">
-                    <h3>退货基本信息</h3>
+            <h2 class="mt-4 mb-4">创建退货单</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('return.return_list') }}">退货管理</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">创建退货单</li>
+                </ol>
+            </nav>
+            
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">退货基本信息</h5>
                 </div>
                 <div class="card-body">
                     <form method="post">
-                        <div class="form-group">
-                            <label for="remark">备注</label>
-                            <textarea class="form-control" id="remark" name="remark" rows="2"></textarea>
+                        <div class="mb-3">
+                            <label for="remark" class="form-label">备注</label>
+                            <textarea class="form-control" id="remark" name="remark" rows="2" placeholder="可选填写备注信息"></textarea>
                         </div>
                         
-                        <h3 class="mt-4">退货明细</h3>
+                        <h5 class="mt-4 mb-3">退货明细（不合格商品）</h5>
+                        <p class="text-muted small mb-3">
+                            <i class="fa fa-info-circle"></i> 
+                            只能选择存放在<strong>不合格区</strong>的商品进行退货
+                        </p>
                         <div id="return-items">
-                            <div class="return-item mb-3 p-3 border rounded">
-                                <div class="form-row">
-                                    <div class="form-group col-md-3">
-                                        <label>商品</label>
-                                        <select class="form-control" name="product_id" required>
-                                            <option value="">选择商品</option>
+                            <div class="return-item card mb-3 p-3 border rounded">
+                                <div class="row g-3 align-items-end">
+                                    <div class="col-md-3">
+                                        <label class="form-label">商品 <span class="text-danger">*</span></label>
+                                        <select class="form-select" name="product_id" required>
+                                            <option value="">请选择不合格商品</option>
                                             {% for defective in defective_products %}
-                                            <option value="{{ defective.product_id }}" data-unit-price="0.0" data-location-id="{{ defective.location_id }}" data-batch-no="{{ defective.batch_no }}">
-                                                {{ defective.product.name }} ({{ defective.location.code }} - 批次: {{ defective.batch_no }} - 数量: {{ defective.quantity }})
+                                            <option value="{{ defective.product_id }}" 
+                                                    data-unit-price="{{ defective.unit_price or '0.00' }}" 
+                                                    data-location-id="{{ defective.location_id }}" 
+                                                    data-batch-no="{{ defective.batch_no }}"
+                                                    data-max-quantity="{{ defective.quantity }}"
+                                                    data-product-name="{{ defective.product.name }}"
+                                                    data-defect-reason="{{ defective.defect_reason }}">
+                                                {{ defective.product.name }} ({{ defective.location.code }})
+                                                <small class="text-muted d-block">批次: {{ defective.batch_no }} | 可退: {{ defective.quantity }}件</small>
                                             </option>
                                             {% endfor %}
                                         </select>
                                     </div>
-                                    <div class="form-group col-md-2">
-                                        <label>库位</label>
-                                        <input type="text" class="form-control" name="location_id" readonly>
+                                    <div class="col-md-2">
+                                        <label class="form-label">库位编码</label>
+                                        <input type="text" class="form-control" name="location_id" readonly placeholder="自动填充">
                                     </div>
-                                    <div class="form-group col-md-2">
-                                        <label>批次号</label>
-                                        <input type="text" class="form-control" name="batch_no" readonly>
+                                    <div class="col-md-2">
+                                        <label class="form-label">批次号</label>
+                                        <input type="text" class="form-control" name="batch_no" readonly placeholder="自动填充">
                                     </div>
-                                    <div class="form-group col-md-1">
-                                        <label>数量</label>
-                                        <input type="number" class="form-control" name="quantity" min="1" required>
+                                    <div class="col-md-1">
+                                        <label class="form-label">数量 <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" name="quantity" min="1" required placeholder="数量">
+                                        <small class="text-muted stock-hint"></small>
                                     </div>
-                                    <div class="form-group col-md-1">
-                                        <label>单价</label>
-                                        <input type="number" class="form-control" name="unit_price" step="0.01" min="0.01" required>
+                                    <div class="col-md-1">
+                                        <label class="form-label">单价 <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" name="unit_price" step="0.01" min="0.01" required placeholder="0.00">
                                     </div>
-                                    <div class="form-group col-md-2">
-                                        <label>不合格原因</label>
-                                        <select class="form-control" name="defect_reason" required>
-                                            <option value="">选择原因</option>
+                                    <div class="col-md-2">
+                                        <label class="form-label">退货原因 <span class="text-danger">*</span></label>
+                                        <select class="form-select" name="defect_reason" required>
+                                            <option value="">请选择</option>
                                             {% for reason in defect_reasons %}
                                             <option value="{{ reason }}">{{ reason }}</option>
                                             {% endfor %}
                                         </select>
                                     </div>
-                                    <div class="form-group col-md-1">
-                                        <label>操作</label>
-                                        <button type="button" class="btn btn-danger btn-block remove-item">删除</button>
+                                    <div class="col-md-1">
+                                        <label class="form-label">操作</label>
+                                        <button type="button" class="btn btn-outline-danger btn-sm w-100 remove-item">
+                                            <i class="fa fa-trash"></i> 删除
+                                        </button>
                                     </div>
                                 </div>
-                                <div class="form-row">
-                                    <div class="form-group col-md-12">
-                                        <label>备注</label>
-                                        <input type="text" class="form-control" name="item_remark">
+                                <div class="row mt-2">
+                                    <div class="col-md-12">
+                                        <label class="form-label">明细备注</label>
+                                        <input type="text" class="form-control" name="item_remark" placeholder="可选">
                                     </div>
                                 </div>
                             </div>
                         </div>
                         
-                        <button type="button" class="btn btn-primary mb-3" id="add-item">添加商品</button>
-                        <button type="submit" class="btn btn-success">提交</button>
+                        <div class="mt-4 d-flex gap-2">
+                            <button type="button" class="btn btn-primary" id="add-item">
+                                <i class="fa fa-plus"></i> 添加商品
+                            </button>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fa fa-check"></i> 提交退货单
+                            </button>
+                            <a href="{{ url_for('return.return_list') }}" class="btn btn-secondary">
+                                取消
+                            </a>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -82,52 +112,72 @@
 </div>
 
 <script>
-// 复制商品选择事件
 function setupItemEvents() {
-    // 商品选择事件
     document.querySelectorAll('select[name="product_id"]').forEach(select => {
         select.addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
+            if (!selectedOption.value) {
+                clearItemFields(this);
+                return;
+            }
+            
             const unitPrice = selectedOption.getAttribute('data-unit-price');
             const locationId = selectedOption.getAttribute('data-location-id');
             const batchNo = selectedOption.getAttribute('data-batch-no');
+            const maxQuantity = selectedOption.getAttribute('data-max-quantity');
             
-            // 更新对应的值
             const itemDiv = this.closest('.return-item');
             itemDiv.querySelector('input[name="unit_price"]').value = unitPrice;
             itemDiv.querySelector('input[name="location_id"]').value = locationId;
             itemDiv.querySelector('input[name="batch_no"]').value = batchNo;
+            
+            const quantityInput = itemDiv.querySelector('input[name="quantity"]');
+            quantityInput.max = maxQuantity;
+            quantityInput.placeholder = `最多${maxQuantity}件`;
+            itemDiv.querySelector('.stock-hint').textContent = `可退: ${maxQuantity}件`;
         });
     });
     
-    // 删除按钮事件
     document.querySelectorAll('.remove-item').forEach(button => {
         button.addEventListener('click', function() {
-            const itemDiv = this.closest('.return-item');
-            if (document.querySelectorAll('.return-item').length > 1) {
-                itemDiv.remove();
+            const itemsContainer = document.getElementById('return-items');
+            if (itemsContainer.querySelectorAll('.return-item').length > 1) {
+                this.closest('.return-item').remove();
             } else {
-                alert('至少需要一个商品');
+                alert('至少需要保留一个商品明细');
             }
         });
     });
 }
 
-// 初始化事件
+function clearItemFields(selectElement) {
+    const itemDiv = selectElement.closest('.return-item');
+    itemDiv.querySelector('input[name="unit_price"]').value = '';
+    itemDiv.querySelector('input[name="location_id"]').value = '';
+    itemDiv.querySelector('input[name="batch_no"]').value = '';
+    const quantityInput = itemDiv.querySelector('input[name="quantity"]');
+    quantityInput.value = '';
+    quantityInput.max = '';
+    quantityInput.placeholder = '数量';
+    itemDiv.querySelector('.stock-hint').textContent = '';
+}
+
 setupItemEvents();
 
-// 添加商品按钮事件
 document.getElementById('add-item').addEventListener('click', function() {
     const itemsContainer = document.getElementById('return-items');
     const firstItem = itemsContainer.querySelector('.return-item');
     const newItem = firstItem.cloneNode(true);
     
-    // 清空值
     newItem.querySelectorAll('input, select').forEach(input => {
-        if (input.type !== 'hidden') {
+        if (input.type !== 'hidden' && input.type !== 'radio' && input.type !== 'checkbox') {
             input.value = '';
         }
+        if (input.tagName === 'SELECT') {
+            input.selectedIndex = 0;
+        }
     });
+    newItem.querySelector('.stock-hint').textContent = '';
     
     itemsContainer.appendChild(newItem);
     setupItemEvents();
