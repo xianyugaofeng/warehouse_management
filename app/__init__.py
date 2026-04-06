@@ -24,17 +24,17 @@ def create_app(config_name='default'):
 
     from app.views.user_manage import user_bp
     from app.views.auth import auth as auth_bp
-    from app.views.inbound_manage import inbound_bp
+    from app.views.inbound_views.inbound_manage import inbound_bp
     from app.views.outbound_manage import outbound_bp
     from app.views.inventory_manage import inventory_bp
     from app.views.product_manage import product_bp
     from app.views.supplier_manage import supplier_bp
     from app.views.customer_manage import customer_bp
     from app.views.report import report_bp
-    from app.views.inspection_manage import inspection_bp
-    from app.views.purchase_manage import purchase_bp
-    from app.views.putaway_manage import putaway_bp
-    from app.views.return_manage import return_bp
+    from app.views.inbound_views.inspection_manage import inspection_bp
+    from app.views.inbound_views.purchase_manage import purchase_bp
+    from app.views.inbound_views.putaway_manage import putaway_bp
+    from app.views.inbound_views.return_manage import return_bp
     from app.views.stock_move_manage import stock_move_bp
     from app.views.count_manage import count_bp
     from app.views.sales_manage import sales_bp
