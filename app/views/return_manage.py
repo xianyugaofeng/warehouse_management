@@ -1,15 +1,21 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required, current_user
 from datetime import datetime
+import logging
 from app import db
-from app.models import ReturnOrder, ReturnItem, WarehouseLocation, Product, PurchaseOrder
+from app.models import ReturnOrder, ReturnItem, WarehouseLocation
 from app.models.inventory import Inventory
 from app.utils.helpers import generate_return_no
+from app.utils.auth import permission_required
+
+logger = logging.getLogger(__name__)
 
 return_bp = Blueprint('return', __name__)
 
 
 @return_bp.route('/list', methods=['GET'])
+@permission_required('outbound_manage')
+@login_required
 def return_list():
     """退货单列表"""
     page = request.args.get('page', 1, type=int)
@@ -50,23 +56,21 @@ def return_list():
 
 
 @return_bp.route('/add', methods=['GET', 'POST'])
+@permission_required('outbound_manage')
 @login_required
 def return_add():
-    """创建退货单"""
+    """
+    创建退货单
+    
+    业务说明：
+    - 退货单用于处理不合格商品的退货流程
+    - 不合格商品存放在不合格区（location_type='reject'）
+    - 不合格商品不参与正常的库存流转，不需要考虑可用库存、锁定库存、冻结库存
+    - 退货时直接扣减物理库存数量
+    """
     if request.method == 'POST':
-        # 获取表单数据
-        return_reason = request.form.get('return_reason')
         remark = request.form.get('remark')
         
-        # 检查必填字段
-        if not return_reason:
-            flash('退货原因不能为空', 'danger')
-            return redirect(url_for('return.return_add'))
-        
-        # 自动关联采购单：从退货明细中获取第一个商品的采购单信息
-        purchase_order_id = None
-        
-        # 处理退货明细
         product_ids = request.form.getlist('product_id')
         location_ids = request.form.getlist('location_id')
         batch_nos = request.form.getlist('batch_no')
@@ -75,9 +79,7 @@ def return_add():
         defect_reasons = request.form.getlist('defect_reason')
         item_remarks = request.form.getlist('item_remark')
         
-        total_amount = 0.0
-        
-        # 首先获取采购单ID
+        valid_items = []
         for i, product_id in enumerate(product_ids):
             if not product_id or not location_ids[i] or not quantities[i] or not unit_prices[i] or not defect_reasons[i]:
                 continue
@@ -88,126 +90,118 @@ def return_add():
                 if quantity <= 0 or unit_price <= 0:
                     continue
             except ValueError:
+                flash(f'商品{product_id}的数量或单价格式不正确', 'warning')
                 continue
             
-            # 查找库存记录，获取关联的检验单和采购单
-            inventory = Inventory.query.filter_by(
-                product_id=int(product_id),
-                location_id=int(location_ids[i]),
-                batch_no=batch_nos[i]
-            ).first()
-            
-            if inventory and inventory.inspection_order_id:
-                # 获取检验单
-                from app.models import InspectionOrder
-                inspection_order = InspectionOrder.query.get(inventory.inspection_order_id)
-                if inspection_order and inspection_order.purchase_order_id:
-                    purchase_order_id = inspection_order.purchase_order_id
-                    break
+            valid_items.append({
+                'product_id': int(product_id),
+                'location_id': int(location_ids[i]),
+                'batch_no': batch_nos[i],
+                'quantity': quantity,
+                'unit_price': unit_price,
+                'defect_reason': defect_reasons[i],
+                'item_remark': item_remarks[i]
+            })
         
-        # 创建退货单
+        if not valid_items:
+            flash('请至少添加一个有效的退货明细', 'danger')
+            return redirect(url_for('return.return_add'))
+        
         order_no = generate_return_no()
         return_order = ReturnOrder(
             order_no=order_no,
-            return_reason=return_reason,
             operator_id=current_user.id,
-            purchase_order_id=purchase_order_id,
             remark=remark
         )
         
-        # 处理退货明细
-        product_ids = request.form.getlist('product_id')
-        location_ids = request.form.getlist('location_id')
-        batch_nos = request.form.getlist('batch_no')
-        quantities = request.form.getlist('quantity')
-        unit_prices = request.form.getlist('unit_price')
-        defect_reasons = request.form.getlist('defect_reason')
-        item_remarks = request.form.getlist('item_remark')
-        
         total_amount = 0.0
+        processed_items = []
         
-        for i, product_id in enumerate(product_ids):
-            if not product_id or not location_ids[i] or not quantities[i] or not unit_prices[i] or not defect_reasons[i]:
-                continue
+        for item in valid_items:
+            inventory = Inventory.query.filter_by(
+                product_id=item['product_id'],
+                location_id=item['location_id'],
+                batch_no=item['batch_no']
+            ).with_for_update().first()
             
-            try:
-                quantity = int(quantities[i])
-                unit_price = float(unit_prices[i])
-                if quantity <= 0 or unit_price <= 0:
-                    continue
-            except ValueError:
-                continue
+            if not inventory:
+                db.session.rollback()
+                flash(f"商品{item['product_id']}的库存记录不存在", 'danger')
+                return redirect(url_for('return.return_add'))
             
-            # 计算金额
-            amount = quantity * unit_price
+            if not inventory.location or inventory.location.location_type != 'reject':
+                db.session.rollback()
+                flash(f"商品{item['product_id']}不在不合格区，无法进行退货操作", 'danger')
+                return redirect(url_for('return.return_add'))
+            
+            if inventory.quantity < item['quantity']:
+                db.session.rollback()
+                flash(f"商品{item['product_id']}的库存不足，当前库存{inventory.quantity}件，需要{item['quantity']}件", 'danger')
+                return redirect(url_for('return.return_add'))
+            
+            amount = item['quantity'] * item['unit_price']
             total_amount += amount
             
-            # 创建退货明细
             return_item = ReturnItem(
                 return_order=return_order,
-                product_id=int(product_id),
-                location_id=int(location_ids[i]),
-                batch_no=batch_nos[i],
-                quantity=quantity,
-                unit_price=unit_price,
+                product_id=item['product_id'],
+                location_id=item['location_id'],
+                inspection_order_id=inventory.inspection_order_id,
+                batch_no=item['batch_no'],
+                quantity=item['quantity'],
+                unit_price=item['unit_price'],
                 amount=amount,
-                defect_reason=defect_reasons[i],
-                remark=item_remarks[i]
+                defect_reason=item['defect_reason'],
+                remark=item['item_remark']
             )
-            
-            # 更新不合格商品库存数量
-            inventory = Inventory.query.filter_by(
-                product_id=int(product_id),
-                location_id=int(location_ids[i]),
-                batch_no=batch_nos[i]
-            ).first()
-            
-            if inventory and inventory.quantity >= quantity:
-                inventory.quantity -= quantity
-                # 如果数量为0，删除记录
-                if inventory.quantity == 0:
-                    db.session.delete(inventory)
-            
-        # 设置总金额
+            db.session.add(return_item)
+            processed_items.append((inventory, item['quantity']))
+            logger.info(f"退货明细：商品{item['product_id']}, 数量{item['quantity']}, 批次{item['batch_no']}")
+        
+        for inventory, quantity in processed_items:
+            inventory.quantity -= quantity
+            logger.info(f"扣减不合格品库存：商品{inventory.product_id}, 扣减{quantity}件, 剩余{inventory.quantity}件")
+            if inventory.quantity == 0:
+                db.session.delete(inventory)
+                logger.info(f"删除库存记录：商品{inventory.product_id}, 库存已清零")
+        
         return_order.total_amount = total_amount
         return_order.status = 'completed'
         
-        # 保存到数据库
-        db.session.add(return_order)
-        db.session.commit()
-        
-        flash('退货单创建成功', 'success')
-        return redirect(url_for('return.return_list'))
+        try:
+            db.session.add(return_order)
+            db.session.commit()
+            logger.info(f"退货单创建成功：{order_no}, 共{len(processed_items)}项商品, 总金额{total_amount}")
+            flash(f'退货单创建成功，共{len(processed_items)}项商品', 'success')
+            return redirect(url_for('return.return_list'))
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"创建退货单失败: {str(e)}")
+            flash(f'创建退货单失败: {str(e)}', 'danger')
+            return redirect(url_for('return.return_add'))
     
-    # 获取不合格商品库位的不合格商品
-    inspection_locations = WarehouseLocation.query.filter(
-        WarehouseLocation.location_type == 'reject'
+    reject_locations = WarehouseLocation.query.filter(
+        WarehouseLocation.location_type == 'reject',
+        WarehouseLocation.status == True
     ).all()
     
     defective_products = []
-    for location in inspection_locations:
-        # 查询该库位的所有库存记录
-        location_inventories = Inventory.query.filter_by(location_id=location.id).all()
-        # 筛选出有不合格原因的库存记录
-        for inventory in location_inventories:
+    for location in reject_locations:
+        inventories = Inventory.query.filter_by(location_id=location.id).all()
+        for inventory in inventories:
             if inventory.defect_reason:
                 defective_products.append(inventory)
     
-    # 不合格原因选项
-    defect_reasons = [
-        '质量问题', '包装损坏', '规格不符', '过期', '其他'
-    ]
-    
-    # 获取所有采购单
-    purchase_orders = PurchaseOrder.query.all()
+    defect_reasons = ['质量问题', '包装损坏', '规格不符', '过期', '其他']
     
     return render_template('return/add.html', 
                            defective_products=defective_products, 
-                           defect_reasons=defect_reasons,
-                           purchase_orders=purchase_orders)
+                           defect_reasons=defect_reasons)
 
 
 @return_bp.route('/detail/<int:order_id>', methods=['GET'])
+@permission_required('outbound_manage')
+@login_required
 def return_detail(order_id):
     """退货单详情"""
     return_order = ReturnOrder.query.get_or_404(order_id)
