@@ -82,18 +82,6 @@
                                     <a href="{{ url_for('stock_move.detail', order_id=order.id) }}" class="btn btn-sm btn-info">
                                         <i class="fa fa-eye"></i>查看
                                     </a>
-                                    {% if order.status == 'pending' %}
-                                        <form action="{{ url_for('stock_move.confirm', order_id=order.id) }}" method="POST" class="d-inline">
-                                            <button type="submit" class="btn btn-sm btn-success ms-1" onclick="return confirm('确认执行移库操作？')">
-                                                <i class="fa fa-check"></i>确认
-                                            </button>
-                                        </form>
-                                        <form action="{{ url_for('stock_move.cancel', order_id=order.id) }}" method="POST" class="d-inline">
-                                            <button type="submit" class="btn btn-sm btn-danger ms-1" onclick="return confirm('确认取消该移库单？')">
-                                                <i class="fa fa-times"></i>取消
-                                            </button>
-                                        </form>
-                                    {% endif %}
                                 </td>
                             </tr>
                         {% else %}

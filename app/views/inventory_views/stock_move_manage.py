@@ -152,7 +152,7 @@ def add():
                                            now=datetime.now()
                     )
 
-        # 创建移库单
+        # 创建移库单并执行移库操作
         order_no = generate_stock_move_no()
         total_quantity = sum(int(qty) for qty in quantities if qty.isdigit())
         stock_move_order = StockMoveOrder(
@@ -160,19 +160,19 @@ def add():
             operator_id=current_user.id,
             move_date=datetime.now().date(),
             total_quantity=total_quantity,
-            status='pending',
+            status='completed',
             reason=reason,
             remark=remark
         )
         db.session.add(stock_move_order)
         db.session.flush()
 
-        # 创建移库明细
+        # 创建移库明细并执行库存移动
         try:
             for i in range(len(product_ids)):
-                product_id = product_ids[i]
-                source_location_id = source_location_ids[i]
-                target_location_id = target_location_ids[i]
+                product_id = int(product_ids[i])
+                source_location_id = int(source_location_ids[i])
+                target_location_id = int(target_location_ids[i])
                 quantity = int(quantities[i]) if quantities[i].isdigit() else 0
 
                 if quantity <= 0:
@@ -187,167 +187,103 @@ def add():
                     quantity=quantity
                 )
                 db.session.add(item)
+                db.session.flush()
+
+                # 执行库存移动
+                source_inventory = Inventory.query.filter_by(
+                    product_id=product_id,
+                    location_id=source_location_id
+                ).first()
+
+                target_inventory = Inventory.query.filter_by(
+                    product_id=product_id,
+                    location_id=target_location_id
+                ).first()
+
+                # 记录变更前的数量
+                source_quantity_before = source_inventory.quantity
+                source_inventory_id = source_inventory.id
+                target_quantity_before = target_inventory.quantity if target_inventory else 0
+
+                # 更新目标库位库存
+                if target_inventory:
+                    target_inventory.quantity += quantity
+                    logger.info(f'移库：目标库位库存增加，商品:{product_id}, 数量:{quantity}')
+                else:
+                    target_inventory = Inventory(
+                        product_id=product_id,
+                        location_id=target_location_id,
+                        quantity=quantity,
+                        production_date=source_inventory.production_date,
+                        expire_date=source_inventory.expire_date,
+                        remark='移库创建'
+                    )
+                    db.session.add(target_inventory)
+                    db.session.flush()
+                    logger.info(f'移库：创建目标库位库存记录，商品:{product_id}, 数量:{quantity}')
+
+                # 更新源库位库存
+                source_inventory.quantity -= quantity
+                logger.info(f'移库：源库位库存减少，商品:{product_id}, 数量:{quantity}')
+
+                # 判断是否需要删除源库位库存记录
+                should_delete_source = source_inventory.quantity == 0
+                if should_delete_source:
+                    db.session.delete(source_inventory)
+                    logger.info(f'移库：源库位库存减少到0，删除库存记录 {source_inventory_id}')
+
+                # 记录源库位库存变更日志
+                try:
+                    log = InventoryChangeLog(
+                        inventory_id=source_inventory_id if not should_delete_source else None,
+                        change_type='move',
+                        quantity_before=source_quantity_before,
+                        quantity_after=0 if should_delete_source else source_inventory.quantity,
+                        locked_quantity_before=0,
+                        locked_quantity_after=0,
+                        frozen_quantity_before=0,
+                        frozen_quantity_after=0,
+                        operator=current_user.username if current_user.is_authenticated else 'system',
+                        reason=f'移库：{reason or "库位调拨"}',
+                        reference_id=stock_move_order.id,
+                        reference_type='stock_move_order'
+                    )
+                    db.session.add(log)
+                except Exception as e:
+                    logger.error(f'移库：创建源库位变更日志失败: {str(e)}')
+
+                # 记录目标库位库存变更日志
+                try:
+                    log = InventoryChangeLog(
+                        inventory_id=target_inventory.id,
+                        change_type='move_in',
+                        quantity_before=target_quantity_before,
+                        quantity_after=target_inventory.quantity,
+                        locked_quantity_before=0,
+                        locked_quantity_after=0,
+                        frozen_quantity_before=0,
+                        frozen_quantity_after=0,
+                        operator=current_user.username if current_user.is_authenticated else 'system',
+                        reason=f'移库入库：{reason or "库位调拨"}',
+                        reference_id=stock_move_order.id,
+                        reference_type='stock_move_order'
+                    )
+                    db.session.add(log)
+                except Exception as e:
+                    logger.error(f'移库：创建目标库位变更日志失败: {str(e)}')
 
             db.session.commit()
-            flash('移库单创建成功，请确认后执行', 'success')
+            flash('移库成功，库存已更新', 'success')
             return redirect(url_for('stock_move.list'))
         except Exception as e:
             db.session.rollback()
-            flash(f'创建失败：{str(e)}', 'danger')
+            flash(f'移库失败：{str(e)}', 'danger')
 
     return render_template('stock_move/add.html',
                            products=products,
                            locations=locations,
                            now=datetime.now()
     )
-
-
-# 确认库存移动单
-@stock_move_bp.route('/confirm/<int:order_id>', methods=['POST'])
-@permission_required('inventory_manage')
-@login_required
-def confirm(order_id):
-    stock_move_order = StockMoveOrder.query.get_or_404(order_id)
-
-    if stock_move_order.status != 'pending':
-        flash('该移库单已处理，无法重复确认', 'danger')
-        return redirect(url_for('stock_move.list'))
-
-    try:
-        # 处理每个移库明细
-        for item in stock_move_order.items:
-            # 检查库位类型是否相同
-            if item.source_location.location_type != item.target_location.location_type:
-                flash(f'商品 {item.product.name if item.product else "未知"} 的源库位和目标库位类型不同，无法移库', 'danger')
-                return redirect(url_for('stock_move.list'))
-            
-            # 查找源库位库存
-            source_inventory = Inventory.query.filter_by(
-                product_id=item.product_id,
-                location_id=item.source_location_id
-            ).first()
-
-            if not source_inventory or source_inventory.quantity < item.quantity:
-                flash(f'商品 {item.product.name if item.product else "未知"} 在源库位库存不足', 'danger')
-                return redirect(url_for('stock_move.list'))
-
-            # 查找目标库位库存
-            target_inventory = Inventory.query.filter_by(
-                product_id=item.product_id,
-                location_id=item.target_location_id
-            ).first()
-
-            # 检查目标库位库存商品是否一致
-            if target_inventory and target_inventory.product_id != item.product_id:
-                flash(f'商品 {item.product.name if item.product else "未知"} 的目标库位已存在其他商品，无法移库', 'danger')
-                return redirect(url_for('stock_move.list'))
-
-            # 记录变更前的数量
-            source_quantity_before = source_inventory.quantity
-            source_inventory_id = source_inventory.id  # 保存ID，删除后无法访问
-            target_quantity_before = target_inventory.quantity if target_inventory else 0
-            
-            if target_inventory:
-                # 目标库位已有库存，增加数量
-                target_inventory.quantity += item.quantity
-                logger.info(f'移库确认：目标库位库存增加，商品:{item.product_id}, 数量:{item.quantity}')
-            else:
-                # 目标库位没有库存，创建新记录
-                target_inventory = Inventory(
-                    product_id=item.product_id,
-                    location_id=item.target_location_id,
-                    quantity=item.quantity,
-                    production_date=source_inventory.production_date,
-                    expire_date=source_inventory.expire_date,
-                    remark='移库创建'
-                )
-                db.session.add(target_inventory)
-                logger.info(f'移库确认：创建目标库位库存记录，商品:{item.product_id}, 数量:{item.quantity}')
-
-            # 减少源库位库存
-            source_inventory.quantity -= item.quantity
-            logger.info(f'移库确认：源库位库存减少，商品:{item.product_id}, 数量:{item.quantity}')
-            
-            # 判断是否需要删除源库位库存记录
-            should_delete_source = source_inventory.quantity == 0
-            if should_delete_source:
-                db.session.delete(source_inventory)
-                logger.info(f'移库确认：源库位库存减少到0，删除库存记录 {source_inventory_id}')
-
-            # 记录源库位库存变更日志
-            try:
-                log = InventoryChangeLog(
-                    inventory_id=source_inventory_id if not should_delete_source else None,
-                    change_type='move',
-                    quantity_before=source_quantity_before,
-                    quantity_after=0 if should_delete_source else source_inventory.quantity,
-                    locked_quantity_before=source_inventory.locked_quantity,
-                    locked_quantity_after=0 if should_delete_source else source_inventory.locked_quantity,
-                    frozen_quantity_before=source_inventory.frozen_quantity,
-                    frozen_quantity_after=0 if should_delete_source else source_inventory.frozen_quantity,
-                    operator=current_user.username if current_user.is_authenticated else 'system',
-                    reason=f'移库：{stock_move_order.reason or "库位调拨"}',
-                    reference_id=stock_move_order.id,
-                    reference_type='stock_move_order'
-                )
-                db.session.add(log)
-            except Exception as e:
-                logger.error(f'移库确认：创建源库位变更日志失败: {str(e)}')
-
-            # 记录目标库位库存变更日志
-            try:
-                log = InventoryChangeLog(
-                    inventory_id=target_inventory.id,
-                    change_type='move_in',
-                    quantity_before=target_quantity_before,
-                    quantity_after=target_inventory.quantity,
-                    locked_quantity_before=target_inventory.locked_quantity,
-                    locked_quantity_after=target_inventory.locked_quantity,
-                    frozen_quantity_before=target_inventory.frozen_quantity,
-                    frozen_quantity_after=target_inventory.frozen_quantity,
-                    operator=current_user.username if current_user.is_authenticated else 'system',
-                    reason=f'移库入库：{stock_move_order.reason or "库位调拨"}',
-                    reference_id=stock_move_order.id,
-                    reference_type='stock_move_order'
-                )
-                db.session.add(log)
-            except Exception as e:
-                logger.error(f'移库确认：创建目标库位变更日志失败: {str(e)}')
-
-        # 更新移库单状态为已完成
-        stock_move_order.status = 'completed'
-        logger.info(f'移库单 {stock_move_order.order_no} 状态更新为"已完成"')
-
-        db.session.commit()
-        flash('移库单确认成功，库存已更新', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash(f'确认失败：{str(e)}', 'danger')
-
-    return redirect(url_for('stock_move.list'))
-
-
-# 取消库存移动单
-@stock_move_bp.route('/cancel/<int:order_id>', methods=['POST'])
-@permission_required('inventory_manage')
-@login_required
-def cancel(order_id):
-    stock_move_order = StockMoveOrder.query.get_or_404(order_id)
-
-    if stock_move_order.status != 'pending':
-        flash('该移库单已处理，无法取消', 'danger')
-        return redirect(url_for('stock_move.list'))
-
-    try:
-        stock_move_order.status = 'canceled'
-        db.session.commit()
-        flash('移库单已取消', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash(f'取消失败：{str(e)}', 'danger')
-
-    return redirect(url_for('stock_move.list'))
-
 
 # 库存移动单详情
 @stock_move_bp.route('/detail/<int:order_id>')

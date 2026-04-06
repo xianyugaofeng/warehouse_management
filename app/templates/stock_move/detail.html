@@ -110,19 +110,4 @@
         </div>
     </div>
 
-    <!--操作按钮-->
-    {% if order.status == 'pending' %}
-        <div class="mt-4">
-            <form action="{{ url_for('stock_move.confirm', order_id=order.id) }}" method="POST" class="d-inline">
-                <button type="submit" class="btn btn-success" onclick="return confirm('确认执行移库操作？')">
-                    <i class="fa fa-check"></i>确认移库
-                </button>
-            </form>
-            <form action="{{ url_for('stock_move.cancel', order_id=order.id) }}" method="POST" class="d-inline ms-2">
-                <button type="submit" class="btn btn-danger" onclick="return confirm('确认取消该移库单？')">
-                    <i class="fa fa-times"></i>取消移库
-                </button>
-            </form>
-        </div>
-    {% endif %}
 {% endblock %}
