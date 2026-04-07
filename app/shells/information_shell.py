@@ -53,21 +53,29 @@ admin.roles.append(admin_role)
 db.session.add(admin)
 db.session.commit()
 
-from app.models import WarehouseLocation, Supplier, Category
+from app.models import WarehouseLocation, Supplier, Category, Customer
 category1 = Category(
-    name="原材料",  # 分类名称
-    desc="生产用基础原材料"  # 备注（可选）
+    name="电脑",
+    desc="台式机、笔记本等电脑设备"
 )
 category2 = Category(
-    name="成品",
-    desc="已完工可销售的成品"
+    name="办公",
+    desc="办公用品及设备"
 )
 category3 = Category(
-    name="配件",
-    desc="设备/产品配套配件"
+    name="文具用品",
+    desc="各类文具及办公用品"
+)
+category4 = Category(
+    name="手机",
+    desc="各类手机及配件"
+)
+category5 = Category(
+    name="数码",
+    desc="数码产品及配件"
 )
 
-db.session.add_all([category1, category2, category3])
+db.session.add_all([category1, category2, category3, category4, category5])
 db.session.commit()
 
 supplier1 = Supplier(
@@ -89,27 +97,56 @@ supplier2 = Supplier(
 db.session.add_all([supplier1, supplier2])
 db.session.commit()
 
+# 按照分类和供应商创建对应库位
 location1 = WarehouseLocation(
-    name="A区-原材料库",
+    name="A区-电脑产品库",
     code="A-001",
-    area="原材料库",
+    area="电脑区",
     status=True,
-    remark="存放金属/塑料原材料"
+    remark="存放北京XX商贸有限公司提供的电脑设备"
 )
 location2 = WarehouseLocation(
-    name="B区-成品库",
+    name="B区-办公文具库",
     code="B-001",
-    area="成品库",
+    area="办公区",
     status=True,
-    remark="存放完工成品，靠近发货区"
+    remark="存放上海XX科技有限公司提供的办公用品及文具"
 )
 location3 = WarehouseLocation(
-    name="C区-配件库",
+    name="C区-手机数码库",
     code="C-001",
-    area="配件库",
+    area="数码区",
     status=True,
-    remark="存放各类配套配件"
+    remark="存放各类手机及数码产品"
 )
 
+# 添加并提交库位数据
 db.session.add_all([location1, location2, location3])
+db.session.commit()
+
+# 添加客户数据样例
+customer1 = Customer(
+    name="北京XX科技有限公司",
+    contact_person="王五",
+    phone="13700137000",
+    email="wangwu@example.com",
+    address="北京市海淀区XX路XX号",
+)
+customer2 = Customer(
+    name="上海XX贸易有限公司",
+    contact_person="赵六",
+    phone="13600136000",
+    email="zhaoliu@example.com",
+    address="上海市徐汇区XX路XX号",
+)
+customer3 = Customer(
+    name="广州XX电子有限公司",
+    contact_person="孙七",
+    phone="13500135000",
+    email="sunqi@example.com",
+    address="广州市天河区XX路XX号",
+)
+
+# 添加并提交客户数据
+db.session.add_all([customer1, customer2, customer3])
 db.session.commit()

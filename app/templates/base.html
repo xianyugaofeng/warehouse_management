@@ -63,6 +63,8 @@
                 <div class="list-group list-group-flush mt-4">  <!--Bootstrap 列表组 无边框样式list-group-flush mt-4：上边距 1.5rem-->
                     {% if current_user.has_permission('product_manage') %}
                         <a href="{{ url_for('product.list') }}" class="list-group-item list-group-item-action">商品管理</a>
+                        <a href="{{ url_for('supplier.list') }}" class="list-group-item list-group-item-action">供应商管理</a>
+                        <a href="{{ url_for('customer.list') }}" class="list-group-item list-group-item-action">客户管理</a>
                     {% endif %}
                     {% if current_user.has_permission('inbound_manage') %}
                         <a href="{{ url_for('inbound.list') }}" class="list-group-item list-group-item-action">入库管理</a>

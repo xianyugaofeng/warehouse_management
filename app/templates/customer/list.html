@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}客户管理 - 仓库管理系统{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">    
+        <h2>客户列表</h2>
+        <a href="{{ url_for('customer.edit', id=0) }}" class="btn btn-primary">
+            <i class="fa fa-plus"></i>添加客户
+        </a>
+    </div>
+
+    <!--搜索表单-->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form action="{{ url_for('customer.list') }}" method="GET" class="row g-3">
+                <div class="col-md-9">
+                    <input type="text" name="keyword" class="form-control" placeholder="客户名称/联系人/电话" value="{{ keyword }}">
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-secondary w-100">
+                        <i class="fa fa-search"></i>搜索
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 客户表格 -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>客户名称</th>
+                            <th>联系人</th>
+                            <th>联系电话</th>
+                            <th>地址</th>
+                            <th>邮箱</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for customer in customers %}
+                            <tr>
+                                <td>{{ customer.name }}</td>
+                                <td>{{ customer.contact_person or '-' }}</td>
+                                <td>{{ customer.phone or '-' }}</td>
+                                <td>{{ customer.address or '-' }}</td>
+                                <td>{{ customer.email or '-' }}</td>
+                                <td>
+                                    <a href="{{ url_for('customer.edit', id=customer.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fa fa-edit"></i>编辑
+                                    </a>
+                                    <a href="{{ url_for('customer.delete', id=customer.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('确认删除?')">
+                                        <i class="fa fa-trash"></i>删除
+                                    </a>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center">暂无数据</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!--分页-->
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('customer.list', page=pagination.prev_num, keyword=keyword) }}">
+                                上一页
+                            </a>
+                        </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">上一页</span>
+                    </li>
+                    {% endif %}
+                    {% for page in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
+                        {% if page %}
+                            {% if pagination.page == page %}    
+                                <li class="page-item active"><span class="page-link">{{ page }}</span></li>  
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('customer.list', page=page, keyword=keyword) }}">
+                                        {{ page }}
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('customer.list', page=pagination.next_num, keyword=keyword)}}">
+                                下一页
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">下一页</span></li>
+                    {% endif %}     
+                </ul>
+            </nav>
+        </div>
+    </div>
+{% endblock %}

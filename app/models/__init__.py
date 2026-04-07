@@ -3,7 +3,7 @@ from datetime import datetime
 from app import db, create_app
 
 from .user import User, Role, Permission
-from .product import Product, Category, Supplier
+from .product import Product, Category, Supplier, Customer
 from .inventory import Inventory, WarehouseLocation
 from .inbound import InboundItem, InboundOrder
 from .outbound import OutboundItem, OutboundOrder

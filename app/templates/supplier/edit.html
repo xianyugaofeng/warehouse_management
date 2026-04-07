@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ '编辑供应商' if supplier.id else '添加供应商' }} - 仓库管理系统{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-body">
+            <h2 class="mb-4">{{ '编辑供应商' if supplier.id else '添加供应商' }}</h2>
+            <form action="{{ url_for('supplier.edit', id=supplier.id or 0) }}" method="POST">
+                <div class="mb-3">
+                    <label for="name" class="form-label">供应商名称 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="name" name="name" value="{{ supplier.name or '' }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="contact_person" class="form-label">联系人</label>
+                    <input type="text" class="form-control" id="contact_person" name="contact_person" value="{{ supplier.contact_person or '' }}">
+                </div>
+                <div class="mb-3">
+                    <label for="phone" class="form-label">联系电话</label>
+                    <input type="text" class="form-control" id="phone" name="phone" value="{{ supplier.phone or '' }}">
+                </div>
+                <div class="mb-3">
+                    <label for="address" class="form-label">地址</label>
+                    <textarea class="form-control" id="address" name="address" rows="3">{{ supplier.address or '' }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label">邮箱</label>
+                    <input type="email" class="form-control" id="email" name="email" value="{{ supplier.email or '' }}">
+                </div>
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('supplier.list') }}" class="btn btn-secondary">取消</a>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

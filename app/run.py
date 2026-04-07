@@ -1,6 +1,6 @@
 from app import create_app, db
 from app.models import User, Role, Permission
-from app.models import Product, Category, Supplier
+from app.models import Product, Category, Supplier, Customer
 from app.models import Inventory, WarehouseLocation
 from app.models import InboundOrder, OutboundOrder
 
@@ -13,7 +13,7 @@ def make_shell_context():   # 在命令行使用flask shell命令启动Flask交�
                             # 函数返回一个Python字典dict()构造函数内的关键字参数会被创建为键值对
     return dict(
         db=db, User=User, Role=Role, Permission=Permission,
-        Product=Product, Category=Category, Supplier=Supplier,
+        Product=Product, Category=Category, Supplier=Supplier, Customer=Customer,
         Inventory=Inventory, WarehouseLocation=WarehouseLocation,
         InboundOrder=InboundOrder, OutboundOrder=OutboundOrder
     )
