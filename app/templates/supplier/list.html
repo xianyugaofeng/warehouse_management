@@ -2,23 +2,30 @@
 {% block title %}供应商管理 - 仓库管理系统{% endblock %}
 
 {% block content %}
-    <div class="d-flex justify-content-between align-items-center mb-4">    
-        <h2>供应商列表</h2>
-        <a href="{{ url_for('supplier.edit', id=0) }}" class="btn btn-primary">
-            <i class="fa fa-plus"></i>添加供应商
+    <div class="d-flex justify-content-between align-items-center mb-6">    
+        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+            <i class="fa fa-building mr-3 text-primary"></i>供应商列表
+        </h2>
+        <a href="{{ url_for('supplier.edit', id=0) }}" class="btn btn-primary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300">
+            <i class="fa fa-plus mr-2"></i>添加供应商
         </a>
     </div>
 
     <!--搜索表单-->
-    <div class="card mb-4">
-        <div class="card-body">
-            <form action="{{ url_for('supplier.list') }}" method="GET" class="row g-3">
-                <div class="col-md-9">
-                    <input type="text" name="keyword" class="form-control" placeholder="供应商名称/联系人/电话" value="{{ keyword }}">
+    <div class="card mb-6 shadow-sm rounded-xl overflow-hidden">
+        <div class="card-body p-6">
+            <form action="{{ url_for('supplier.list') }}" method="GET" class="row g-4">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
+                            <i class="fa fa-search text-gray-400"></i>
+                        </span>
+                        <input type="text" name="keyword" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" placeholder="供应商名称/联系人/电话" value="{{ keyword }}">
+                    </div>
                 </div>
-                <div class="col-md-3">
-                    <button type="submit" class="btn btn-secondary w-100">
-                        <i class="fa fa-search"></i>搜索
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-secondary w-100 rounded-lg hover:bg-gray-700 transform hover:-translate-y-1 transition-all duration-300">
+                        <i class="fa fa-search mr-2"></i>搜索
                     </button>
                 </div>
             </form>
@@ -26,40 +33,50 @@
     </div>
 
     <!-- 供应商表格 -->
-    <div class="card">
-        <div class="card-body">
+    <div class="card shadow-sm rounded-xl overflow-hidden">
+        <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover table-bordered">
-                    <thead class="table-light">
-                        <tr>
-                            <th>供应商名称</th>
-                            <th>联系人</th>
-                            <th>联系电话</th>
-                            <th>地址</th>
-                            <th>邮箱</th>
-                            <th>操作</th>
+                    <thead class="bg-gray-50">
+                        <tr class="text-gray-700 border-b-2 border-gray-300">
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">供应商名称</th>
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">联系人</th>
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">联系电话</th>
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">地址</th>
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">邮箱</th>
+                            <th class="py-3 px-4 text-center font-semibold">操作</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="bg-white">
                         {% for supplier in suppliers %}
-                            <tr>
-                                <td>{{ supplier.name }}</td>
-                                <td>{{ supplier.contact_person or '-' }}</td>
-                                <td>{{ supplier.phone or '-' }}</td>
-                                <td>{{ supplier.address or '-' }}</td>
-                                <td>{{ supplier.email or '-' }}</td>
-                                <td>
-                                    <a href="{{ url_for('supplier.edit', id=supplier.id) }}" class="btn btn-sm btn-outline-primary">
-                                        <i class="fa fa-edit"></i>编辑
-                                    </a>
-                                    <a href="{{ url_for('supplier.delete', id=supplier.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('确认删除?')">
-                                        <i class="fa fa-trash"></i>删除
-                                    </a>
+                            <tr class="transition-all duration-300 hover:bg-gray-50">
+                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 font-medium">{{ supplier.name }}</td>
+                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ supplier.contact_person or '-' }}</td>
+                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ supplier.phone or '-' }}</td>
+                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">{{ supplier.address or '-' }}</td>
+                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ supplier.email or '-' }}</td>
+                                <td class="py-3 px-4 border-b border-gray-200 text-center">
+                                    <div class="flex justify-center space-x-2">
+                                        <a href="{{ url_for('supplier.edit', id=supplier.id) }}" class="btn btn-sm btn-primary rounded-lg hover:bg-blue-600 transform hover:-translate-y-1 transition-all duration-300">
+                                            <i class="fa fa-edit mr-1"></i>编辑
+                                        </a>
+                                        <a href="{{ url_for('supplier.delete', id=supplier.id) }}" class="btn btn-sm btn-danger rounded-lg hover:bg-red-600 transform hover:-translate-y-1 transition-all duration-300" onclick="return confirm('确认删除?')">
+                                            <i class="fa fa-trash mr-1"></i>删除
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         {% else %}
                             <tr>
-                                <td colspan="6" class="text-center">暂无数据</td>
+                                <td colspan="6" class="py-12 text-center text-gray-500 border border-gray-200">
+                                    <div class="flex flex-col items-center">
+                                        <i class="fa fa-building text-4xl mb-4 text-gray-300"></i>
+                                        <p>暂无供应商数据</p>
+                                        <a href="{{ url_for('supplier.edit', id=0) }}" class="mt-4 btn btn-primary">
+                                            <i class="fa fa-plus mr-2"></i>添加供应商
+                                        </a>
+                                    </div>
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -67,46 +84,122 @@
             </div>
 
             <!--分页-->
-            <nav aria-label="Page navigation">
-                <ul class="pagination justify-content-center">
-                    {% if pagination.has_prev %}
-                        <li class="page-item">
-                            <a class="page-link" href="{{ url_for('supplier.list', page=pagination.prev_num, keyword=keyword) }}">
-                                上一页
-                            </a>
-                        </li>
-                    {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link">上一页</span>
-                    </li>
-                    {% endif %}
-                    {% for page in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
-                        {% if page %}
-                            {% if pagination.page == page %}    
-                                <li class="page-item active"><span class="page-link">{{ page }}</span></li>  
-                            {% else %}
+            <div class="p-4 border-t border-gray-200 bg-gray-50">
+                <div class="flex flex-wrap justify-between items-center gap-4">
+                    <p class="text-sm text-gray-600">
+                        显示 {{ pagination.page * pagination.per_page - pagination.per_page + 1 }} 到 {{ pagination.page * pagination.per_page if pagination.page * pagination.per_page < pagination.total else pagination.total }} 条，共 {{ pagination.total }} 条
+                    </p>
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination space-x-1">
+                            {% if pagination.has_prev %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('supplier.list', page=page, keyword=keyword) }}">
-                                        {{ page }}
+                                    <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300" href="{{ url_for('supplier.list', page=pagination.prev_num, keyword=keyword) }}">
+                                        <i class="fa fa-chevron-left"></i>
                                     </a>
                                 </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link rounded-lg border-gray-300 bg-gray-100 text-gray-400">
+                                        <i class="fa fa-chevron-left"></i>
+                                    </span>
+                                </li>
                             {% endif %}
-                        {% else %}
-                            <li class="page-item disabled"><span class="page-link">...</span></li>
-                        {% endif %}
-                    {% endfor %}
-                    
-                    {% if pagination.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="{{ url_for('supplier.list', page=pagination.next_num, keyword=keyword)}}">
-                                下一页
-                            </a>
-                        </li>
-                    {% else %}
-                        <li class="page-item disabled"><span class="page-link">下一页</span></li>
-                    {% endif %}     
-                </ul>
-            </nav>
+                            {% for page in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
+                                {% if page %}
+                                    {% if pagination.page == page %}    
+                                        <li class="page-item active">
+                                            <span class="page-link rounded-lg bg-primary border-primary text-white px-3 py-1">{{ page }}</span>
+                                        </li>  
+                                    {% else %}
+                                        <li class="page-item">
+                                            <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300 px-3 py-1" href="{{ url_for('supplier.list', page=page, keyword=keyword) }}">
+                                                {{ page }}
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link rounded-lg border-gray-300 bg-gray-100 text-gray-400 px-3 py-1">...</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if pagination.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300" href="{{ url_for('supplier.list', page=pagination.next_num, keyword=keyword)}}">
+                                        <i class="fa fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link rounded-lg border-gray-300 bg-gray-100 text-gray-400">
+                                        <i class="fa fa-chevron-right"></i>
+                                    </span>
+                                </li>
+                            {% endif %}     
+                        </ul>
+                    </nav>
+                </div>
+            </div>
         </div>
     </div>
+    
+    <style>
+        /* 自定义动画效果 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .card {
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        h2 {
+            animation: slideIn 0.4s ease-out;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .table-responsive {
+                font-size: 0.875rem;
+            }
+            
+            .table th,
+            .table td {
+                padding: 0.75rem;
+            }
+            
+            .btn {
+                font-size: 0.75rem;
+                padding: 0.25rem 0.5rem;
+            }
+            
+            .flex.justify-between {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .pagination {
+                justify-content: center;
+            }
+        }
+    </style>
 {% endblock %}
