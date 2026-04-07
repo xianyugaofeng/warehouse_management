@@ -101,21 +101,25 @@
                 <div class="row mb-4">          <!--Bootstrap栅格行 下边距1.5em-->
 
                     <div class="col-md-6 mb-3">
-                        <label for="receiver" class="form-label">领用人<span class="text-danger">*</span></label>
-                        <input type="text" id="receiver" class="form-control" name="receiver" required placeholder="请输入领用人姓名">
+                        <label for="customer_id" class="form-label">客户<span class="text-danger">*</span></label>
+                        <select class="form-select" id="customer_id" name="customer_id" required>
+                            <option value="">请选择客户</option>
+                            {% for customer in customers %}
+                                <option value="{{ customer.id }}">
+                                    {{ customer.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label for="receive_phone" class="form-label">领用人电话</label>
-                        <input type="tel" id="receive_phone" class="form-control" name="receive_phone" placeholder="请输入领用人电话(选填)">
+                        <label for="receive_phone" class="form-label">联系电话</label>
+                        <input type="tel" id="receive_phone" class="form-control" name="receive_phone" placeholder="请输入联系电话(选填)">
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="outbound_date" class="form-label">出库日期<span class="text-danger">*</span></label>
                         <input type="date" id="outbound_date" class="form-control" name="outbound_date" value="{{ now.strftime('%Y-%m-%d') if now else '' }}" required>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="purpose" class="form-label">领用用途</label>
-                        <input type="text" id="purpose" class="form-control" name="purpose" placeholder="请输入领用用途(选填)">
-                    </div>
+
                     <div class="col-md-6 mb-3">
                         <label for="remark" class="form-label">备注</label>
                         <input type="text" id="remark" class="form-control" name="remark" placeholder="输入备注信息(选填)">

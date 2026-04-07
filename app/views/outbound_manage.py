@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from datetime import datetime
 from app import db
 from app.models.outbound import OutboundOrder, OutboundItem
-from app.models.product import Product
+from app.models.product import Product, Customer
 from app.models.inventory import WarehouseLocation
 from app.utils.auth import permission_required
 from app.utils.helpers import generate_outbound_no, update_inventory
@@ -17,15 +17,15 @@ outbound_bp = Blueprint('outbound', __name__)
 @login_required
 def list():
     keyword = request.args.get('keyword', '')
-    receiver = request.args.get('receiver', '')
+    customer_id = request.args.get('customer_id', '')
     start_date = request.args.get('start_date', '')
     end_date = request.args.get('end_date', '')
 
     query = OutboundOrder.query
     if keyword:
         query = query.filter(OutboundOrder.order_no.ilike(f'%{keyword}%'))
-    if receiver:
-        query = query.filter(OutboundOrder.receiver.ilike(f'%{receiver}%'))
+    if customer_id:
+        query = query.filter(OutboundOrder.customer_id == customer_id)
     if start_date:
         query = query.filter(OutboundOrder.outbound_date >= start_date)
     if end_date:
@@ -35,13 +35,17 @@ def list():
     pagination = query.order_by(OutboundOrder.create_time.desc()).paginate(page=page, per_page=10)
     orders = pagination.items
 
+    # 获取所有客户用于筛选
+    customers = Customer.query.all()
+
     return render_template('outbound/list.html',
                            orders=orders,
                            pagination=pagination,
                            keyword=keyword,
-                           receiver=receiver,
+                           customer_id=customer_id,
                            start_date=start_date,
-                           end_date=end_date
+                           end_date=end_date,
+                           customers=customers
     )
 
 # 添加出库单
@@ -54,10 +58,9 @@ def add():
 
     if request.method == 'POST':
         # 接收表单数据
-        receiver = request.form.get('receiver')
+        customer_id = request.form.get('customer_id')
         receive_phone = request.form.get('receive_phone')
         outbound_date = request.form.get('outbound_date', datetime.now().strftime('%Y-%m-%d'))
-        purpose = request.form.get('purpose')
         remark = request.form.get('remark')
 
         # 接收明细数据
@@ -72,13 +75,15 @@ def add():
             return render_template('outbound/add.html',
                                    products=products,
                                    locations=locations,
+                                   customers=customers,
                                    now=datetime.now()
             )
-        if not receiver:
-            flash('请填写领用人', 'danger')
+        if not customer_id:
+            flash('请选择客户', 'danger')
             return render_template('outbound/add.html',
                                    products=products,
                                    locations=locations,
+                                   customers=customers,
                                    now=datetime.now()
             )
 
@@ -87,11 +92,10 @@ def add():
         total_amount = sum(int(qty) for qty in quantities if qty.isdigit())
         outbound_order = OutboundOrder(
             order_no=order_no,
-            receiver=receiver,
+            customer_id=customer_id,
             operator_id=current_user.id,
             receive_phone=receive_phone,
             outbound_date=outbound_date,
-            purpose=purpose,
             total_amount=total_amount,
             remark=remark
         )
@@ -129,9 +133,13 @@ def add():
             db.session.rollback()
             flash(f'创建失败：{str(e)}', 'danger')
 
+    # 获取所有客户
+    customers = Customer.query.all()
+
     return render_template('outbound/add.html',
                            products=products,
                            locations=locations,
+                           customers=customers,
                            now=datetime.now()
     )
 
@@ -145,19 +153,24 @@ def items():
     keyword = request.args.get('keyword', '')
     product_id = request.args.get('product_id', '')
     location_id = request.args.get('location_id', '')
+    customer_id = request.args.get('customer_id', '')
     start_date = request.args.get('start_date', '')
     end_date = request.args.get('end_date', '')
 
     # 构建查询
-    query = OutboundItem.query.join(OutboundOrder).join(Product).join(WarehouseLocation)
+    query = OutboundItem.query.join(OutboundOrder).join(Product).join(WarehouseLocation).join(Customer)
     
     # 应用过滤条件
     if keyword:
         query = query.filter(
             Product.name.ilike(f'%{keyword}%') |
             Product.code.ilike(f'%{keyword}%') |
-            OutboundOrder.order_no.ilike(f'%{keyword}%')
+            OutboundOrder.order_no.ilike(f'%{keyword}%') |
+            Customer.name.ilike(f'%{keyword}%')
         )
+    
+    if customer_id:
+        query = query.filter(OutboundOrder.customer_id == customer_id)
     
     if product_id:
         query = query.filter(OutboundItem.product_id == product_id)
@@ -177,9 +190,10 @@ def items():
     pagination = query.order_by(OutboundItem.id.desc()).paginate(page=page, per_page=per_page)
     items = pagination.items
 
-    # 获取所有商品和库位用于筛选
+    # 获取所有商品、库位和客户用于筛选
     products = Product.query.all()
     locations = WarehouseLocation.query.filter_by(status=True).all()
+    customers = Customer.query.all()
 
     return render_template('outbound/items.html',
                            items=items,
@@ -187,9 +201,11 @@ def items():
                            keyword=keyword,
                            product_id=product_id,
                            location_id=location_id,
+                           customer_id=customer_id,
                            start_date=start_date,
                            end_date=end_date,
                            products=products,
-                           locations=locations
+                           locations=locations,
+                           customers=customers
     )
 

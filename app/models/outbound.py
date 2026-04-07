@@ -1,5 +1,6 @@
 from datetime import datetime
 from app import db
+from app.models.product import Customer
 
 
 class OutboundOrder(db.Model):
@@ -7,11 +8,10 @@ class OutboundOrder(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     order_no = db.Column(db.String(32), unique=True, nullable=False)   # 出库单号（自动生成）
     operator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)   # 操作员
-    receiver = db.Column(db.String(32), nullable=False)   # 领用人
-    receive_phone = db.Column(db.String(16))   # 领用电话
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)   # 关联客户
+    receive_phone = db.Column(db.String(16))   # 联系电话
     outbound_date = db.Column(db.Date, default=datetime.utcnow, nullable=False)   # 出库日期
     total_amount = db.Column(db.Integer, default=0)   # 出库总数量
-    purpose = db.Column(db.String(64))   # 领用用途
     status = db.Column(db.String(16), default='completed', nullable=False)   # 状态(draft/completed/canceled)
     remark = db.Column(db.String(256))   # 备注
     create_time = db.Column(db.DateTime, default=datetime.utcnow)
@@ -22,9 +22,12 @@ class OutboundOrder(db.Model):
 
     # 关联操作员
     operator = db.relationship('User', backref='outbound_orders')
+    # 关联客户
+    customer = db.relationship('Customer', backref='outbound_orders')
 
     def __repr__(self):
-        return f'<OutboundOrder {self.order_no}>'
+        customer = self.customer.name if self.customer else '未知客户'
+        return f'<OutboundOrder {self.order_no} - {customer}>'
 
 
 class OutboundItem(db.Model):

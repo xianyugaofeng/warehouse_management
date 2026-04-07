@@ -44,6 +44,17 @@
                     </select>
                 </div>
                 <div class="col-md-3">
+                    <label for="customer_id" class="form-label">客户</label>
+                    <select class="form-select" id="customer_id" name="customer_id">
+                        <option value="">全部客户</option>
+                        {% for customer in customers %}
+                            <option value="{{ customer.id }}" {% if customer_id == customer.id|string %}selected{% endif %}>
+                                {{ customer.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
                     <label for="date_range" class="form-label">日期范围</label>
                     <div class="d-flex gap-2">
                         <input type="date" class="form-control" name="start_date" value="{{ start_date }}">
@@ -107,7 +118,7 @@
                         <ul class="pagination">
                             {% if pagination.has_prev %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('outbound.items', page=pagination.prev_num, keyword=keyword, product_id=product_id, location_id=location_id, start_date=start_date, end_date=end_date) }}" aria-label="Previous">
+                                    <a class="page-link" href="{{ url_for('outbound.items', page=pagination.prev_num, keyword=keyword, product_id=product_id, location_id=location_id, customer_id=customer_id, start_date=start_date, end_date=end_date) }}" aria-label="Previous">
                                         <span aria-hidden="true">&laquo;</span>
                                     </a>
                                 </li>
@@ -127,7 +138,7 @@
                                         </li>
                                     {% else %}
                                         <li class="page-item">
-                                            <a class="page-link" href="{{ url_for('outbound.items', page=page_num, keyword=keyword, product_id=product_id, location_id=location_id, start_date=start_date, end_date=end_date) }}">{{ page_num }}</a>
+                                            <a class="page-link" href="{{ url_for('outbound.items', page=page_num, keyword=keyword, product_id=product_id, location_id=location_id, customer_id=customer_id, start_date=start_date, end_date=end_date) }}">{{ page_num }}</a>
                                         </li>
                                     {% endif %}
                                 {% else %}
@@ -139,7 +150,7 @@
                             
                             {% if pagination.has_next %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('outbound.items', page=pagination.next_num, keyword=keyword, product_id=product_id, location_id=location_id, start_date=start_date, end_date=end_date) }}" aria-label="Next">
+                                    <a class="page-link" href="{{ url_for('outbound.items', page=pagination.next_num, keyword=keyword, product_id=product_id, location_id=location_id, customer_id=customer_id, start_date=start_date, end_date=end_date) }}" aria-label="Next">
                                         <span aria-hidden="true">&raquo;</span>
                                     </a>
                                 </li>

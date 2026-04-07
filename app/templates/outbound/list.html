@@ -22,8 +22,15 @@
                     <input type="text" name="keyword" class="form-control" placeholder="出库单号" value="{{ keyword }}">
                 </div>
                 <div class="col-md-3">
-                    <input type="text" name="receiver" class="form-control" placeholder="领用人" value="{{ receiver }}">
-                </div>
+                        <select name="customer_id" class="form-select">
+                            <option value="">所有客户</option>
+                            {% for customer in customers %}
+                                <option value="{{ customer.id }}" {% if customer_id == customer.id|string %}selected{% endif %}>
+                                    {{ customer.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
                 <div class="col-md-3">      <!--HTML5 日期选择器-->
                     <input type="date" name="start_date" class="form-control" placeholder="开始日期" value="{{ start_date }}">
                 </div>
@@ -53,11 +60,10 @@
                         <tr>
                             <th>出库单号</th>       <!--不需要放入模态框表格中-->
 
-                            <th>领用人</th>
-                            <th>领用电话</th>
+                            <th>客户</th>
+                            <th>联系电话</th>
                             <th>出库日期</th>
                             <th>出库总数量</th>      <!--不需要放入模态框表格中-->
-                            <th>领用用途</th>
                             <th>操作员</th>
                             <th>状态</th>
                             <th>操作</th>         <!--不需要放入模态框表格中-->
@@ -68,11 +74,11 @@
                             <tr>
                                 <td>{{ order.order_no }}</td>
 
-                                <td>{{ order.receiver }}</td>
+                                <td>{{ order.customer.name if order.customer else '-' }}</td>
                                 <td>{{ order.receive_phone or '-' }}</td>
                                 <td>{{ order.outbound_date.strftime('%Y-%m-%d') }}</td>
                                 <td>{{ order.total_amount }}</td>
-                                <td>{{ order.purpose or '-' }}</td>
+
                                 <td>{{ order.operator.real_name or order.operator.username }}</td>
                                 <td>
                                     {% if order.status == 'completed' %}
@@ -106,12 +112,12 @@
                                         <div class="modal-body">        <!--模态框主体-->
                                             <div class="row mb-3">         <!--Bootstrap 5 栅格行-->
                                                 <div class="col-md-6">
-                                                    <p><strong>领用人:</strong> {{ order.receiver }}</p>
-                                                    <p><strong>领用人电话:</strong> {{ order.receive_phone or '-' }}</p>
+                                                    <p><strong>客户:</strong> {{ order.customer.name if order.customer else '-' }}</p>
+                                                    <p><strong>联系电话:</strong> {{ order.receive_phone or '-' }}</p>
                                                     <p><strong>出库日期:</strong> {{ order.outbound_date.strftime('%Y-%m-%d') }}</p>
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <p><strong>领用用途:</strong> {{ order.purpose or '-' }}</p>
+
                                                     <p><strong>操作员:</strong> {{ order.operator.real_name or order.operator.username }}</p>
                                                     <p><strong>状态:</strong>
                                                         {% if order.status == 'completed' %}
@@ -173,7 +179,7 @@
                 <ul class="pagination justify-content-center">      <!--Bootstrap分页样式类-->
                     {% if pagination.has_prev %}            <!--判断分页对象是否有上一页-->
                         <li class="page-item">          <!--分页项容器-->
-                            <a class="page-link" href="{{ url_for('outbound.list', page=pagination.prev_num, keyword=keyword, receiver=receiver, start_date=start_date, end_date=end_date) }}">
+                            <a class="page-link" href="{{ url_for('outbound.list', page=pagination.prev_num, keyword=keyword, customer_id=customer_id, start_date=start_date, end_date=end_date) }}">
                                 上一页
                             </a>
                         </li>
@@ -187,7 +193,7 @@
                                 <li class="page-item active"><span class="page-link">{{ page }}</span></li>
                             {% else %}      <!--当前遍历的page不是当前所在页  创造可点击的链接,包含所有搜索参数-->
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('outbound.list', page=page, keyword=keyword, receiver=receiver, start_date=start_date, end_date=end_date) }}">
+                                    <a class="page-link" href="{{ url_for('outbound.list', page=page, keyword=keyword, customer_id=customer_id, start_date=start_date, end_date=end_date) }}">
                                         {{ page }}
                                     </a>
                                 </li>
@@ -199,7 +205,7 @@
                     <!--判断分页对象是否有下一页-->
                     {% if pagination.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('outbound.list', page=pagination.next_num, keyword=keyword, receiver=receiver, start_date=start_date, end_date=end_date) }}">
+                            <a class="page-link" href="{{ url_for('outbound.list', page=pagination.next_num, keyword=keyword, customer_id=customer_id, start_date=start_date, end_date=end_date) }}">
                                 下一页
                             </a>
                         </li>
