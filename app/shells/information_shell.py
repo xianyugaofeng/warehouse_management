@@ -166,8 +166,7 @@ def init_roles():
     roles = {
         '管理员': ['product_manage', 'inventory_manage', 'inbound_manage', 'outbound_manage', 'supplier_manage', 'customer_manage', 'user_manage'],
         '仓库管理员': ['product_manage', 'inventory_manage', 'inbound_manage', 'outbound_manage'],
-        '采购人员': ['supplier_manage', 'inbound_manage'],
-        '销售人员': ['customer_manage', 'outbound_manage'],
+        '职员' : ['product_manage', 'inventory_manage', 'supplier_manage', 'customer_manage', 'user_manage']
     }
     
     for role_name, permissions in roles.items():
@@ -196,10 +195,11 @@ def init_admin():
     if not admin:
         admin = User(
             username='admin',
-            password='123456',  # 实际使用时应使用哈希密码
-            name='管理员',
+            real_name='管理员',
             email='admin@example.com'
         )
+        # 设置密码
+        admin.set_password('123456')
         # 分配管理员角色
         admin_role = Role.query.filter_by(name='管理员').first()
         if admin_role:

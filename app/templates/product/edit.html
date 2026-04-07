@@ -43,6 +43,31 @@
                         </div>
                     </div>
                     
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="category_id" class="form-label">商品分类</label>
+                            <select class="form-select" id="category_id" name="category_id" onchange="loadCategoryParams(this.value)">     <!--form-select：Bootstrap下拉选择框样式-->
+                                <option value="">请选择分类</option>         <!--默认选项值为空-->
+                                {% for category in categories %}         <!--遍历分类列表-->
+                                    <option value="{{ category.id }}" {% if product.category_id == category.id %}selected{% endif %}>
+                                        {{ category.name }}     <!--编辑模式：如果商品当前属于此分类，则选中-->     <!--添加模式：没有选中项-->
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="supplier_id" class="form-label">供应商</label>
+                            <select class="form-select" id="supplier_id" name="supplier_id">
+                                <option value="">请选择供应商</option>
+                                {% for supplier in suppliers %}
+                                    <option value="{{ supplier.id }}" {% if product.supplier_id == supplier.id %}selected{% endif %}>
+                                        {{ supplier.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
                     <!-- 商品参数 -->
                     <div class="mb-3">
                         <h4>商品参数</h4>
@@ -101,65 +126,6 @@
                                 });
                         }
                     </script>
-                    
-                    <!-- JavaScript 代码 -->
-                    <script>
-                        function loadCategoryParams(categoryId) {
-                            if (!categoryId) {
-                                document.getElementById('param-container').innerHTML = '<p class="text-muted">请先选择商品分类</p>';
-                                return;
-                            }
-                            
-                            // 发送 AJAX 请求获取分类参数
-                            fetch('/product/get_category_params?category_id=' + categoryId)
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (data.params.length > 0) {
-                                        let html = '';
-                                        data.params.forEach(param => {
-                                            html += `
-                                                <div class="row mb-2">
-                                                    <div class="col-md-4">
-                                                        <label class="form-label">${param.name}</label>
-                                                    </div>
-                                                    <div class="col-md-8">
-                                                        <input type="text" class="form-control" name="param_${param.id}" placeholder="请输入${param.name}">
-                                                    </div>
-                                                </div>
-                                            `;
-                                        });
-                                        document.getElementById('param-container').innerHTML = html;
-                                    } else {
-                                        document.getElementById('param-container').innerHTML = '<p class="text-muted">该分类暂无参数</p>';
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error('Error loading category params:', error);
-                                    document.getElementById('param-container').innerHTML = '<p class="text-danger">加载参数失败</p>';
-                                });
-                        }
-                    </script>
-                    
-                    <!-- 商品参数 -->
-                    <div class="mb-3">
-                        <h4>商品参数</h4>
-                        <div id="param-container">
-                            {% if category_params %}
-                                {% for category_param in category_params %}
-                                    <div class="row mb-2">
-                                        <div class="col-md-4">
-                                            <label class="form-label">{{ category_param.param_key.name }}</label>
-                                        </div>
-                                        <div class="col-md-8">
-                                            <input type="text" class="form-control" name="param_{{ category_param.param_key.id }}" value="{{ product_params.get(category_param.param_key.id, '') }}" placeholder="请输入{{ category_param.param_key.name }}">
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            {% else %}
-                                <p class="text-muted">请先选择商品分类</p>
-                            {% endif %}
-                        </div>
-                    </div>
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="category_id" class="form-label">商品分类</label>
