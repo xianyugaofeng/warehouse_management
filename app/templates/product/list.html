@@ -2,35 +2,47 @@
 {% block title %}商品管理 - 仓库管理系统{% endblock %}
 
 {% block content %}
-    <div class="d-flex justify-content-between align-items-center mb-4">    
+    <div class="d-flex justify-content-between align-items-center mb-6">    
         <!--justify-content-between：两端水平对齐 align-items-center：垂直居中对齐-->
-        <h2>商品列表</h2>
-        <a href="{{ url_for('product.edit', id=0) }}" class="btn btn-primary">
-            <i class="fa fa-plus"></i>添加商品
+        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+            <i class="fa fa-shopping-bag mr-3 text-primary"></i>商品列表
+        </h2>
+        <a href="{{ url_for('product.edit', id=0) }}" class="btn btn-primary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300">
+            <i class="fa fa-plus mr-2"></i>添加商品
         </a>
     </div>
 
     <!--搜索表单-->
-    <div class="card mb-4">
-        <div class="card-body">
-            <form action="{{ url_for('product.list') }}" method="GET" class="row g-3">  <!--row g-3：Bootstrap 栅格行 水平和垂直间隙为3-->
-                <div class="col-md-3">      <!--中等屏幕占3列-->
-                    <input type="text" name="keyword" class="form-control" placeholder="商品名称/编码" value="{{ keyword }}">
+    <div class="card mb-6 shadow-sm rounded-xl overflow-hidden">
+        <div class="card-body p-6">
+            <form action="{{ url_for('product.list') }}" method="GET" class="row g-4">  <!--row g-4：Bootstrap 栅格行 水平和垂直间隙为4-->
+                <div class="col-md-4">      <!--中等屏幕占4列-->
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
+                            <i class="fa fa-search text-gray-400"></i>
+                        </span>
+                        <input type="text" name="keyword" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" placeholder="商品名称/编码" value="{{ keyword }}">
+                    </div>
                 </div>
-                <div class="col-md-3">
-                    <select name="category_id" class="form-select">
-                        <option value="">所有分类</option>      <!--默认选项所有分类-->
-                            {% for category in categories %}    <!--遍历 categories 变量生成选项-->
-                                <option value="{{ category.id }}" {% if category_id == category.id|string %}selected{% endif %}>    <!--根据category_id变量设置选中状态-->
-                                    {{ category.name }}     <!--使用 category.id|string 将 ID 转换为字符串比较-->
-                                </option>
-                            {% endfor %}
-                    </select>
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
+                            <i class="fa fa-list text-gray-400"></i>
+                        </span>
+                        <select name="category_id" class="form-select rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300">
+                            <option value="">所有分类</option>      <!--默认选项所有分类-->
+                                {% for category in categories %}    <!--遍历 categories 变量生成选项-->
+                                    <option value="{{ category.id }}" {% if category_id == category.id|string %}selected{% endif %}>    <!--根据category_id变量设置选中状态-->
+                                        {{ category.name }}     <!--使用 category.id|string 将 ID 转换为字符串比较-->
+                                    </option>
+                                {% endfor %}
+                        </select>
+                    </div>
                 </div>
 
-                <div class="col-md-3">
-                    <button type="submit" class="btn btn-secondary w-100">      <!--w-100：宽度 100%-->
-                        <i class="fa fa-search"></i>搜索
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-secondary w-100 rounded-lg hover:bg-gray-700 transform hover:-translate-y-1 transition-all duration-300">      <!--w-100：宽度 100%-->
+                        <i class="fa fa-search mr-2"></i>搜索
                     </button>
                 </div>
             </form>
@@ -38,42 +50,52 @@
     </div>
 
     <!-- 商品表格 -->
-    <div class="card">
-        <div class="card-body">
+    <div class="card shadow-sm rounded-xl overflow-hidden">
+        <div class="card-body p-0">
             <div class="table-responsive">      <!--使表格在小屏幕上可以水平滚动-->
                 <!--当屏幕宽度小于特定阈值时，表格会变得可滚动，以便用户可以查看所有内容，而不会影响页面布局-->
-                <table class="table table-hover table-bordered">    <!--table-bordered：添加边框 table-hover：鼠标悬停时行高亮效果-->
-                    <thead class="table-light">     <!--浅灰色表头背景-->
-                        <tr>
-                            <th>商品编码</th>
-                            <th>商品名称</th>
-                            <th>单位</th>
-                            <th>分类</th>
-                            <th>预警阈值</th>
-                            <th>操作</th>
+                <table class="table table-hover table-bordered">    <!--table-hover：鼠标悬停时行高亮效果 table-bordered：添加边框-->
+                    <thead class="bg-gray-50">     <!--浅灰色表头背景-->
+                        <tr class="text-gray-700 border-b-2 border-gray-300">
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">商品编码</th>
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">商品名称</th>
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">单位</th>
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">分类</th>
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">预警阈值</th>
+                            <th class="py-3 px-4 text-center font-semibold">操作</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="bg-white">
                         {% for product in products %}       <!--从后端传递的商品数据列表-->
-                            <tr>
-                                <td>{{ product.code }}</td>
-                                <td>{{ product.name }}</td>
-                                <td>{{ product.unit or '-' }}</td>
-                                <td>{{ product.category.name if product.category else '-' }}</td>
-                                <td>{{ product.warning_stock }}</td>
-                                <td>
-                                    <a href="{{ url_for('product.edit', id=product.id) }}" class="btn btn-sm btn-outline-primary">
-                                        <!-- 链接到 product.edit 路由，传递商品ID -->
-                                        <i class="fa fa-edit"></i>编辑
-                                    </a>
-                                    <a href="{{ url_for('product.delete', id=product.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('确认删除?')">
-                                        <i class="fa fa-trash"></i>删除
-                                    </a>
+                            <tr class="transition-all duration-300 hover:bg-gray-50">
+                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ product.code }}</td>
+                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 font-medium">{{ product.name }}</td>
+                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ product.unit or '-' }}</td>
+                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ product.category.name if product.category else '-' }}</td>
+                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ product.warning_stock }}</td>
+                                <td class="py-3 px-4 border-b border-gray-200 text-center">
+                                    <div class="flex justify-center space-x-2">
+                                        <a href="{{ url_for('product.edit', id=product.id) }}" class="btn btn-sm btn-primary rounded-lg hover:bg-blue-600 transform hover:-translate-y-1 transition-all duration-300">
+                                            <!-- 链接到 product.edit 路由，传递商品ID -->
+                                            <i class="fa fa-edit mr-1"></i>编辑
+                                        </a>
+                                        <a href="{{ url_for('product.delete', id=product.id) }}" class="btn btn-sm btn-danger rounded-lg hover:bg-red-600 transform hover:-translate-y-1 transition-all duration-300" onclick="return confirm('确认删除?')">
+                                            <i class="fa fa-trash mr-1"></i>删除
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         {% else %}      <!--当 products 列表为空时执行-->
                             <tr>
-                                <td colspan="6" class="text-center">暂无数据</td>   <!--合并六列-->
+                                <td colspan="6" class="py-12 text-center text-gray-500 border border-gray-200">
+                                    <div class="flex flex-col items-center">
+                                        <i class="fa fa-box-open text-4xl mb-4 text-gray-300"></i>
+                                        <p>暂无商品数据</p>
+                                        <a href="{{ url_for('product.edit', id=0) }}" class="mt-4 btn btn-primary">
+                                            <i class="fa fa-plus mr-2"></i>添加商品
+                                        </a>
+                                    </div>
+                                </td>   <!--合并六列-->
                             </tr>
                         {% endfor %}    <!--结束商品列表的循环-->
                     </tbody>
@@ -81,47 +103,123 @@
             </div>      <!--Bootstrap 响应式表格类-->
 
             <!--分页-->
-            <nav aria-label="Page navigation">
-                <ul class="pagination justify-content-center">      <!--justify-content-center：使分页居中显示-->
-                    {% if pagination.has_prev %}      <!--检查分页对象 pagination 是否有上一页-->
-                        <li class="page-item">      <!--分页项容器-->
-                            <a class="page-link" href="{{ url_for('product.list', page=pagination.prev_num, keyword=keyword, category_id=category_id) }}">
-                                上一页
-                            </a>    <!--生成分页链接，保留上一页的页码，搜索关键词，分类筛选-->
-                        </li>
-                    {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link">上一页</span>   <!--禁用的分页项通常使用<span>-->
-                    </li>
-                    {% endif %}
-                    <!--遍历分页对象生成的页码序列-->
-                    {% for page in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
-                        {% if page %}      <!--当前遍历的page是否有效 当page为None时，表示有页码被省略-->
-                            {% if pagination.page == page %}    <!--检查当前遍历的页码是否是当前所在页-->    
-                                <li class="page-item active"><span class="page-link">{{ page }}</span></li>  
+            <div class="p-4 border-t border-gray-200 bg-gray-50">
+                <div class="flex flex-wrap justify-between items-center gap-4">
+                    <p class="text-sm text-gray-600">
+                        显示 {{ pagination.page * pagination.per_page - pagination.per_page + 1 }} 到 {{ pagination.page * pagination.per_page if pagination.page * pagination.per_page < pagination.total else pagination.total }} 条，共 {{ pagination.total }} 条
+                    </p>
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination space-x-1">      <!--justify-content-center：使分页居中显示-->
+                            {% if pagination.has_prev %}      <!--检查分页对象 pagination 是否有上一页-->
+                                <li class="page-item">      <!--分页项容器-->
+                                    <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300" href="{{ url_for('product.list', page=pagination.prev_num, keyword=keyword, category_id=category_id) }}">
+                                        <i class="fa fa-chevron-left"></i>
+                                    </a>    <!--生成分页链接，保留上一页的页码，搜索关键词，分类筛选-->
+                                </li>
                             {% else %}
-                                <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('product.list', page=page, keyword=keyword, category_id=category_id) }}">
-                                        {{ page }}
-                                    </a>
+                                <li class="page-item disabled">
+                                    <span class="page-link rounded-lg border-gray-300 bg-gray-100 text-gray-400">
+                                        <i class="fa fa-chevron-left"></i>
+                                    </span>   <!--禁用的分页项通常使用<span>-->
                                 </li>
                             {% endif %}
-                        {% else %}
-                            <li class="page-item disabled"><span class="page-link">...</span></li>     <!--省略号，表示中间有页码被省略-->
-                        {% endif %}
-                    {% endfor %}
-                    
-                    {% if pagination.has_next %}    <!--检查分页对象是否有下一页-->
-                        <li class="page-item">
-                            <a class="page-link" href="{{ url_for('product.list', page=pagination.next_num, keyword=keyword, category_id=category_id)}}">
-                                下一页
-                            </a>
-                        </li>
-                    {% else %}      <!--当没有下一页时(如在最后一页)-->
-                        <li class="page-item disabled"><span class="page-link">下一页</span></li>       <!--下一页按钮禁用状态-->
-                    {% endif %}     
-                </ul>
-            </nav>
+                            <!--遍历分页对象生成的页码序列-->
+                            {% for page in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
+                                {% if page %}      <!--当前遍历的page是否有效 当page为None时，表示有页码被省略-->
+                                    {% if pagination.page == page %}    <!--检查当前遍历的页码是否是当前所在页-->    
+                                        <li class="page-item active">
+                                            <span class="page-link rounded-lg bg-primary border-primary text-white px-3 py-1">{{ page }}</span>
+                                        </li>  
+                                    {% else %}
+                                        <li class="page-item">
+                                            <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300 px-3 py-1" href="{{ url_for('product.list', page=page, keyword=keyword, category_id=category_id) }}">
+                                                {{ page }}
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link rounded-lg border-gray-300 bg-gray-100 text-gray-400 px-3 py-1">...</span>
+                                    </li>     <!--省略号，表示中间有页码被省略-->
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if pagination.has_next %}    <!--检查分页对象是否有下一页-->
+                                <li class="page-item">
+                                    <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300" href="{{ url_for('product.list', page=pagination.next_num, keyword=keyword, category_id=category_id)}}">
+                                        <i class="fa fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            {% else %}      <!--当没有下一页时(如在最后一页)-->
+                                <li class="page-item disabled">
+                                    <span class="page-link rounded-lg border-gray-300 bg-gray-100 text-gray-400">
+                                        <i class="fa fa-chevron-right"></i>
+                                    </span>
+                                </li>       <!--下一页按钮禁用状态-->
+                            {% endif %}     
+                        </ul>
+                    </nav>
+                </div>
+            </div>
         </div>
     </div>
+    
+    <style>
+        /* 自定义动画效果 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .card {
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        h2 {
+            animation: slideIn 0.4s ease-out;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .table-responsive {
+                font-size: 0.875rem;
+            }
+            
+            .table th,
+            .table td {
+                padding: 0.75rem;
+            }
+            
+            .btn {
+                font-size: 0.75rem;
+                padding: 0.25rem 0.5rem;
+            }
+            
+            .flex.justify-between {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .pagination {
+                justify-content: center;
+            }
+        }
+    </style>
 {% endblock %}

@@ -1,59 +1,132 @@
 {% extends "base.html" %}
-{% block title %}{% if product.id %}编辑商品{% else %}添加商品{% endif %} - 仓库管理系统{% endblock %}
+{% block title %}{% if product.id %}编辑商品{% else %}添加商品{% endif %} - 仓库管理系统    <style>
+        /* 自定义动画效果 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .card {
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        h2 {
+            animation: slideIn 0.4s ease-out;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .input-group {
+                font-size: 0.875rem;
+            }
+            
+            .btn {
+                font-size: 0.75rem;
+                padding: 0.25rem 0.5rem;
+            }
+            
+            .flex.justify-between {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+    </style>
+{% endblock %}
 
 {% block content %}
-    <div class="row mb-4">    <!--Bootstrap行布局 下边距1.5em-->
-        <div class="col">    <!--Bootstrap 列，自动占用所有可用宽度-->
-            <h2>{% if product.id %}编辑商品{% else %}添加商品{% endif %}</h2>
-            <nav aria-label="breadcrumb">       <!--无障碍访问标签，为屏幕阅读器描述这是面包屑导航-->
-                <ol class="breadcrumb">     <!--Bootstrap 面包屑导航样式-->
-                    <li class="breadcrumb-item"><a href="{{ url_for('product.list') }}">商品管理</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">{% if product.id %}编辑商品{% else %}添加商品{% endif %}</li>
-                    <!--breadcrumb-item active:面包屑项高亮显示-->
-                </ol>
-            </nav>
-        </div>
+    <div class="d-flex justify-content-between align-items-center mb-6">    
+        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+            <i class="fa fa-shopping-bag mr-3 text-primary"></i>{% if product.id %}编辑商品{% else %}添加商品{% endif %}
+        </h2>
+        <nav aria-label="breadcrumb">       <!--无障碍访问标签，为屏幕阅读器描述这是面包屑导航-->
+            <ol class="breadcrumb">     <!--Bootstrap 面包屑导航样式-->
+                <li class="breadcrumb-item"><a href="{{ url_for('product.list') }}">商品管理</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{% if product.id %}编辑商品{% else %}添加商品{% endif %}</li>
+                <!--breadcrumb-item active:面包屑项高亮显示-->
+            </ol>
+        </nav>
     </div>
 
-    <div class="card shadow-sm">
-        <div class="card-body p-4">
+    <div class="card mb-6 shadow-sm rounded-xl overflow-hidden">
+        <div class="card-body p-6">
             {% if product.id %}
                 <!--编辑模式-->
-                <h2>编辑产品</h2>
                 <form method="POST" action="{{ url_for('product.edit', id=product.id) }}">
                     <!--提交到 product.edit 路由 product.id 在添加模式下可能为 0 或空，由后端处理-->
                     <div class="row mb-3">      <!--Bootstrap栅格行-->
                         <div class="col-md-6">
                             <label for="code" class="form-label">商品编码<span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="code" name="code" value="{{ product.code or '' }}" required placeholder="请输入唯一商品编码">
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
+                                    <i class="fa fa-barcode text-gray-400"></i>
+                                </span>
+                                <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="code" name="code" value="{{ product.code or '' }}" required placeholder="请输入唯一商品编码">
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <label for="name" class="form-label">商品名称<span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="name" name="name" value="{{ product.name or '' }}" required placeholder="请输入商品名称">
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
+                                    <i class="fa fa-shopping-bag text-gray-400"></i>
+                                </span>
+                                <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="name" name="name" value="{{ product.name or '' }}" required placeholder="请输入商品名称">
+                            </div>
                         </div>
                     </div>
                     <div class="row mb-3">      <!--创建新的一行-->
                         <div class="col-md-6">
                             <label for="unit" class="form-label">单位</label>
-                            <input type="text" class="form-control" id="unit" name="unit" value="{{ product.unit or '' }}" placeholder="个/箱/kg">
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
+                                    <i class="fa fa-balance-scale text-gray-400"></i>
+                                </span>
+                                <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="unit" name="unit" value="{{ product.unit or '' }}" placeholder="个/箱/kg">
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <label for="warning_stock" class="form-label">库存预警阈值</label>
-                            <input type="text" class="form-control" id="warning_stock" name="warning_stock" value="{{ product.warning_stock or '' }}" placeholder="默认10">
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
+                                    <i class="fa fa-exclamation-triangle text-gray-400"></i>
+                                </span>
+                                <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="warning_stock" name="warning_stock" value="{{ product.warning_stock or '' }}" placeholder="默认10">
+                            </div>
                         </div>
                     </div>
                     
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="category_id" class="form-label">商品分类</label>
-                            <select class="form-select" id="category_id" name="category_id" onchange="loadCategoryParams(this.value)">     <!--form-select：Bootstrap下拉选择框样式-->
-                                <option value="">请选择分类</option>         <!--默认选项值为空-->
-                                {% for category in categories %}         <!--遍历分类列表-->
-                                    <option value="{{ category.id }}" {% if product.category_id == category.id %}selected{% endif %}>
-                                        {{ category.name }}     <!--编辑模式：如果商品当前属于此分类，则选中-->     <!--添加模式：没有选中项-->
-                                    </option>
-                                {% endfor %}
-                            </select>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
+                                    <i class="fa fa-list text-gray-400"></i>
+                                </span>
+                                <select class="form-select rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="category_id" name="category_id" onchange="loadCategoryParams(this.value)">     <!--form-select：Bootstrap下拉选择框样式-->
+                                    <option value="">请选择分类</option>         <!--默认选项值为空-->
+                                    {% for category in categories %}         <!--遍历分类列表-->
+                                        <option value="{{ category.id }}" {% if product.category_id == category.id %}selected{% endif %}>
+                                            {{ category.name }}     <!--编辑模式：如果商品当前属于此分类，则选中-->     <!--添加模式：没有选中项-->
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
                         </div>
                     </div>
                     
@@ -68,7 +141,12 @@
                                             <label class="form-label">{{ category_param.param_key.name }}</label>
                                         </div>
                                         <div class="col-md-8">
-                                            <input type="text" class="form-control" name="param_{{ category_param.param_key.id }}" value="{{ product_params.get(category_param.param_key.id, '') }}" placeholder="请输入{{ category_param.param_key.name }}">
+                                            <div class="input-group">
+                                <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
+                                    <i class="fa fa-cog text-gray-400"></i>
+                                </span>
+                                <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" name="param_{{ category_param.param_key.id }}" value="{{ product_params.get(category_param.param_key.id, '') }}" placeholder="请输入{{ category_param.param_key.name }}">
+                            </div>
                                         </div>
                                     </div>
                                 {% endfor %}
@@ -99,7 +177,12 @@
                                                         <label class="form-label">${param.name}</label>
                                                     </div>
                                                     <div class="col-md-8">
-                                                        <input type="text" class="form-control" name="param_${param.id}" placeholder="请输入${param.name}">
+                                                        <div class="input-group">
+                                <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
+                                    <i class="fa fa-cog text-gray-400"></i>
+                                </span>
+                                <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" name="param_${param.id}" placeholder="请输入${param.name}">
+                            </div>
                                                     </div>
                                                 </div>
                                             `;
@@ -118,19 +201,25 @@
 
                     <div class="mb-3">
                         <label for="remark" class="form-label">备注</label>
-                        <textarea class="form-control" id="remark" name="remark" rows="3" placeholder="请输入备注信息">
-                            {{ product.remark or '' }}
-                        </textarea>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
+                                <i class="fa fa-comment text-gray-400"></i>
+                            </span>
+                            <textarea class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="remark" name="remark" rows="3" placeholder="请输入备注信息">{{ product.remark or '' }}</textarea>
+                        </div>
                         <!--textarea：多行文本输入框 rows="3"：默认显示3行-->
                     </div>
                     <div class="d-flex gap-2">      <!--Bootstrap弹性布局 子元素之间间距 0.5rem -->
-                        <button type="submit" class="btn btn-primary">保存</button>
-                        <a href="{{ url_for('product.list') }}" class="btn btn-outline-secondary">取消</a>
+                        <button type="submit" class="btn btn-primary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300">
+                            <i class="fa fa-save mr-2"></i>保存
+                        </button>
+                        <a href="{{ url_for('product.list') }}" class="btn btn-outline-secondary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300">
+                            <i class="fa fa-times mr-2"></i>取消
+                        </a>
                     </div>
                 </form>
             {% else %}
                 <!--创建模式-->
-                <h2>创建新产品</h2>
                 <form method="POST" action="{{ url_for('product.edit', id=0) }}">
                     <!--提交到 product.edit 路由 product.id 在添加模式下可能为 0 或空，由后端处理-->
                     <div class="row mb-3">      <!--Bootstrap栅格行-->
