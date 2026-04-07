@@ -254,7 +254,7 @@ def role_delete(role_id):
         return redirect(url_for('user.role_list'))
     
     # 检查是否有用户使用该角色
-    if role.users.count() > 0:
+    if len(role.users) > 0:
         flash('该角色正在被使用，无法删除', 'danger')
         return redirect(url_for('user.role_list'))
     

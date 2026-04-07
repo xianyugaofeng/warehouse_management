@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}添加库位{% endblock %}
+{% block content %}
+    <h2>添加库位</h2>
+    <form method="post">
+        <div class="form-group mb-3">
+            <label for="code">库位编码</label>
+            <input type="text" class="form-control" id="code" name="code" required>
+        </div>
+        <div class="form-group mb-3">
+            <label for="name">库位名称</label>
+            <input type="text" class="form-control" id="name" name="name" required>
+        </div>
+        <div class="form-group mb-3">
+            <label for="area">所属区域</label>
+            <input type="text" class="form-control" id="area" name="area">
+        </div>
+        <div class="form-group mb-3">
+            <label for="status">状态</label>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" id="status1" name="status" value="1" checked>
+                <label class="form-check-label" for="status1">启用</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" id="status0" name="status" value="0">
+                <label class="form-check-label" for="status0">禁用</label>
+            </div>
+        </div>
+        <div class="form-group mb-3">
+            <label for="remark">备注</label>
+            <textarea class="form-control" id="remark" name="remark" rows="3"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">保存</button>
+        <a href="{{ url_for('location.list') }}" class="btn btn-secondary">取消</a>
+    </form>
+{% endblock %}

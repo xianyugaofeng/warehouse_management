@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}库位管理{% endblock %}
+{% block content %}
+    <h2>库位管理</h2>
+    <div class="mb-3">
+        <a href="{{ url_for('location.add') }}" class="btn btn-primary">添加库位</a>
+    </div>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>库位编码</th>
+                <th>库位名称</th>
+                <th>所属区域</th>
+                <th>状态</th>
+                <th>备注</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for location in locations %}
+            <tr>
+                <td>{{ location.id }}</td>
+                <td>{{ location.code }}</td>
+                <td>{{ location.name }}</td>
+                <td>{{ location.area or '-' }}</td>
+                <td>
+                    {% if location.status %}
+                    <span class="badge bg-success">启用</span>
+                    {% else %}
+                    <span class="badge bg-danger">禁用</span>
+                    {% endif %}
+                </td>
+                <td>{{ location.remark or '-' }}</td>
+                <td>
+                    <a href="{{ url_for('location.edit', location_id=location.id) }}" class="btn btn-sm btn-warning">编辑</a>
+                    <a href="{{ url_for('location.delete', location_id=location.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('确定删除吗？')">删除</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
