@@ -39,7 +39,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from app import create_app, db
-from app.models.product import Category, Supplier, ProductParamKey, CategoryParam
+from app.models.product import Category, Supplier, ProductParamKey, CategoryParam, Customer
 from app.models.inventory import WarehouseLocation
 from app.models.user import User, Role, Permission
 
@@ -85,7 +85,7 @@ def init_product_params():
     # 定义分类参数关联
     category_params = {
         '电脑': ['存储容量', '屏幕尺寸', '品牌', '显卡型号', '处理器型号'],
-        '手机': ['品牌', '存储容量', '机型名称', '处理器型号'],
+        '手机': ['品牌', '屏幕尺寸', '存储容量', '机型名称', '处理器型号'],
     }
     
     # 保存分类参数关联
@@ -160,11 +160,38 @@ def init_warehouse_locations():
     print('库位初始化完成')
 
 
+def init_customers():
+    """初始化客户"""
+    customers = [
+        {'name': '北京京东世纪贸易有限公司', 'contact_person': '刘强东', 'phone': '13812345678', 'address': '北京市朝阳区', 'email': 'liuqiangdong@jd.com'},
+        {'name': '上海苏宁易购销售有限公司', 'contact_person': '张近东', 'phone': '13912345678', 'address': '上海市浦东新区', 'email': 'zhangjindong@suning.com'},
+        {'name': '国美电器有限公司', 'contact_person': '黄光裕', 'phone': '13712345678', 'address': '北京市朝阳区', 'email': 'huangguangyu@gome.com'},
+        {'name': '小米科技有限责任公司', 'contact_person': '雷军', 'phone': '13612345678', 'address': '北京市海淀区', 'email': 'leijun@xiaomi.com'},
+        {'name': '华为技术有限公司', 'contact_person': '任正非', 'phone': '13512345678', 'address': '广东省深圳市', 'email': 'renzhenfei@huawei.com'},
+    ]
+    
+    for item in customers:
+        customer = Customer.query.filter_by(name=item['name']).first()
+        if not customer:
+            customer = Customer(
+                name=item['name'],
+                contact_person=item['contact_person'],
+                phone=item['phone'],
+                address=item['address'],
+                email=item['email']
+            )
+            db.session.add(customer)
+    db.session.commit()
+    print('客户初始化完成')
+
+
 def init_roles():
     """初始化角色权限"""
     # 定义角色权限
     roles = {
-        '管理员': ['product_manage', 'inventory_manage', 'inbound_manage', 'outbound_manage', 'supplier_manage', 'customer_manage', 'user_manage'],
+        '管理员': ['product_manage', 'inventory_manage', 'inbound_manage',
+                  'outbound_manage', 'supplier_manage', 'customer_manage',
+                  'user_manage', 'report_view'],
         '仓库管理员': ['product_manage', 'inventory_manage', 'inbound_manage', 'outbound_manage'],
         '职员' : ['product_manage', 'inventory_manage', 'supplier_manage', 'customer_manage', 'user_manage']
     }
@@ -218,6 +245,7 @@ def main():
         init_categories()
         init_product_params()
         init_suppliers()
+        init_customers()
         init_warehouse_locations()
         init_roles()
         init_admin()

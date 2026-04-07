@@ -17,15 +17,24 @@ report_bp = Blueprint('report', __name__)
 @login_required
 def index():
     # 1. 库存Top10商品(按数量排序)
-    top_products = db.session.query(
-        Product.name, Product.code, db.func.sum(Inventory.quantity)
+    top_products_result = db.session.query(
+        Product.name, Product.code, db.func.sum(Inventory.quantity).label('total_quantity')
     ).join(Inventory).group_by(Product.id).order_by(db.func.sum(Inventory.quantity).desc()).limit(10).all()
     # 查询会返回一个包含元组的列表，每个元组包含产品名称、产品代码和该产品的总库存量
     # (name, code, total_quantity)
+    
+    # 将查询结果转换为字典列表，以便在模板中使用
+    top_products = []
+    for product in top_products_result:
+        top_products.append({
+            'name': product[0],
+            'code': product[1],
+            'total_quantity': float(product[2])
+        })
 
     # 2. 近30天出入库趋势（按日期分组）
-    end_date = datetime.now()
-    start_date = datetime.now() - timedelta(days=30)
+    end_date = datetime.now().date()
+    start_date = (datetime.now() - timedelta(days=30)).date()
 
     # 入库趋势
     inbound_trend = db.session.query(
@@ -52,12 +61,12 @@ def index():
     for item in inbound_trend:
         idx = (item.date - start_date).days
         if 0 <= idx < 31:
-            inbound_data[idx] == item.total
+            inbound_data[idx] = float(item.total)
 
     for item in outbound_trend:
         idx = (item.date - start_date).days
         if 0 <= idx < 31:
-            outbound_data[idx] == item.total
+            outbound_data[idx] = float(item.total)
 
     return render_template('report/index.html',
                            top_products=top_products,

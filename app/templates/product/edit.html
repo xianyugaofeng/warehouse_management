@@ -126,30 +126,7 @@
                                 });
                         }
                     </script>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="category_id" class="form-label">商品分类</label>
-                            <select class="form-select" id="category_id" name="category_id" onchange="loadCategoryParams(this.value)">     <!--form-select：Bootstrap下拉选择框样式-->
-                                <option value="">请选择分类</option>         <!--默认选项值为空-->
-                                {% for category in categories %}         <!--遍历分类列表-->
-                                    <option value="{{ category.id }}" {% if product.category_id == category.id %}selected{% endif %}>
-                                        {{ category.name }}     <!--编辑模式：如果商品当前属于此分类，则选中-->     <!--添加模式：没有选中项-->
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="supplier_id" class="form-label">供应商</label>
-                            <select class="form-select" id="supplier_id" name="supplier_id">
-                                <option value="">请选择供应商</option>
-                                {% for supplier in suppliers %}
-                                    <option value="{{ supplier.id }}" {% if product.supplier_id == supplier.id %}selected{% endif %}>
-                                        {{ supplier.name }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
+
                     <div class="mb-3">
                         <label for="remark" class="form-label">备注</label>
                         <textarea class="form-control" id="remark" name="remark" rows="3" placeholder="请输入备注信息">

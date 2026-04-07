@@ -156,6 +156,7 @@ def items():
     customer_id = request.args.get('customer_id', '')
     start_date = request.args.get('start_date', '')
     end_date = request.args.get('end_date', '')
+    order_id = request.args.get('order_id', '')
 
     # 构建查询
     query = OutboundItem.query.join(OutboundOrder).join(Product).join(WarehouseLocation).join(Customer)
@@ -177,6 +178,9 @@ def items():
     
     if location_id:
         query = query.filter(OutboundItem.location_id == location_id)
+    
+    if order_id:
+        query = query.filter(OutboundItem.order_id == order_id)
     
     if start_date:
         query = query.filter(OutboundOrder.outbound_date >= start_date)
@@ -204,8 +208,17 @@ def items():
                            customer_id=customer_id,
                            start_date=start_date,
                            end_date=end_date,
+                           order_id=order_id,
                            products=products,
                            locations=locations,
                            customers=customers
     )
+
+# 出库单详情
+@outbound_bp.route('/detail/<int:id>')
+@permission_required('outbound_manage')
+@login_required
+def detail(id):
+    order = OutboundOrder.query.get_or_404(id)
+    return render_template('outbound/detail.html', order=order)
 

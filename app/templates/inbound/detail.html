@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}入库单详情 - 仓库管理系统{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>入库单详情</h2>
+        <a href="{{ url_for('inbound.list') }}" class="btn btn-secondary">
+            <i class="fa fa-arrow-left"></i>返回列表
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>基本信息</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>入库单号:</strong> {{ order.order_no }}</p>
+                    <p><strong>供应商:</strong> {{ order.supplier.name if order.supplier else '-' }}</p>
+                    <p><strong>入库日期:</strong> {{ order.inbound_date.strftime('%Y-%m-%d') }}</p>
+                    <p><strong>入库总数量:</strong> {{ order.total_amount }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>操作员:</strong> {{ order.operator.real_name or order.operator.username }}</p>
+                    <p><strong>状态:</strong>
+                        {% if order.status == 'completed' %}
+                            <span class="badge bg-success">已完成</span>
+                        {% elif order.status == 'draft' %}
+                            <span class="badge bg-warning">草稿</span>
+                        {% else %}
+                            <span class="badge bg-danger">已取消</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>创建时间:</strong> {{ order.create_time.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                    <p><strong>备注:</strong> {{ order.remark or '-' }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5>入库明细</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>商品名称</th>
+                            <th>商品编码</th>
+                            <th>库位</th>
+                            <th>批次号</th>
+                            <th>数量</th>
+                            <th>生产日期</th>
+                            <th>过期日期</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order.items %}
+                            <tr>
+                                <td>{{ item.product.name }}</td>
+                                <td>{{ item.product.code }}</td>
+                                <td>{{ item.location.code }}</td>
+                                <td>{{ item.batch_no or '-' }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ item.production_date.strftime('%Y-%m-%d') if item.production_date else '-' }}</td>
+                                <td>{{ item.expire_date.strftime('%Y-%m-%d') if item.expire_date else '-' }}</td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center">暂无明细</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}
