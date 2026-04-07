@@ -148,21 +148,26 @@ def items():
     keyword = request.args.get('keyword', '')
     product_id = request.args.get('product_id', '')
     location_id = request.args.get('location_id', '')
+    supplier_id = request.args.get('supplier_id', '')
     start_date = request.args.get('start_date', '')
     end_date = request.args.get('end_date', '')
     order_id = request.args.get('order_id', '')
 
     # 构建查询
-    query = InboundItem.query.join(InboundOrder).join(Product).join(WarehouseLocation)
+    query = InboundItem.query.join(InboundOrder).join(Supplier, InboundOrder.supplier_id == Supplier.id).join(Product).join(WarehouseLocation)
     
     # 应用过滤条件
     if keyword:
         query = query.filter(
             Product.name.ilike(f'%{keyword}%') |
             Product.code.ilike(f'%{keyword}%') |
-            InboundOrder.order_no.ilike(f'%{keyword}%')
+            InboundOrder.order_no.ilike(f'%{keyword}%') |
+            Supplier.name.ilike(f'%{keyword}%')
         )
     
+    if supplier_id:
+        query = query.filter(InboundOrder.supplier_id == supplier_id)
+
     if product_id:
         query = query.filter(InboundItem.product_id == product_id)
     
@@ -187,6 +192,7 @@ def items():
     # 获取所有商品和库位用于筛选
     products = Product.query.all()
     locations = WarehouseLocation.query.filter_by(status=True).all()
+    suppliers = Supplier.query.all()
 
     return render_template('inbound/items.html',
                            items=items,
@@ -198,7 +204,8 @@ def items():
                            end_date=end_date,
                            order_id=order_id,
                            products=products,
-                           locations=locations
+                           locations=locations,
+                           suppliers=suppliers
     )
 
 # 入库单详情

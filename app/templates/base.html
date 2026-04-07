@@ -67,10 +67,12 @@
                         <a href="{{ url_for('customer.list') }}" class="list-group-item list-group-item-action">客户管理</a>
                     {% endif %}
                     {% if current_user.has_permission('inbound_manage') %}
-                        <a href="{{ url_for('inbound.list') }}" class="list-group-item list-group-item-action">入库管理</a>
+                        <a href="{{ url_for('inbound.list') }}" class="list-group-item list-group-item-action">入库单列表</a>
+                        <a href="{{ url_for('inbound.items') }}" class="list-group-item list-group-item-action">入库明细查询</a>
                     {% endif %}
                     {% if current_user.has_permission('outbound_manage') %}
-                        <a href="{{ url_for('outbound.list') }}" class="list-group-item list-group-item-action">出库管理</a>
+                        <a href="{{ url_for('outbound.list') }}" class="list-group-item list-group-item-action">出库单列表</a>
+                        <a href="{{ url_for('outbound.items') }}" class="list-group-item list-group-item-action">出库明细查询</a>
                     {% endif %}
                     {% if current_user.has_permission('inventory_manage') %}
                         <a href="{{ url_for('inventory.list') }}" class="list-group-item list-group-item-action">库存管理</a>

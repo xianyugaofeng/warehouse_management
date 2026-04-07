@@ -159,7 +159,7 @@ def items():
     order_id = request.args.get('order_id', '')
 
     # 构建查询
-    query = OutboundItem.query.join(OutboundOrder).join(Product).join(WarehouseLocation).join(Customer)
+    query = OutboundItem.query.join(OutboundOrder).join(Customer, OutboundOrder.customer_id == Customer.id).join(Product).join(WarehouseLocation)
     
     # 应用过滤条件
     if keyword:

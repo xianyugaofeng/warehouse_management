@@ -5,12 +5,6 @@
     <div class="row mb-4">
         <div class="col">
             <h2>入库明细查询</h2>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ url_for('inbound.list') }}">入库管理</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">入库明细查询</li>
-                </ol>
-            </nav>
         </div>
     </div>
 
@@ -39,6 +33,17 @@
                         {% for location in locations %}
                             <option value="{{ location.id }}" {% if location_id == location.id|string %}selected{% endif %}>
                                 {{ location.code }} - {{ location.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="supplier_id" class="form-label">供应商</label>
+                    <select class="form-select" id="supplier_id" name="supplier_id">
+                        <option value="">全部供应商</option>
+                        {% for supplier in suppliers %}
+                            <option value="{{ supplier.id }}" {% if supplier_id == supplier.id|string %}selected{% endif %}>
+                                {{ supplier.name }}
                             </option>
                         {% endfor %}
                     </select>
