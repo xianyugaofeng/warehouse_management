@@ -55,17 +55,6 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-6">
-                            <label for="supplier_id" class="form-label">供应商</label>
-                            <select class="form-select" id="supplier_id" name="supplier_id">
-                                <option value="">请选择供应商</option>
-                                {% for supplier in suppliers %}
-                                    <option value="{{ supplier.id }}" {% if product.supplier_id == supplier.id %}selected{% endif %}>
-                                        {{ supplier.name }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
                     </div>
                     
                     <!-- 商品参数 -->
@@ -172,17 +161,6 @@
                                 {% for category in categories %}         <!--遍历分类列表-->
                                     <option value="{{ category.id }}" {% if product.category_id == category.id %}selected{% endif %}>
                                         {{ category.name }}     <!--编辑模式：如果商品当前属于此分类，则选中-->     <!--添加模式：没有选中项-->
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="supplier_id" class="form-label">供应商</label>
-                            <select class="form-select" id="supplier_id" name="supplier_id">
-                                <option value="">请选择供应商</option>
-                                {% for supplier in suppliers %}
-                                    <option value="{{ supplier.id }}" {% if product.supplier_id == supplier.id %}selected{% endif %}>
-                                        {{ supplier.name }}
                                     </option>
                                 {% endfor %}
                             </select>

@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}库存Top10商品 - 仓库管理系统{% endblock %}
+
+{% block js %}
+<!--EChart图片库-->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<script>
+    //确保 DOM 完全加载后再执行内部代码，避免因元素未渲染而无法获取图表容器
+    $(document).ready(function() {
+        //初始化库存Top10商品柱状图
+        const top10Chart = echarts.init(document.getElementById('top10Chart'));
+        //处理Top10数据（提取商品名称和库存数量）
+        //将后端传递的商品列表拆分为两个独立的 JavaScript 数组，分别用于图表 x 轴的商品名称和 y 轴的库存数量
+        const top10Names = {{ top_products|map(attribute='name')|list|tojson }};
+        const top10Quantities = {{ top_products|map(attribute='total_quantity')|list|tojson }};
+
+        const top10Option = {
+            title: {
+                text: '库存top10商品',
+                left: 'center',
+                textStyle: {
+                    fontSize: 14,
+                    fontWeight: 'bold'
+                }
+            },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'shadow'
+                },
+                formatter: function(params) {
+                    return `${params[0].name}<br/>库存数量: ${params[0].value} 件`;
+                }
+            },
+            grid: {
+                left: '5%',
+                right: '5%',
+                bottom: '5%',
+                containLabel: true
+            },
+            xAxis: {
+                type: 'category',
+                data: top10Names,
+                axisLabel: {
+                    rotate: 45,
+                    fontSize: 10
+                }
+            },
+            yAxis: {
+                type: 'value',
+                name: '库存数量(件)',
+                nameTextStyle: {
+                    fontSize: 12
+                }
+            },
+            series: [
+                //系列类型为柱状图/条形图（bar），适合展示分类数据的数量对比
+                {
+                    name: '库存数量',
+                    type: 'bar',
+                    data: top10Quantities,
+                    itemStyle: {
+                        color: function(params) {
+                        // 渐变颜色（从蓝色到紫色）
+                            const colorList = ['#007bff', '#6610f2', '#6f42c1', '#e83e8c', '#dc3545',
+                                         '#fd7e14', '#ffc107', '#28a745', '#20c997', '#17a2b8'];
+                            return colorList[params.dataIndex];
+                        }
+                    },
+                    label: {
+                        show: true,
+                        //将标签放置在柱子的顶部外侧
+                        position: 'top',
+                        fontSize: 10
+                    }
+                }
+            ]
+        };
+        top10Chart.setOption(top10Option);
+
+        //回调函数内调用 top10Chart.resize()
+        window.addEventListener('resize', function() {
+            top10Chart.resize();
+        });
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>库存Top10商品</h2>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item active" aria-current="page">库存分析</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!--库存Top10商品卡片-->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">库存Top10商品</h5>
+                <span class="badge bg-light text-primary">实时统计</span>
+            </div>
+            <div class="card-body">
+                <!--Top10商品图表-->
+                <div id="top10Chart" style="width: 100%; height: 400px; margin-bottom: 30px;"></div>
+
+                <!--Top10商品详情表格-->
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered">
+                        <!--Bootstrap 的悬停效果、边框和紧凑样式-->
+                        <thead class="table-light">
+                            <tr>
+                                <th width="10%">排名</th>
+                                <th width="30%">商品名称</th>
+                                <th width="20%">商品编码</th>
+                                <th width="20%">库存总量(件)</th>
+                                <th width="20%">占总库存占比</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if top_products %}
+                                {% set total_stock = top_products|sum(attribute='total_quantity')|float %}
+                                <!--通过 top_products 列表（后端传入）计算所有商品的总库存 total_stock（使用 sum 过滤器）-->
+                                {% for item in top_products %}
+                                    <!--使用 loop.index 从1开始生成排名，遍历每个商品，显示名称、编码、库存量并计算该商品库存占总库存的百分比（保留两位小数）-->
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>{{ item.name }}</td>
+                                        <td>{{ item.code }}</td>
+                                        <td>{{ item.total_quantity }}</td>
+                                        <td>{{ "%.2f%%"|format((item.total_quantity|float / total_stock|float) * 100) }}</td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>        <!--text-muted一种文本颜色-->
+                                    <td colspan="5" class="text-center text-muted">暂无库存数据，请先录入商品与库存信息</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

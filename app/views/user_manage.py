@@ -262,3 +262,103 @@ def role_delete(role_id):
     db.session.commit()
     flash('角色删除成功', 'success')
     return redirect(url_for('user.role_list'))
+
+
+@user_bp.route('/permission/list')
+@login_required
+def permission_list():
+    """权限列表"""
+    if not current_user.has_permission('user_manage'):
+        flash('无权限访问', 'danger')
+        return redirect(url_for('product.list'))
+    
+    from app.models.user import Permission
+    permissions = Permission.query.all()
+    return render_template('user/permission_list.html', permissions=permissions)
+
+
+@user_bp.route('/permission/add', methods=['GET', 'POST'])
+@login_required
+def permission_add():
+    """添加权限"""
+    if not current_user.has_permission('user_manage'):
+        flash('无权限访问', 'danger')
+        return redirect(url_for('product.list'))
+    
+    if request.method == 'POST':
+        name = request.form.get('name')
+        desc = request.form.get('desc')
+        
+        # 检查权限名是否已存在
+        existing_perm = Permission.query.filter_by(name=name).first()
+        if existing_perm:
+            flash('权限名已存在', 'danger')
+            return redirect(url_for('user.permission_add'))
+        
+        # 创建权限
+        permission = Permission(name=name, desc=desc)
+        db.session.add(permission)
+        db.session.commit()
+        flash('权限添加成功', 'success')
+        return redirect(url_for('user.permission_list'))
+    
+    return render_template('user/permission_add.html')
+
+
+@user_bp.route('/permission/edit/<int:perm_id>', methods=['GET', 'POST'])
+@login_required
+def permission_edit(perm_id):
+    """编辑权限"""
+    if not current_user.has_permission('user_manage'):
+        flash('无权限访问', 'danger')
+        return redirect(url_for('product.list'))
+    
+    from app.models.user import Permission
+    permission = Permission.query.get(perm_id)
+    if not permission:
+        flash('权限不存在', 'danger')
+        return redirect(url_for('user.permission_list'))
+    
+    if request.method == 'POST':
+        name = request.form.get('name')
+        desc = request.form.get('desc')
+        
+        # 检查权限名是否已存在（排除当前权限）
+        existing_perm = Permission.query.filter_by(name=name).filter(Permission.id != perm_id).first()
+        if existing_perm:
+            flash('权限名已存在', 'danger')
+            return redirect(url_for('user.permission_edit', perm_id=perm_id))
+        
+        # 更新权限信息
+        permission.name = name
+        permission.desc = desc
+        db.session.commit()
+        flash('权限更新成功', 'success')
+        return redirect(url_for('user.permission_list'))
+    
+    return render_template('user/permission_edit.html', permission=permission)
+
+
+@user_bp.route('/permission/delete/<int:perm_id>')
+@login_required
+def permission_delete(perm_id):
+    """删除权限"""
+    if not current_user.has_permission('user_manage'):
+        flash('无权限访问', 'danger')
+        return redirect(url_for('product.list'))
+    
+    from app.models.user import Permission
+    permission = Permission.query.get(perm_id)
+    if not permission:
+        flash('权限不存在', 'danger')
+        return redirect(url_for('user.permission_list'))
+    
+    # 检查是否有角色使用该权限
+    if len(permission.roles) > 0:
+        flash('该权限正在被角色使用，无法删除', 'danger')
+        return redirect(url_for('user.permission_list'))
+    
+    db.session.delete(permission)
+    db.session.commit()
+    flash('权限删除成功', 'success')
+    return redirect(url_for('user.permission_list'))

@@ -79,9 +79,6 @@ class Supplier(db.Model):
     address = db.Column(db.String(256))   # 地址
     email = db.Column(db.String(64))  # 邮箱
     create_time = db.Column(db.DateTime, default=datetime.utcnow)
-    products = db.relationship('Product', backref='supplier', lazy='dynamic')  # 关联商品
-    # 通过supplier.products获取属于该供应商的全部商品（动态加载）
-    # 通过product.supplier获取该商品属于的所有供应商（立即加载）
 
     def __repr__(self):
         return f'<Supplier {self.name}>'
@@ -108,7 +105,6 @@ class Product(db.Model):
     name = db.Column(db.String(64), nullable=False)   # 商品名称
     unit = db.Column(db.String(16))  # 单位（个/箱/kg）
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))  # 关联分类
-    supplier_id = db.Column(db.Integer, db.ForeignKey('suppliers.id'))   # 关联供应商
     warning_stock = db.Column(db.Integer, default=10)   # 库存预警阈值
     remark = db.Column(db.String(256))  # 备注
     create_time = db.Column(db.DateTime, default=datetime.utcnow)

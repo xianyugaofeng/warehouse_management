@@ -75,14 +75,19 @@
                         <a href="{{ url_for('outbound.items') }}" class="list-group-item list-group-item-action">出库明细查询</a>
                     {% endif %}
                     {% if current_user.has_permission('inventory_manage') %}
-                        <a href="{{ url_for('inventory.list') }}" class="list-group-item list-group-item-action">库存管理</a>
+                        <a href="{{ url_for('inventory.list') }}" class="list-group-item list-group-item-action">库存列表</a>
+                        <a href="{{ url_for('inventory.detail') }}" class="list-group-item list-group-item-action">库存明细查询</a>
                         <a href="{{ url_for('location.list') }}" class="list-group-item list-group-item-action">库位管理</a>
                     {% endif %}
                     {% if current_user.has_permission('report_view') %}
-                        <a href="{{ url_for('report.index') }}" class="list-group-item list-group-item-action">报表统计</a>
+                        <a href="{{ url_for('report.top_products') }}" class="list-group-item list-group-item-action">库存Top10商品</a>
+                        <a href="{{ url_for('report.trend') }}" class="list-group-item list-group-item-action">近30天入库趋势</a>
+                        <a href="{{ url_for('report.health') }}" class="list-group-item list-group-item-action">库存健康度分析</a>
                     {% endif %}
                     {% if current_user.has_permission('user_manage') %}
                         <a href="{{ url_for('user.list') }}" class="list-group-item list-group-item-action">用户管理</a>
+                        <a href="{{ url_for('user.role_list') }}" class="list-group-item list-group-item-action">角色管理</a>
+                        <a href="{{ url_for('user.permission_list') }}" class="list-group-item list-group-item-action">权限管理</a>
                     {% endif %}
                 </div>
             </div>

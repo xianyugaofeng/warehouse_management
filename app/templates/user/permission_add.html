@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}添加权限 - 仓库管理系统{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>添加权限</h2>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('user.list') }}">用户管理</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('user.permission_list') }}">权限管理</a></li>
+                <li class="breadcrumb-item active" aria-current="page">添加权限</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form method="POST">
+            <div class="mb-3">
+                <label for="name" class="form-label">权限名称</label>
+                <input type="text" class="form-control" id="name" name="name" required>
+                <div class="form-text">权限名称应使用小写字母和下划线，如 product_manage</div>
+            </div>
+            <div class="mb-3">
+                <label for="desc" class="form-label">权限描述</label>
+                <input type="text" class="form-control" id="desc" name="desc" required>
+                <div class="form-text">权限的中文描述，如 商品管理</div>
+            </div>
+            <div class="text-end">
+                <a href="{{ url_for('user.permission_list') }}" class="btn btn-secondary">取消</a>
+                <button type="submit" class="btn btn-primary">保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

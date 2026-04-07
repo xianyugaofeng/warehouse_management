@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, url_for, flash, redirect, jsonify
 from flask_login import login_required
 from app import db
-from app.models.product import Product, Category, Supplier, ProductParamKey, CategoryParam, ProductParamValue
+from app.models.product import Product, Category, ProductParamKey, CategoryParam, ProductParamValue
 from app.utils.auth import permission_required
 
 product_bp = Blueprint('product', __name__)
@@ -15,8 +15,6 @@ def list():
     # 多条件查询
     keyword = request.args.get('keyword', '')       # 若查询为None返回''
     category_id = request.args.get('category_id', '')
-    supplier_id = request.args.get('supplier_id', '')
-
     query = Product.query       # 创建一个查询对象，相当于SELECT * FROM product 获取所有产品\
                                 # 查询对象是惰性的，不会立即执行数据库查询
     if keyword:     # 关键字搜索
@@ -25,8 +23,6 @@ def list():
         # 自动参数化查询，防止SQL注入
     if category_id:   # 按分类筛选
         query = query.filter_by(category_id=category_id)
-    if supplier_id:   # 按供应商筛选
-        query = query.filter_by(supplier_id=supplier_id)
     """每次调用这些方法都会返回一个修改后的查询对象(链式调用)"""
 
     # 分页
@@ -37,15 +33,13 @@ def list():
 
     # 下拉框数据
     categories = Category.query.all()     # 获取分类数据
-    suppliers = Supplier.query.all()       # 获取供应商数据
 
     return render_template('product/list.html',
                            products=products,             # 当前页的产品数据列表
                            pagination=pagination,         # 分页信息(包含总页数、当前页等)
                            keyword=keyword,               # 搜索关键词
                            category_id=category_id,       # 当前选中分类id(回显筛选状态)
-                           categories=categories,         # 用于生成下拉选项
-                           suppliers=suppliers
+                           categories=categories         # 用于生成下拉选项
     )
 
 
@@ -58,7 +52,6 @@ def edit(id=0):
     # 如果id存在，通过get_or_404(id)获取对应产品实例
     # 如果id不存在则创建一个新的Product实例
     categories = Category.query.all()
-    suppliers = Supplier.query.all()
 
     # 加载商品参数
     category_params = []
@@ -76,7 +69,6 @@ def edit(id=0):
         name = request.form.get('name')
         unit = request.form.get('unit')
         category_id = request.form.get('category_id')
-        supplier_id = request.form.get('supplier_id')
         warning_stock = request.form.get('warning_stock', 10, type=int)
         remark = request.form.get('remark')
 
@@ -85,19 +77,17 @@ def edit(id=0):
         if code_exist and code_exist.id != product.id:
             flash('商品编码已存在', 'danger')
             return render_template('product/edit.html',
-                                   product=product,
-                                   categories=categories,
-                                   suppliers=suppliers,
-                                   category_params=category_params,
-                                   product_params=product_params
-            )
+                               product=product,
+                               categories=categories,
+                               category_params=category_params,
+                               product_params=product_params
+        )
 
         # 创建或修改Product实例
         product.code = code
         product.name = name
         product.unit = unit
         product.category_id = category_id
-        product.supplier_id = supplier_id
         product.warning_stock = warning_stock
         product.remark = remark
 
@@ -129,7 +119,6 @@ def edit(id=0):
     return render_template('product/edit.html',
                            product=product,
                            categories=categories,
-                           suppliers=suppliers,
                            category_params=category_params,
                            product_params=product_params
     )

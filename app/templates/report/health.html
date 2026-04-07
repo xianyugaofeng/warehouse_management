@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}库存健康度分析 - 仓库管理系统{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>库存健康度分析</h2>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item active" aria-current="page">库存健康度</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!--库存健康度分析卡片-->
+<div class="row gap-4">
+    <!--健康度评分卡片-->
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">库存健康度评分</h5>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="display-4 fw-bold {% if health_score >= 80 %}text-success{% elif health_score >= 60 %}text-warning{% else %}text-danger{% endif %}">
+                                {{ "%.1f"|format(health_score) }}%
+                            </div>
+                            <p class="text-muted">健康度评分</p>
+                        </div>
+                    </div>
+                    <div class="col-md-9">
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar {% if health_score >= 80 %}bg-success{% elif health_score >= 60 %}bg-warning{% else %}bg-danger{% endif %}" role="progressbar" style="width: {{ health_score }}%" aria-valuenow="{{ health_score }}" aria-valuemin="0" aria-valuemax="100">
+                                {{ "%.1f"|format(health_score) }}%
+                            </div>
+                        </div>
+                        <div class="mt-2 text-sm text-muted">
+                            健康度评分基于预警库存商品占比、库存周转率等因素综合计算
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--库存基础统计卡片-->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">基础统计</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <span class="fw-bold">总库存数量:</span> {{ total_inventory }} 件
+                    </li>
+                    <li class="mb-2">
+                        <span class="fw-bold">总商品数:</span> {{ total_product_count }} 种
+                    </li>
+                    <li class="mb-2">
+                        <span class="fw-bold">健康库存数量:</span> 
+                        <span class="text-success fw-bold">{{ "%.0f"|format(healthy_inventory) }}</span> 件
+                    </li>
+                    <li class="mb-2">
+                        <span class="fw-bold">预警库存数量:</span> 
+                        <span class="text-danger fw-bold">{{ "%.0f"|format(warning_inventory) }}</span> 件
+                    </li>
+                    <li class="mb-2">
+                        <span class="fw-bold">健康库存占比:</span> 
+                        {{ "%.2f%%"|format((healthy_inventory|float / total_inventory|float) * 100 if total_inventory > 0 else 0) }}
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!--库存周转情况卡片-->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">库存周转情况</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <span class="fw-bold">近30天总入库:</span> 
+                        <span class="text-success fw-bold">{{ inbound_total }} 件</span>
+                    </li>
+                    <li class="mb-2">
+                        <span class="fw-bold">近30天总出库:</span> 
+                        <span class="text-danger fw-bold">{{ outbound_total }} 件</span>
+                    </li>
+                    <li class="mb-2">
+                        <span class="fw-bold">库存变化:</span> 
+                        {% set balance = inbound_total - outbound_total %}
+                        {% if balance > 0 %}
+                            <span class="text-success fw-bold">+{{ balance }}件（增加）</span>
+                        {% elif balance < 0 %}
+                            <span class="text-danger fw-bold">{{ balance }}件（减少）</span>
+                        {% else %}
+                            <span class="text-secondary fw-bold">0 件（平衡）</span>
+                        {% endif %}
+                    </li>
+                    <li class="mb-2">
+                        <span class="fw-bold">库存周转率:</span> 
+                        {{ "%.2f"|format((outbound_total|float / total_inventory|float) * 100 if total_inventory > 0 else 0) }}%
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!--操作建议卡片-->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">操作建议</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    {% if warning_inventory > 0 %}
+                        <li class="mb-2">
+                            <i class="fa fa-exclamation-circle text-warning"></i> 
+                            有 {{ "%.0f"|format(warning_inventory) }} 件商品库存低于预警阈值，建议及时补货
+                        </li>
+                    {% else %}
+                        <li class="mb-2">
+                            <i class="fa fa-check-circle text-success"></i> 
+                            所有商品库存均在安全水平以上
+                        </li>
+                    {% endif %}
+                    
+                    {% set balance = inbound_total - outbound_total %}
+                    {% if balance > inbound_total * 0.3 %}
+                        <li class="mb-2">
+                            <i class="fa fa-info-circle text-primary"></i> 
+                            入库远超出库，注意库存积压风险
+                        </li>
+                    {% elif balance < -outbound_total * 0.3 %}
+                        <li class="mb-2">
+                            <i class="fa fa-info-circle text-primary"></i> 
+                            出库远超入库，注意缺货风险
+                        </li>
+                    {% else %}
+                        <li class="mb-2">
+                            <i class="fa fa-check-circle text-success"></i> 
+                            出入库平衡，库存水平合理
+                        </li>
+                    {% endif %}
+                    
+                    <li class="mb-2">
+                        <i class="fa fa-check-circle text-success"></i> 
+                        定期盘点确保库存准确率
+                    </li>
+                    
+                    <li class="mb-2">
+                        <i class="fa fa-check-circle text-success"></i> 
+                        根据销售趋势调整库存策略
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

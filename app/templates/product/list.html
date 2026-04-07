@@ -27,16 +27,7 @@
                             {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <select name="supplier_id" class="form-select">
-                        <option value="">所有供应商</option>
-                        {% for supplier in suppliers %}     <!--遍历 suppliers 变量生成供应商选项-->
-                            <option value="{{ supplier.id }}" {% if supplier_id == supplier.id|string %}selected{% endif %}>
-                                {{ supplier.name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
+
                 <div class="col-md-3">
                     <button type="submit" class="btn btn-secondary w-100">      <!--w-100：宽度 100%-->
                         <i class="fa fa-search"></i>搜索
@@ -58,7 +49,6 @@
                             <th>商品名称</th>
                             <th>单位</th>
                             <th>分类</th>
-                            <th>供应商</th>
                             <th>预警阈值</th>
                             <th>操作</th>
                         </tr>
@@ -70,7 +60,6 @@
                                 <td>{{ product.name }}</td>
                                 <td>{{ product.unit or '-' }}</td>
                                 <td>{{ product.category.name if product.category else '-' }}</td>
-                                <td>{{ product.supplier.name if product.supplier else '-' }}</td>
                                 <td>{{ product.warning_stock }}</td>
                                 <td>
                                     <a href="{{ url_for('product.edit', id=product.id) }}" class="btn btn-sm btn-outline-primary">
@@ -84,7 +73,7 @@
                             </tr>
                         {% else %}      <!--当 products 列表为空时执行-->
                             <tr>
-                                <td colspan="7" class="text-center">暂无数据</td>   <!--合并七列-->
+                                <td colspan="6" class="text-center">暂无数据</td>   <!--合并六列-->
                             </tr>
                         {% endfor %}    <!--结束商品列表的循环-->
                     </tbody>
@@ -96,9 +85,9 @@
                 <ul class="pagination justify-content-center">      <!--justify-content-center：使分页居中显示-->
                     {% if pagination.has_prev %}      <!--检查分页对象 pagination 是否有上一页-->
                         <li class="page-item">      <!--分页项容器-->
-                            <a class="page-link" href="{{ url_for('product.list', page=pagination.prev_num, keyword=keyword, category_id=category_id, supplier_id=supplier_id) }}">
+                            <a class="page-link" href="{{ url_for('product.list', page=pagination.prev_num, keyword=keyword, category_id=category_id) }}">
                                 上一页
-                            </a>    <!--生成分页链接，保留上一页的页码，搜索关键词，分类筛选，供应商筛选-->
+                            </a>    <!--生成分页链接，保留上一页的页码，搜索关键词，分类筛选-->
                         </li>
                     {% else %}
                     <li class="page-item disabled">
@@ -112,7 +101,7 @@
                                 <li class="page-item active"><span class="page-link">{{ page }}</span></li>  
                             {% else %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('product.list', page=page, keyword=keyword, category_id=category_id, supplier_id=supplier_id) }}">
+                                    <a class="page-link" href="{{ url_for('product.list', page=page, keyword=keyword, category_id=category_id) }}">
                                         {{ page }}
                                     </a>
                                 </li>
@@ -124,7 +113,7 @@
                     
                     {% if pagination.has_next %}    <!--检查分页对象是否有下一页-->
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('product.list', page=pagination.next_num, keyword=keyword, category_id=category_id, supplier_id=supplier_id)}}">
+                            <a class="page-link" href="{{ url_for('product.list', page=pagination.next_num, keyword=keyword, category_id=category_id)}}">
                                 下一页
                             </a>
                         </li>
