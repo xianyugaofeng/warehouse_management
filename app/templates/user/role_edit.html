@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}编辑角色{% endblock %}
+{% block content %}
+    <h2>编辑角色</h2>
+    <form method="post">
+        <div class="form-group mb-3">
+            <label for="name">角色名称</label>
+            <input type="text" class="form-control" id="name" name="name" value="{{ role.name }}" required>
+        </div>
+        <div class="form-group mb-3">
+            <label for="desc">描述</label>
+            <input type="text" class="form-control" id="desc" name="desc" value="{{ role.desc }}">
+        </div>
+        <div class="form-group mb-3">
+            <label>权限</label>
+            <div class="form-check">
+                {% for perm_name, perm_desc in permissions.items() %}
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="perm{{ loop.index }}" name="permissions" value="{{ perm_name }}" {% if perm_name in role_perms %}checked{% endif %}>
+                    <label class="form-check-label" for="perm{{ loop.index }}">{{ perm_desc }}</label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">保存</button>
+        <a href="{{ url_for('user.role_list') }}" class="btn btn-secondary">取消</a>
+    </form>
+{% endblock %}

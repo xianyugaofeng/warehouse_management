@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}角色管理{% endblock %}
+{% block content %}
+    <h2>角色管理</h2>
+    <div class="mb-3">
+        <a href="{{ url_for('user.role_add') }}" class="btn btn-primary">添加角色</a>
+        <a href="{{ url_for('user.list') }}" class="btn btn-secondary">用户管理</a>
+    </div>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>角色名称</th>
+                <th>描述</th>
+                <th>权限</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for role in roles %}
+            <tr>
+                <td>{{ role.id }}</td>
+                <td>{{ role.name }}</td>
+                <td>{{ role.desc }}</td>
+                <td>
+                    {% for perm in role.permissions %}
+                    <span class="badge bg-primary text-white px-2 py-1 rounded-full text-sm mb-1 d-inline-block">
+                        {{ perm.desc or perm.name }}
+                    </span>
+                    {% endfor %}
+                </td>
+                <td>
+                    <a href="{{ url_for('user.role_edit', role_id=role.id) }}" class="btn btn-sm btn-warning">编辑</a>
+                    <a href="{{ url_for('user.role_delete', role_id=role.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('确定删除吗？')">删除</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

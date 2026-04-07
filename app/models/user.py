@@ -9,7 +9,9 @@ PERMISSIONS = {
     'inbound_manage': '入库管理',
     'outbound_manage': '出库管理',
     'inventory_manage': '库存管理',
-    'report_view': '报表查看'
+    'report_view': '报表查看',
+    'supplier_manage': '供应商管理',
+    'customer_manage': '客户管理'
 }
 
 # 角色-权限 多对多关联表

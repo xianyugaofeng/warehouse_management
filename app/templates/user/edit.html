@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}编辑用户{% endblock %}
+{% block content %}
+    <h2>编辑用户</h2>
+    <form method="post">
+        <div class="form-group mb-3">
+            <label for="username">用户名</label>
+            <input type="text" class="form-control" id="username" value="{{ user.username }}" disabled>
+        </div>
+        <div class="form-group mb-3">
+            <label for="real_name">真实姓名</label>
+            <input type="text" class="form-control" id="real_name" name="real_name" value="{{ user.real_name }}">
+        </div>
+        <div class="form-group mb-3">
+            <label for="password">密码（留空不修改）</label>
+            <input type="password" class="form-control" id="password" name="password">
+        </div>
+        <div class="form-group mb-3">
+            <label for="phone">手机号</label>
+            <input type="text" class="form-control" id="phone" name="phone" value="{{ user.phone }}">
+        </div>
+        <div class="form-group mb-3">
+            <label for="email">邮箱</label>
+            <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}">
+        </div>
+        <div class="form-group mb-3">
+            <label for="role">角色</label>
+            <select class="form-control" id="role" name="role_id">
+                <option value="">请选择角色</option>
+                {% for role in roles %}
+                <option value="{{ role.id }}" {% if role.id == user_role_id %}selected{% endif %}>{{ role.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">保存</button>
+        <a href="{{ url_for('user.list') }}" class="btn btn-secondary">取消</a>
+    </form>
+{% endblock %}

@@ -182,7 +182,9 @@ def init_roles():
         for perm_name in permissions:
             permission = Permission.query.filter_by(name=perm_name).first()
             if not permission:
-                permission = Permission(name=perm_name)
+                from app.models.user import Permission as PermissionModel
+                perm_desc = PermissionModel.PERMISSIONS.get(perm_name, perm_name)
+                permission = Permission(name=perm_name, desc=perm_desc)
                 db.session.add(permission)
             role.permissions.append(permission)
     db.session.commit()
