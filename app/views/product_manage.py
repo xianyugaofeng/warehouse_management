@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, url_for, flash, redirect
+from flask import Blueprint, render_template, request, url_for, flash, redirect, jsonify
 from flask_login import login_required
 from app import db
 from app.models.product import Product, Category, Supplier, ProductParamKey, CategoryParam, ProductParamValue
@@ -69,16 +69,11 @@ def edit(id=0):
         # 获取商品的参数值
         for param in product.params:
             product_params[param.param_key_id] = param.value
-    elif id == 0:
-        # 新建商品，默认显示所有参数
-        all_params = ProductParamKey.query.all()
-        for param in all_params:
-            category_params.append({'param_key': param})
+    # 新建商品时，默认不显示参数，需要先选择分类
 
     if request.method == 'POST':
         code = request.form.get('code')
         name = request.form.get('name')
-        spec = request.form.get('spec')
         unit = request.form.get('unit')
         category_id = request.form.get('category_id')
         supplier_id = request.form.get('supplier_id')
@@ -100,7 +95,6 @@ def edit(id=0):
         # 创建或修改Product实例
         product.code = code
         product.name = name
-        product.spec = spec
         product.unit = unit
         product.category_id = category_id
         product.supplier_id = supplier_id
@@ -149,3 +143,23 @@ def delete(id):
     db.session.commit()
     flash('删除成功', 'success')
     return redirect(url_for('product.list'))
+
+# 获取分类参数
+@product_bp.route('/get_category_params')
+@permission_required('product_manage')
+@login_required
+def get_category_params():
+    category_id = request.args.get('category_id', type=int)
+    if not category_id:
+        return jsonify({'params': []})
+    
+    # 获取分类的参数
+    category_params = CategoryParam.query.filter_by(category_id=category_id).order_by(CategoryParam.sort_order).all()
+    params = []
+    for cp in category_params:
+        params.append({
+            'id': cp.param_key.id,
+            'name': cp.param_key.name
+        })
+    
+    return jsonify({'params': params})

@@ -7,7 +7,7 @@ from app.utils.auth import permission_required
 
 inventory_bp = Blueprint('inventory', __name__)
 
-# 库存列表
+# 库存列表（专门查看库存模型）
 @inventory_bp.route('/list')
 @permission_required('inventory_manage')
 @login_required
@@ -39,6 +39,48 @@ def list():
     categories = Category.query.all()
     locations = WarehouseLocation.query.filter_by(status=True).all()
 
+    return render_template('inventory/list.html',
+                           inventories=inventories,
+                           categories=categories,
+                           locations=locations,
+                           pagination=pagination,
+                           category_id=category_id,
+                           location_id=location_id,
+                           warning_only=warning_only,
+                           keyword=keyword
+    )
+
+# 库存明细（专门用于查询商品参数）
+@inventory_bp.route('/detail')
+@permission_required('inventory_manage')
+@login_required
+def detail():
+    keyword = request.args.get('keyword', '')
+    category_id = request.args.get('category_id', '')
+    location_id = request.args.get('location_id', '')
+    warning_only = request.args.get('warning_only', '') == '1'
+
+    query = Inventory.query.join(Product).join(WarehouseLocation)
+    if keyword:
+        query = query.filter(Product.name.ilike(f'%{keyword}%') |
+                             Product.code.ilike(f'%{keyword}%')
+        )
+    # 确保只按分类查询
+    if category_id:
+        query = query.filter(Product.category_id==category_id)
+    if location_id:
+        query = query.filter(Inventory.location_id==location_id)
+    if warning_only:
+        query = query.filter(Inventory.quantity <= Product.warning_stock)
+
+    page = request.args.get('page', 1, type=int)
+    pagination = query.order_by(Inventory.update_time.desc()).paginate(page=page, per_page=10)
+    inventories = pagination.items
+
+    # 下拉框数据
+    categories = Category.query.all()
+    locations = WarehouseLocation.query.filter_by(status=True).all()
+
     # 加载商品参数信息
     product_params = {}
     for inventory in inventories:
@@ -47,7 +89,7 @@ def list():
             params = ProductParamValue.query.filter_by(product_id=product_id).all()
             product_params[product_id] = {param.param_key.name: param.value for param in params}
 
-    return render_template('inventory/list.html',
+    return render_template('inventory/detail.html',
                            inventories=inventories,
                            categories=categories,
                            locations=locations,

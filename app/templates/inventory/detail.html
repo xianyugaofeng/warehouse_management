@@ -1,16 +1,13 @@
 {% extends "base.html" %}
-{% block title %}库存管理 - 仓库管理系统{% endblock %}
+{% block title %}库存明细 - 仓库管理系统{% endblock %}
 
 {% block content %}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <!--子元素水平排列 两端对齐 垂直居中-->
-        <h2>库存列表</h2>
+        <h2>库存明细查询</h2>
         <div>
-            <a href="{{ url_for('inventory.list', warning_only=1) }}" class="btn btn-sm {% if warning_only %}btn-danger{% else %}btn-outline-danger{% endif %}">
-                <i class="fa fa-exclamation-triangle"></i>仅看预警库存
-            </a>
-            <a href="{{ url_for('inventory.detail') }}" class="btn btn-sm btn-outline-primary ms-2">
-                <i class="fa fa-list-alt"></i>库存明细查询
+            <a href="{{ url_for('inventory.list') }}" class="btn btn-sm btn-outline-primary">
+                <i class="fa fa-list"></i>库存列表
             </a>
         </div>
     </div>
@@ -18,13 +15,13 @@
     <!--搜索表单-->
     <div class="card mb-4">
         <div class="card-body">
-            <form action="{{ url_for('inventory.list') }}" method="GET" class="row g-3">
+            <form action="{{ url_for('inventory.detail') }}" method="GET" class="row g-3">
                 <div class="col-md-3">
                     <input type="text" name="keyword" class="form-control" placeholder="商品名称/编码" value="{{ keyword }}">
                 </div>
                 <div class="col-md-2">
-                    <select name="category_id" class="form-select">
-                        <option value="">所有分类</option>
+                    <select name="category_id" class="form-select" required>
+                        <option value="">请选择分类</option>
                         {% for category in categories %}
                             <option value="{{ category.id }}" {% if category_id == category.id|string %}selected{% endif %}>
                                 {{ category.name }}
@@ -68,39 +65,31 @@
                         <tr>
                             <th>商品编码</th>
                             <th>商品名称</th>
-                            <th>库位</th>
-                            <th>批次号</th>
+                            <th>商品参数</th>
                             <th>库存数量</th>
-                            <th>预警阈值</th>
-                            <th>库存状态</th>
-                            <th>生产日期</th>
-                            <th>过期日期</th>
-                            <th>最后更新时间</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for inventory in inventories %}
-                            <tr {% if inventory.is_warning() %}class="table-danger"{% endif %}>
+                            <tr>
                                 <td>{{ inventory.product.code }}</td>
                                 <td>{{ inventory.product.name }}</td>
-                                <td>{{ inventory.location.code }} - {{ inventory.location.name }}</td>
-                                <td>{{ inventory.batch_no or '-'}}</td>
-                                <td>{{ inventory.quantity }}</td>
-                                <td>{{ inventory.product.warning_stock }}</td>
                                 <td>
-                                    {% if inventory.is_warning() %}
-                                        <span class="badge bg-danger">库存预警</span>
+                                    {% if product_params.get(inventory.product.id) %}
+                                        <ul class="list-unstyled mb-0">
+                                            {% for key, value in product_params[inventory.product.id].items() %}
+                                                <li><strong>{{ key }}:</strong> {{ value }}</li>
+                                            {% endfor %}
+                                        </ul>
                                     {% else %}
-                                        <span class="badge bg-success">库存正常</span>
+                                        -
                                     {% endif %}
                                 </td>
-                                <td>{{ inventory.production_date.strftime('%Y-%m-%d') if inventory.production_date else '-' }}</td>
-                                <td>{{ inventory.expire_date.strftime('%Y-%m-%d') if inventory.expire_date else '-' }}</td>
-                                <td>{{ inventory.update_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>{{ inventory.quantity }}</td>
                             </tr>
                         {% else %}
                             <tr>
-                                <td colspan="10" class="text-center">暂无库存数据</td>
+                                <td colspan="4" class="text-center">暂无库存数据</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -112,7 +101,7 @@
                 <ul class="pagination justify-content-center">
                     {% if pagination.has_prev %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('inventory.list', page=pagination.prev_num, keyword=keyword, category_id=category_id, location_id=location_id, warning_only=1 if warning_only else 0) }}">
+                            <a class="page-link" href="{{ url_for('inventory.detail', page=pagination.prev_num, keyword=keyword, category_id=category_id, location_id=location_id, warning_only=1 if warning_only else 0) }}">
                                 上一页
                             </a>
                         </li>
@@ -125,7 +114,7 @@
                                 <li class="page-item active"><span class="page-link">{{ page }}</span></li>
                             {% else %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('inventory.list', page=page, keyword=keyword, category_id=category_id, location_id=location_id, warning_only=1 if warning_only else 0) }}">
+                                    <a class="page-link" href="{{ url_for('inventory.detail', page=page, keyword=keyword, category_id=category_id, location_id=location_id, warning_only=1 if warning_only else 0) }}">
                                         {{ page }}
                                     </a>
                                 </li>
@@ -136,7 +125,7 @@
                     {% endfor %}
                     {% if pagination.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('inventory.list', page=pagination.next_num, keyword=keyword, category_id=category_id, location_id=location_id, warning_only=1 if warning_only else 0) }}">
+                            <a class="page-link" href="{{ url_for('inventory.detail', page=pagination.next_num, keyword=keyword, category_id=category_id, location_id=location_id, warning_only=1 if warning_only else 0) }}">
                                 下一页
                             </a>
                         </li>

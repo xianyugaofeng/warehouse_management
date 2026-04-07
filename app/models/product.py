@@ -106,7 +106,6 @@ class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(32), unique=True, nullable=False)   # 商品编码（唯一）
     name = db.Column(db.String(64), nullable=False)   # 商品名称
-    spec = db.Column(db.String(64))  # 规格型号
     unit = db.Column(db.String(16))  # 单位（个/箱/kg）
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))  # 关联分类
     supplier_id = db.Column(db.Integer, db.ForeignKey('suppliers.id'))   # 关联供应商
