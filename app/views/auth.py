@@ -1,6 +1,6 @@
 import pymysql
 from flask import Blueprint, request, url_for, redirect, flash, render_template
-from flask_login import login_user, logout_user, login_required
+from flask_login import login_user, logout_user, login_required, current_user
 from app import db
 from app.models.user import User
 from app.utils.helpers import generate_inbound_no
@@ -9,6 +9,10 @@ auth = Blueprint('auth', __name__)
 
 @auth.route('/login', methods=['GET', 'POST'])
 def login():           #  auth/login绑定auth.login视图函数
+    # 检查用户是否已登录
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    
     # 这里的代码只有用户访问/auth/login时才会执行
     if request.method == 'POST':
         username = request.form.get('username')         # 获取表单数据
@@ -37,6 +41,10 @@ def logout():
 
 @auth.route('/register', methods=['GET', 'POST'])
 def register():
+    # 检查用户是否已登录
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    
     # 仅管理员可访问
     if request.method == 'POST':
         username = request.form.get('username')
