@@ -2,24 +2,35 @@
 {% block title %}出库管理 - 仓库管理系统{% endblock %}
 
 {% block content %}
-    <div class="d-flex justify-content-between align-items-center mb-4">     <!--子元素水平排列 两端对齐 垂直居中-->
-        <h2>出库单列表</h2><!--使第一个元素贴近起点，最后一个元素贴近终点，中间元素间距相等-->
+    <div class="d-flex justify-content-between align-items-center mb-6">     <!--子元素水平排列 两端对齐 垂直居中-->
+        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+            <i class="fa fa-arrow-up mr-3 text-primary"></i>出库单列表
+        </h2><!--使第一个元素贴近起点，最后一个元素贴近终点，中间元素间距相等-->
         <div class="d-flex gap-2">
-            <a href="{{ url_for('outbound.add') }}" class="btn btn-primary">
-                <i class="fa fa-plus"></i>添加出库单
+            <a href="{{ url_for('outbound.add') }}" class="btn btn-primary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
+                <i class="fa fa-plus mr-2"></i>添加出库单
             </a>
         </div>
     </div>
 
     <!--搜索表单-->
-    <div class="card mb-4">
-        <div class="card-body">                                                               <!--页面刷新显示筛选结果-->
-            <form action="{{ url_for('outbound.list') }}" method="GET" class="row g-3">       <!--Bootstrap栅格行 水平和垂直间隙为3-->
+    <div class="card mb-6 shadow-sm rounded-xl overflow-hidden">
+        <div class="card-body p-6">                                                               <!--页面刷新显示筛选结果-->
+            <form action="{{ url_for('outbound.list') }}" method="GET" class="row g-4">       <!--Bootstrap栅格行 水平和垂直间隙为3-->
                 <div class="col-md-3">
-                    <input type="text" name="keyword" class="form-control" placeholder="出库单号" value="{{ keyword }}">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
+                            <i class="fa fa-file-text text-gray-400"></i>
+                        </span>
+                        <input type="text" name="keyword" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" placeholder="出库单号" value="{{ keyword }}">
+                    </div>
                 </div>
                 <div class="col-md-3">
-                        <select name="customer_id" class="form-select">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
+                            <i class="fa fa-users text-gray-400"></i>
+                        </span>
+                        <select name="customer_id" class="form-select rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300">
                             <option value="">所有客户</option>
                             {% for customer in customers %}
                                 <option value="{{ customer.id }}" {% if customer_id == customer.id|string %}selected{% endif %}>
@@ -28,18 +39,24 @@
                             {% endfor %}
                         </select>
                     </div>
+                </div>
                 <div class="col-md-3">      <!--HTML5 日期选择器-->
-                    <input type="date" name="start_date" class="form-control" placeholder="开始日期" value="{{ start_date }}">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
+                            <i class="fa fa-calendar text-gray-400"></i>
+                        </span>
+                        <input type="date" name="start_date" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" placeholder="开始日期" value="{{ start_date }}">
+                    </div>
                 </div>
                 <div class="col-md-3">
                     <div class="row g-2">       <!--内部嵌套一个栅格行,列间距为 0.5rem-->
                         <div class="col-6">
-                            <input type="date" name="end_date" class="form-control" placeholder="结束日期" value="{{ end_date }}">
+                            <input type="date" name="end_date" class="form-control rounded-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" placeholder="结束日期" value="{{ end_date }}">
                             <!--显示传入的结束日期值-->
                         </div>
                         <div class="col-6">
-                            <button type="submit" class="btn btn-secondary w-100">       <!--Bootstrap 次要按钮样式（灰色）-->
-                                <i class="fa fa-search"></i>搜索
+                            <button type="submit" class="btn btn-secondary w-100 rounded-lg hover:bg-gray-700 transform hover:-translate-y-1 transition-all duration-300">       <!--Bootstrap 次要按钮样式（灰色）-->
+                                <i class="fa fa-search mr-2"></i>搜索
                             </button>
                         </div>
                     </div>
@@ -49,50 +66,54 @@
     </div>          <!--所有搜索条件都会保留在表单中（通过 value 属性）-->
 
     <!--出库单表格-->
-    <div class="card">
-        <div class="card-body">
+    <div class="card shadow-sm rounded-xl overflow-hidden">
+        <div class="card-body p-0">
             <div class="table-responsive">          <!--使表格在小屏幕上可以水平滚动-->
                 <table class="table table-hover table-bordered">      <!--table-bordered：添加边框 table-hover：鼠标悬停时行高亮效果-->
-                    <thead class="table-light">
-                        <tr>
-                            <th>出库单号</th>       <!--不需要放入模态框表格中-->
-
-                            <th>客户</th>
-                            <th>联系电话</th>
-                            <th>出库日期</th>
-                            <th>出库总数量</th>      <!--不需要放入模态框表格中-->
-                            <th>操作员</th>
-                            <th>状态</th>
-                            <th>操作</th>         <!--不需要放入模态框表格中-->
+                    <thead class="bg-gray-50">
+                        <tr class="text-gray-700 border-b-2 border-gray-300">
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">出库单号</th>       <!--不需要放入模态框表格中-->
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">客户</th>
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">联系电话</th>
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">出库日期</th>
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">出库总数量</th>      <!--不需要放入模态框表格中-->
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">操作员</th>
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">状态</th>
+                            <th class="py-3 px-4 font-semibold text-center">操作</th>         <!--不需要放入模态框表格中-->
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="bg-white">
                         {% for order in orders %}          <!--遍历 orders 变量中的每个出库单对象-->
-                            <tr>
-                                <td>{{ order.order_no }}</td>
-                                <td>{{ order.customer.name if order.customer else '-' }}</td>
-                                <td>{{ order.receive_phone or '-' }}</td>
-                                <td>{{ order.outbound_date.strftime('%Y-%m-%d') }}</td>
-                                <td>{{ order.total_amount }}</td>
-                                <td>{{ order.operator.real_name or order.operator.username }}</td>
-                                <td>
+                            <tr class="transition-all duration-300 hover:bg-gray-50">
+                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 font-medium">{{ order.order_no }}</td>
+                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">{{ order.customer.name if order.customer else '-' }}</td>
+                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">{{ order.receive_phone or '-' }}</td>
+                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ order.outbound_date.strftime('%Y-%m-%d') }}</td>
+                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ order.total_amount }}</td>
+                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">{{ order.operator.real_name or order.operator.username }}</td>
+                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">
                                     {% if order.status == 'completed' %}
-                                        <span class="badge bg-success">已完成</span>
+                                        <span class="badge bg-success rounded-full px-3 py-1">已完成</span>
                                     {% elif order.status == 'draft' %}
-                                        <span class="badge bg-warning">草稿</span>
+                                        <span class="badge bg-warning rounded-full px-3 py-1">草稿</span>
                                     {% else %}
-                                        <span class="badge bg-danger">已取消</span>
+                                        <span class="badge bg-danger rounded-full px-3 py-1">已取消</span>
                                     {% endif %}
                                 </td>
-                                <td>
-                                    <a href="{{ url_for('outbound.detail', id=order.id) }}" class="btn btn-sm btn-outline-primary">
-                                        <i class="fa fa-eye"></i>详情
+                                <td class="py-3 px-4 border-b border-gray-200 text-center">
+                                    <a href="{{ url_for('outbound.detail', id=order.id) }}" class="btn btn-sm btn-outline-primary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
+                                        <i class="fa fa-eye mr-1"></i>详情
                                     </a>
                                 </td>
                             </tr>
                         {% else %}      <!--当orders列表为空时-->
                             <tr>
-                                <td colspan="10" class="text-center">暂无出库单数据</td>
+                                <td colspan="10" class="py-12 text-center text-gray-500 border border-gray-200">
+                                    <div class="flex flex-col items-center">
+                                        <i class="fa fa-file-text text-4xl mb-4 text-gray-300"></i>
+                                        <p>暂无出库单数据</p>
+                                    </div>
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>        <!--关闭表格体-->
@@ -100,46 +121,124 @@
             </div>
 
             <!--分页-->
-            <nav aria-label="Page navigation">      <!--导航项-->
-                <ul class="pagination justify-content-center">      <!--Bootstrap分页样式类-->
-                    {% if pagination.has_prev %}            <!--判断分页对象是否有上一页-->
-                        <li class="page-item">          <!--分页项容器-->
-                            <a class="page-link" href="{{ url_for('outbound.list', page=pagination.prev_num, keyword=keyword, customer_id=customer_id, start_date=start_date, end_date=end_date) }}">
-                                上一页
-                            </a>
-                        </li>
-                    {% else %}
-                        <li class="page-item disabled"><span class="page-link">上一页</span></li>
-                    {% endif %}
-                    <!--遍历分页对象生成的页码序列-->
-                    {% for page in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=3) %}
-                        {% if page %}       <!--检查当前遍历的page是否为有效页码-->
-                            {% if pagination.page == page %}        <!--检查当前遍历的页码是否是当前所在页-->
-                                <li class="page-item active"><span class="page-link">{{ page }}</span></li>
-                            {% else %}      <!--当前遍历的page不是当前所在页  创造可点击的链接,包含所有搜索参数-->
-                                <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('outbound.list', page=page, keyword=keyword, customer_id=customer_id, start_date=start_date, end_date=end_date) }}">
-                                        {{ page }}
+            <div class="p-4 border-t border-gray-200 bg-gray-50">
+                <div class="flex flex-wrap justify-between items-center gap-4">
+                    <p class="text-sm text-gray-600">
+                        显示 {{ pagination.page * pagination.per_page - pagination.per_page + 1 }} 到 {{ pagination.page * pagination.per_page if pagination.page * pagination.per_page < pagination.total else pagination.total }} 条，共 {{ pagination.total }} 条
+                    </p>
+                    <nav aria-label="Page navigation">      <!--导航项-->
+                        <ul class="pagination space-x-1">      <!--Bootstrap分页样式类-->
+                            {% if pagination.has_prev %}            <!--判断分页对象是否有上一页-->
+                                <li class="page-item">          <!--分页项容器-->
+                                    <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300" href="{{ url_for('outbound.list', page=pagination.prev_num, keyword=keyword, customer_id=customer_id, start_date=start_date, end_date=end_date) }}">
+                                        <i class="fa fa-chevron-left"></i>
                                     </a>
                                 </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link rounded-lg border-gray-300 bg-gray-100 text-gray-400">
+                                        <i class="fa fa-chevron-left"></i>
+                                    </span>
+                                </li>
                             {% endif %}
-                        {% else %}          <!--省略号，表示中间有页码被省略-->
-                            <li class="page-item disabled"><span class="page-link">...</span></li>
-                        {% endif %}
-                    {% endfor %}
-                    <!--判断分页对象是否有下一页-->
-                    {% if pagination.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="{{ url_for('outbound.list', page=pagination.next_num, keyword=keyword, customer_id=customer_id, start_date=start_date, end_date=end_date) }}">
-                                下一页
-                            </a>
-                        </li>
-                    {% else %}
-                        <li class="page-item disabled"><span class="page-link">下一页</span></li>
-                    {% endif %}
-                </ul>
-            </nav>
+                            <!--遍历分页对象生成的页码序列-->
+                            {% for page in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=3) %}
+                                {% if page %}       <!--检查当前遍历的page是否为有效页码-->
+                                    {% if pagination.page == page %}        <!--检查当前遍历的页码是否是当前所在页-->
+                                        <li class="page-item active">
+                                            <span class="page-link rounded-lg bg-primary border-primary text-white px-3 py-1">{{ page }}</span>
+                                        </li>
+                                    {% else %}      <!--当前遍历的page不是当前所在页  创造可点击的链接,包含所有搜索参数-->
+                                        <li class="page-item">
+                                            <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300 px-3 py-1" href="{{ url_for('outbound.list', page=page, keyword=keyword, customer_id=customer_id, start_date=start_date, end_date=end_date) }}">
+                                                {{ page }}
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                {% else %}          <!--省略号，表示中间有页码被省略-->
+                                    <li class="page-item disabled">
+                                        <span class="page-link rounded-lg border-gray-300 bg-gray-100 text-gray-400 px-3 py-1">...</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            <!--判断分页对象是否有下一页-->
+                            {% if pagination.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300" href="{{ url_for('outbound.list', page=pagination.next_num, keyword=keyword, customer_id=customer_id, start_date=start_date, end_date=end_date) }}">
+                                        <i class="fa fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link rounded-lg border-gray-300 bg-gray-100 text-gray-400">
+                                        <i class="fa fa-chevron-right"></i>
+                                    </span>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            </div>
         </div>
     </div>
+    
+    <style>
+        /* 自定义动画效果 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .card {
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        h2 {
+            animation: slideIn 0.4s ease-out;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .table-responsive {
+                font-size: 0.875rem;
+            }
+            
+            .table th,
+            .table td {
+                padding: 0.75rem;
+            }
+            
+            .btn {
+                font-size: 0.75rem;
+                padding: 0.25rem 0.5rem;
+            }
+            
+            .flex.justify-between {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .pagination {
+                justify-content: center;
+            }
+        }
+    </style>
 {% endblock %}
 

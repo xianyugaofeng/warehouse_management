@@ -2,72 +2,106 @@
 {% block title %}出库单详情 - 仓库管理系统{% endblock %}
 
 {% block content %}
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>出库单详情</h2>
-        <a href="{{ url_for('outbound.list') }}" class="btn btn-secondary">
-            <i class="fa fa-arrow-left"></i>返回列表
+    <div class="d-flex justify-content-between align-items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+            <i class="fa fa-file-text mr-3 text-primary"></i>出库单详情
+        </h2>
+        <a href="{{ url_for('outbound.list') }}" class="btn btn-secondary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
+            <i class="fa fa-arrow-left mr-2"></i>返回列表
         </a>
     </div>
 
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5>基本信息</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
+    <div class="card mb-6 shadow-sm rounded-xl overflow-hidden">
+        <div class="card-body p-6">
+            <h5 class="text-lg font-semibold text-gray-800 mb-4">基本信息</h5>
+            <div class="row g-4">
                 <div class="col-md-6">
-                    <p><strong>出库单号:</strong> {{ order.order_no }}</p>
-                    <p><strong>客户:</strong> {{ order.customer.name if order.customer else '-' }}</p>
-                    <p><strong>联系电话:</strong> {{ order.receive_phone or '-' }}</p>
-                    <p><strong>出库日期:</strong> {{ order.outbound_date.strftime('%Y-%m-%d') }}</p>
+                    <div class="space-y-3">
+                        <div class="flex items-start">
+                            <span class="font-semibold text-gray-700 w-32">出库单号:</span>
+                            <span class="text-gray-800 font-medium">{{ order.order_no }}</span>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="font-semibold text-gray-700 w-32">客户:</span>
+                            <span class="text-gray-800">{{ order.customer.name if order.customer else '-' }}</span>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="font-semibold text-gray-700 w-32">联系电话:</span>
+                            <span class="text-gray-800">{{ order.receive_phone or '-' }}</span>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="font-semibold text-gray-700 w-32">出库日期:</span>
+                            <span class="text-gray-800">{{ order.outbound_date.strftime('%Y-%m-%d') }}</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="col-md-6">
-                    <p><strong>出库总数量:</strong> {{ order.total_amount }}</p>
-                    <p><strong>操作员:</strong> {{ order.operator.real_name or order.operator.username }}</p>
-                    <p><strong>状态:</strong>
-                        {% if order.status == 'completed' %}
-                            <span class="badge bg-success">已完成</span>
-                        {% elif order.status == 'draft' %}
-                            <span class="badge bg-warning">草稿</span>
-                        {% else %}
-                            <span class="badge bg-danger">已取消</span>
-                        {% endif %}
-                    </p>
-                    <p><strong>创建时间:</strong> {{ order.create_time.strftime('%Y-%m-%d %H:%M:%S') }}</p>
-                    <p><strong>备注:</strong> {{ order.remark or '-' }}</p>
+                    <div class="space-y-3">
+                        <div class="flex items-start">
+                            <span class="font-semibold text-gray-700 w-32">出库总数量:</span>
+                            <span class="text-gray-800 font-medium">{{ order.total_amount }}</span>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="font-semibold text-gray-700 w-32">操作员:</span>
+                            <span class="text-gray-800">{{ order.operator.real_name or order.operator.username }}</span>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="font-semibold text-gray-700 w-32">状态:</span>
+                            <span>
+                                {% if order.status == 'completed' %}
+                                    <span class="badge bg-success rounded-full px-3 py-1">已完成</span>
+                                {% elif order.status == 'draft' %}
+                                    <span class="badge bg-warning rounded-full px-3 py-1">草稿</span>
+                                {% else %}
+                                    <span class="badge bg-danger rounded-full px-3 py-1">已取消</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="font-semibold text-gray-700 w-32">创建时间:</span>
+                            <span class="text-gray-800">{{ order.create_time.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="font-semibold text-gray-700 w-32">备注:</span>
+                            <span class="text-gray-800">{{ order.remark or '-' }}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-header">
-            <h5>出库明细</h5>
-        </div>
-        <div class="card-body">
+    <div class="card shadow-sm rounded-xl overflow-hidden">
+        <div class="card-body p-6">
+            <h5 class="text-lg font-semibold text-gray-800 mb-4">出库明细</h5>
             <div class="table-responsive">
                 <table class="table table-hover table-bordered">
-                    <thead class="table-light">
-                        <tr>
-                            <th>商品名称</th>
-                            <th>商品编码</th>
-                            <th>库位</th>
-                            <th>批次号</th>
-                            <th>数量</th>
+                    <thead class="bg-gray-50">
+                        <tr class="text-gray-700 border-b-2 border-gray-300">
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">商品名称</th>
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">商品编码</th>
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">库位</th>
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">批次号</th>
+                            <th class="py-3 px-4 font-semibold text-center">数量</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="bg-white">
                         {% for item in order.items %}
-                            <tr>
-                                <td>{{ item.product.name }}</td>
-                                <td>{{ item.product.code }}</td>
-                                <td>{{ item.location.code }}</td>
-                                <td>{{ item.batch_no or '-' }}</td>
-                                <td>{{ item.quantity }}</td>
+                            <tr class="transition-all duration-300 hover:bg-gray-50">
+                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 font-medium">{{ item.product.name }}</td>
+                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ item.product.code }}</td>
+                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">{{ item.location.code }}</td>
+                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ item.batch_no or '-' }}</td>
+                                <td class="py-3 px-4 border-b border-gray-200 text-center">{{ item.quantity }}</td>
                             </tr>
                         {% else %}
                             <tr>
-                                <td colspan="5" class="text-center">暂无明细</td>
+                                <td colspan="5" class="py-12 text-center text-gray-500 border border-gray-200">
+                                    <div class="flex flex-col items-center">
+                                        <i class="fa fa-list-alt text-4xl mb-4 text-gray-300"></i>
+                                        <p>暂无明细</p>
+                                    </div>
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -75,4 +109,62 @@
             </div>
         </div>
     </div>
+    
+    <style>
+        /* 自定义动画效果 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .card {
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        h2 {
+            animation: slideIn 0.4s ease-out;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .row.g-4 {
+                flex-direction: column;
+            }
+            
+            .col-md-6 {
+                width: 100%;
+            }
+            
+            .table-responsive {
+                font-size: 0.875rem;
+            }
+            
+            .table th,
+            .table td {
+                padding: 0.75rem;
+            }
+            
+            .btn {
+                font-size: 0.75rem;
+                padding: 0.25rem 0.5rem;
+            }
+        }
+    </style>
 {% endblock %}

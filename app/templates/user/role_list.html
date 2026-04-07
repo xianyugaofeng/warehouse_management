@@ -1,40 +1,114 @@
 {% extends "base.html" %}
-{% block title %}角色管理{% endblock %}
+{% block title %}角色管理 - 仓库管理系统{% endblock %}
 {% block content %}
-    <h2>角色管理</h2>
-    <div class="mb-3">
-        <a href="{{ url_for('user.role_add') }}" class="btn btn-primary">添加角色</a>
-        <a href="{{ url_for('user.list') }}" class="btn btn-secondary">用户管理</a>
+    <div class="d-flex justify-content-between align-items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+            <i class="fa fa-shield mr-3 text-primary"></i>角色管理
+        </h2>
+        <div class="flex space-x-2">
+            <a href="{{ url_for('user.role_add') }}" class="btn btn-primary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
+                <i class="fa fa-plus mr-2"></i>添加角色
+            </a>
+            <a href="{{ url_for('user.list') }}" class="btn btn-secondary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
+                <i class="fa fa-users mr-2"></i>用户管理
+            </a>
+        </div>
     </div>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>角色名称</th>
-                <th>描述</th>
-                <th>权限</th>
-                <th>操作</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for role in roles %}
-            <tr>
-                <td>{{ role.id }}</td>
-                <td>{{ role.name }}</td>
-                <td>{{ role.desc }}</td>
-                <td>
-                    {% for perm in role.permissions %}
-                    <span class="badge bg-primary text-white px-2 py-1 rounded-full text-sm mb-1 d-inline-block">
-                        {{ perm.desc or perm.name }}
-                    </span>
-                    {% endfor %}
-                </td>
-                <td>
-                    <a href="{{ url_for('user.role_edit', role_id=role.id) }}" class="btn btn-sm btn-warning">编辑</a>
-                    <a href="{{ url_for('user.role_delete', role_id=role.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('确定删除吗？')">删除</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+
+    <div class="card shadow-sm rounded-xl overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered">
+                    <thead class="bg-gray-50">
+                        <tr class="text-gray-700 border-b-2 border-gray-300">
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">ID</th>
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold">角色名称</th>
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold">描述</th>
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold">权限</th>
+                            <th class="py-3 px-4 font-semibold text-center">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white">
+                        {% for role in roles %}
+                        <tr class="transition-all duration-300 hover:bg-gray-50">
+                            <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ role.id }}</td>
+                            <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 font-medium">{{ role.name }}</td>
+                            <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">{{ role.desc }}</td>
+                            <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">
+                                {% for perm in role.permissions %}
+                                <span class="badge bg-primary text-white px-2 py-1 rounded-full text-sm mb-1 d-inline-block mr-1">
+                                    {{ perm.desc or perm.name }}
+                                </span>
+                                {% endfor %}
+                            </td>
+                            <td class="py-3 px-4 border-b border-gray-200 text-center">
+                                <a href="{{ url_for('user.role_edit', role_id=role.id) }}" class="btn btn-sm btn-warning shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg mr-2">
+                                    <i class="fa fa-edit mr-1"></i>编辑
+                                </a>
+                                <a href="{{ url_for('user.role_delete', role_id=role.id) }}" class="btn btn-sm btn-danger shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg" onclick="return confirm('确定删除吗？')">
+                                    <i class="fa fa-trash mr-1"></i>删除
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <style>
+        /* 自定义动画效果 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .card {
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        h2 {
+            animation: slideIn 0.4s ease-out;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .table-responsive {
+                font-size: 0.875rem;
+            }
+            
+            .table th,
+            .table td {
+                padding: 0.75rem;
+            }
+            
+            .btn {
+                font-size: 0.75rem;
+                padding: 0.25rem 0.5rem;
+            }
+            
+            .flex.justify-between {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+    </style>
 {% endblock %}

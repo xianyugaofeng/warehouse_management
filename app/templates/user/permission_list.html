@@ -2,9 +2,11 @@
 {% block title %}权限管理 - 仓库管理系统{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
+<div class="row mb-6">
     <div class="col">
-        <h2>权限管理</h2>
+        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+            <i class="fa fa-key mr-3 text-primary"></i>权限管理
+        </h2>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{{ url_for('user.list') }}">用户管理</a></li>
@@ -13,40 +15,45 @@
         </nav>
     </div>
     <div class="col text-end">
-        <a href="{{ url_for('user.permission_add') }}" class="btn btn-primary">
-            <i class="fa fa-plus"></i>添加权限
+        <a href="{{ url_for('user.permission_add') }}" class="btn btn-primary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
+            <i class="fa fa-plus mr-2"></i>添加权限
         </a>
     </div>
 </div>
 
-<div class="card shadow-sm">
-    <div class="card-body">
+<div class="card shadow-sm rounded-xl overflow-hidden">
+    <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover table-bordered">
-                <thead class="table-light">
-                    <tr>
-                        <th>权限名称</th>
-                        <th>权限描述</th>
-                        <th>操作</th>
+                <thead class="bg-gray-50">
+                    <tr class="text-gray-700 border-b-2 border-gray-300">
+                        <th class="py-3 px-4 border-r border-gray-200 font-semibold">权限名称</th>
+                        <th class="py-3 px-4 border-r border-gray-200 font-semibold">权限描述</th>
+                        <th class="py-3 px-4 font-semibold text-center">操作</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="bg-white">
                     {% for permission in permissions %}
-                        <tr>
-                            <td>{{ permission.name }}</td>
-                            <td>{{ permission.desc }}</td>
-                            <td>
-                                <a href="{{ url_for('user.permission_edit', perm_id=permission.id) }}" class="btn btn-sm btn-outline-primary">
-                                    <i class="fa fa-edit"></i>编辑
+                        <tr class="transition-all duration-300 hover:bg-gray-50">
+                            <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 font-medium">{{ permission.name }}</td>
+                            <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">{{ permission.desc }}</td>
+                            <td class="py-3 px-4 border-b border-gray-200 text-center">
+                                <a href="{{ url_for('user.permission_edit', perm_id=permission.id) }}" class="btn btn-sm btn-outline-primary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg mr-2">
+                                    <i class="fa fa-edit mr-1"></i>编辑
                                 </a>
-                                <a href="{{ url_for('user.permission_delete', perm_id=permission.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('确认删除?')">
-                                    <i class="fa fa-trash"></i>删除
+                                <a href="{{ url_for('user.permission_delete', perm_id=permission.id) }}" class="btn btn-sm btn-outline-danger shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg" onclick="return confirm('确认删除?')">
+                                    <i class="fa fa-trash mr-1"></i>删除
                                 </a>
                             </td>
                         </tr>
                     {% else %}
                         <tr>
-                            <td colspan="3" class="text-center text-muted">暂无权限数据</td>
+                            <td colspan="3" class="py-12 text-center text-gray-500 border border-gray-200">
+                                <div class="flex flex-col items-center">
+                                    <i class="fa fa-key text-4xl mb-4 text-gray-300"></i>
+                                    <p>暂无权限数据</p>
+                                </div>
+                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -54,4 +61,54 @@
         </div>
     </div>
 </div>
+    
+    <style>
+        /* 自定义动画效果 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .card {
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        h2 {
+            animation: slideIn 0.4s ease-out;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .table-responsive {
+                font-size: 0.875rem;
+            }
+            
+            .table th,
+            .table td {
+                padding: 0.75rem;
+            }
+            
+            .btn {
+                font-size: 0.75rem;
+                padding: 0.25rem 0.5rem;
+            }
+        }
+    </style>
 {% endblock %}

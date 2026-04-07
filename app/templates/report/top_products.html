@@ -16,11 +16,12 @@
 
         const top10Option = {
             title: {
-                text: '库存top10商品',
+                text: '库存Top10商品',
                 left: 'center',
                 textStyle: {
-                    fontSize: 14,
-                    fontWeight: 'bold'
+                    fontSize: 16,
+                    fontWeight: 'bold',
+                    color: '#333'
                 }
             },
             tooltip: {
@@ -30,12 +31,18 @@
                 },
                 formatter: function(params) {
                     return `${params[0].name}<br/>库存数量: ${params[0].value} 件`;
+                },
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                borderColor: '#ddd',
+                borderWidth: 1,
+                textStyle: {
+                    color: '#333'
                 }
             },
             grid: {
                 left: '5%',
                 right: '5%',
-                bottom: '5%',
+                bottom: '15%',
                 containLabel: true
             },
             xAxis: {
@@ -43,14 +50,30 @@
                 data: top10Names,
                 axisLabel: {
                     rotate: 45,
-                    fontSize: 10
+                    fontSize: 11
+                },
+                axisLine: {
+                    lineStyle: {
+                        color: '#ddd'
+                    }
                 }
             },
             yAxis: {
                 type: 'value',
                 name: '库存数量(件)',
                 nameTextStyle: {
-                    fontSize: 12
+                    fontSize: 12,
+                    color: '#666'
+                },
+                axisLine: {
+                    lineStyle: {
+                        color: '#ddd'
+                    }
+                },
+                splitLine: {
+                    lineStyle: {
+                        color: '#f0f0f0'
+                    }
                 }
             },
             series: [
@@ -65,13 +88,22 @@
                             const colorList = ['#007bff', '#6610f2', '#6f42c1', '#e83e8c', '#dc3545',
                                          '#fd7e14', '#ffc107', '#28a745', '#20c997', '#17a2b8'];
                             return colorList[params.dataIndex];
-                        }
+                        },
+                        borderRadius: [4, 4, 0, 0]
                     },
                     label: {
                         show: true,
                         //将标签放置在柱子的顶部外侧
                         position: 'top',
-                        fontSize: 10
+                        fontSize: 11,
+                        color: '#666'
+                    },
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.2)'
+                        }
                     }
                 }
             ]
@@ -87,9 +119,11 @@
 {% endblock %}
 
 {% block content %}
-<div class="row mb-4">
+<div class="row mb-6">
     <div class="col">
-        <h2>库存Top10商品</h2>
+        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+            <i class="fa fa-bar-chart mr-3 text-primary"></i>库存Top10商品
+        </h2>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item active" aria-current="page">库存分析</li>
@@ -101,45 +135,50 @@
 <!--库存Top10商品卡片-->
 <div class="row">
     <div class="col-12">
-        <div class="card shadow-sm">
+        <div class="card shadow-sm rounded-xl overflow-hidden">
             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">库存Top10商品</h5>
-                <span class="badge bg-light text-primary">实时统计</span>
+                <h5 class="mb-0 font-semibold">库存Top10商品</h5>
+                <span class="badge bg-light text-primary rounded-full px-3 py-1">实时统计</span>
             </div>
-            <div class="card-body">
+            <div class="card-body p-6">
                 <!--Top10商品图表-->
-                <div id="top10Chart" style="width: 100%; height: 400px; margin-bottom: 30px;"></div>
+                <div id="top10Chart" style="width: 100%; height: 450px; margin-bottom: 30px;"></div>
 
                 <!--Top10商品详情表格-->
                 <div class="table-responsive">
                     <table class="table table-hover table-bordered">
                         <!--Bootstrap 的悬停效果、边框和紧凑样式-->
-                        <thead class="table-light">
-                            <tr>
-                                <th width="10%">排名</th>
-                                <th width="30%">商品名称</th>
-                                <th width="20%">商品编码</th>
-                                <th width="20%">库存总量(件)</th>
-                                <th width="20%">占总库存占比</th>
+                        <thead class="bg-gray-50">
+                            <tr class="text-gray-700 border-b-2 border-gray-300">
+                                <th width="10%" class="py-3 px-4 border-r border-gray-200 font-semibold text-center">排名</th>
+                                <th width="30%" class="py-3 px-4 border-r border-gray-200 font-semibold">商品名称</th>
+                                <th width="20%" class="py-3 px-4 border-r border-gray-200 font-semibold text-center">商品编码</th>
+                                <th width="20%" class="py-3 px-4 border-r border-gray-200 font-semibold text-center">库存总量(件)</th>
+                                <th width="20%" class="py-3 px-4 font-semibold text-center">占总库存占比</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody class="bg-white">
                             {% if top_products %}
                                 {% set total_stock = top_products|sum(attribute='total_quantity')|float %}
                                 <!--通过 top_products 列表（后端传入）计算所有商品的总库存 total_stock（使用 sum 过滤器）-->
                                 {% for item in top_products %}
                                     <!--使用 loop.index 从1开始生成排名，遍历每个商品，显示名称、编码、库存量并计算该商品库存占总库存的百分比（保留两位小数）-->
-                                    <tr>
-                                        <td>{{ loop.index }}</td>
-                                        <td>{{ item.name }}</td>
-                                        <td>{{ item.code }}</td>
-                                        <td>{{ item.total_quantity }}</td>
-                                        <td>{{ "%.2f%%"|format((item.total_quantity|float / total_stock|float) * 100) }}</td>
+                                    <tr class="transition-all duration-300 hover:bg-gray-50">
+                                        <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center font-medium">{{ loop.index }}</td>
+                                        <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">{{ item.name }}</td>
+                                        <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ item.code }}</td>
+                                        <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ item.total_quantity }}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200 text-center">{{ "%.2f%%"|format((item.total_quantity|float / total_stock|float) * 100) }}</td>
                                     </tr>
                                 {% endfor %}
                             {% else %}
-                                <tr>        <!--text-muted一种文本颜色-->
-                                    <td colspan="5" class="text-center text-muted">暂无库存数据，请先录入商品与库存信息</td>
+                                <tr>
+                                    <td colspan="5" class="py-12 text-center text-gray-500 border border-gray-200">
+                                        <div class="flex flex-col items-center">
+                                            <i class="fa fa-bar-chart text-4xl mb-4 text-gray-300"></i>
+                                            <p>暂无库存数据，请先录入商品与库存信息</p>
+                                        </div>
+                                    </td>
                                 </tr>
                             {% endif %}
                         </tbody>
@@ -149,4 +188,53 @@
         </div>
     </div>
 </div>
+    
+    <style>
+        /* 自定义动画效果 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .card {
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        h2 {
+            animation: slideIn 0.4s ease-out;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .table-responsive {
+                font-size: 0.875rem;
+            }
+            
+            .table th,
+            .table td {
+                padding: 0.75rem;
+            }
+            
+            #top10Chart {
+                height: 350px !important;
+            }
+        }
+    </style>
 {% endblock %}
