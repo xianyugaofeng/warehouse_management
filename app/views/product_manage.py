@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, url_for, flash, redirect
 from flask_login import login_required
 from app import db
-from app.models.product import Product, Category, Supplier
+from app.models.product import Product, Category, Supplier, ProductParamKey, CategoryParam, ProductParamValue
 from app.utils.auth import permission_required
 
 product_bp = Blueprint('product', __name__)
@@ -60,6 +60,21 @@ def edit(id=0):
     categories = Category.query.all()
     suppliers = Supplier.query.all()
 
+    # 加载商品参数
+    category_params = []
+    product_params = {}
+    if product.category_id:
+        # 获取当前分类的参数
+        category_params = CategoryParam.query.filter_by(category_id=product.category_id).order_by(CategoryParam.sort_order).all()
+        # 获取商品的参数值
+        for param in product.params:
+            product_params[param.param_key_id] = param.value
+    elif id == 0:
+        # 新建商品，默认显示所有参数
+        all_params = ProductParamKey.query.all()
+        for param in all_params:
+            category_params.append({'param_key': param})
+
     if request.method == 'POST':
         code = request.form.get('code')
         name = request.form.get('name')
@@ -77,7 +92,9 @@ def edit(id=0):
             return render_template('product/edit.html',
                                    product=product,
                                    categories=categories,
-                                   suppliers=suppliers
+                                   suppliers=suppliers,
+                                   category_params=category_params,
+                                   product_params=product_params
             )
 
         # 创建或修改Product实例
@@ -92,6 +109,24 @@ def edit(id=0):
 
         if not id:     # 如果id不存在则创建一个新的Product实例
             db.session.add(product)
+            db.session.flush()  # 刷新以获取product.id
+
+        # 保存商品参数
+        # 删除旧参数
+        ProductParamValue.query.filter_by(product_id=product.id).delete()
+        # 添加新参数
+        if category_id:
+            category_params = CategoryParam.query.filter_by(category_id=category_id).all()
+            for category_param in category_params:
+                param_value = request.form.get(f'param_{category_param.param_key_id}')
+                if param_value:
+                    new_param = ProductParamValue(
+                        product_id=product.id,
+                        param_key_id=category_param.param_key_id,
+                        value=param_value
+                    )
+                    db.session.add(new_param)
+
         db.session.commit()
 
         flash('保存成功', 'success')
@@ -100,7 +135,9 @@ def edit(id=0):
     return render_template('product/edit.html',
                            product=product,
                            categories=categories,
-                           suppliers=suppliers
+                           suppliers=suppliers,
+                           category_params=category_params,
+                           product_params=product_params
     )
 
 @product_bp.route('/delete/<int:id>')

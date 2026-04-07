@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request
 from flask_login import login_required
 from app.models.inventory import Inventory, WarehouseLocation
-from app.models.product import Product, Category
+from app.models.product import Product, Category, ProductParamValue
 from app.utils.auth import permission_required
 
 
@@ -39,6 +39,14 @@ def list():
     categories = Category.query.all()
     locations = WarehouseLocation.query.filter_by(status=True).all()
 
+    # 加载商品参数信息
+    product_params = {}
+    for inventory in inventories:
+        product_id = inventory.product.id
+        if product_id not in product_params:
+            params = ProductParamValue.query.filter_by(product_id=product_id).all()
+            product_params[product_id] = {param.param_key.name: param.value for param in params}
+
     return render_template('inventory/list.html',
                            inventories=inventories,
                            categories=categories,
@@ -47,6 +55,7 @@ def list():
                            category_id=category_id,
                            location_id=location_id,
                            warning_only=warning_only,
-                           keyword=keyword
+                           keyword=keyword,
+                           product_params=product_params
     )
 

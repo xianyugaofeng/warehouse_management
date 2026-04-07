@@ -56,7 +56,6 @@
                         <tr>
                             <th>商品编码</th>
                             <th>商品名称</th>
-                            <th>规格型号</th>
                             <th>单位</th>
                             <th>分类</th>
                             <th>供应商</th>
@@ -69,7 +68,6 @@
                             <tr>
                                 <td>{{ product.code }}</td>
                                 <td>{{ product.name }}</td>
-                                <td>{{ product.spec or '-' }}</td>
                                 <td>{{ product.unit or '-' }}</td>
                                 <td>{{ product.category.name if product.category else '-' }}</td>
                                 <td>{{ product.supplier.name if product.supplier else '-' }}</td>
@@ -86,7 +84,7 @@
                             </tr>
                         {% else %}      <!--当 products 列表为空时执行-->
                             <tr>
-                                <td colspan="8" class="text-center">暂无数据</td>   <!--合并八列-->
+                                <td colspan="7" class="text-center">暂无数据</td>   <!--合并七列-->
                             </tr>
                         {% endfor %}    <!--结束商品列表的循环-->
                     </tbody>

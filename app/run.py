@@ -1,6 +1,6 @@
 from app import create_app, db
 from app.models import User, Role, Permission
-from app.models import Product, Category, Supplier, Customer
+from app.models import Product, Category, Supplier, Customer, ProductParamKey, CategoryParam, ProductParamValue
 from app.models import Inventory, WarehouseLocation
 from app.models import InboundOrder, OutboundOrder
 

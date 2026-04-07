@@ -46,6 +46,48 @@
                             <input type="text" class="form-control" id="warning_stock" name="warning_stock" value="{{ product.warning_stock or '' }}" placeholder="默认10">
                         </div>
                     </div>
+                    
+                    <!-- 商品参数 -->
+                    <div class="mb-3">
+                        <h4>商品参数</h4>
+                        <div id="param-container">
+                            {% if category_params %}
+                                {% for category_param in category_params %}
+                                    <div class="row mb-2">
+                                        <div class="col-md-4">
+                                            <label class="form-label">{{ category_param.param_key.name }}</label>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <input type="text" class="form-control" name="param_{{ category_param.param_key.id }}" value="{{ product_params.get(category_param.param_key.id, '') }}" placeholder="请输入{{ category_param.param_key.name }}">
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted">请先选择商品分类</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- 商品参数 -->
+                    <div class="mb-3">
+                        <h4>商品参数</h4>
+                        <div id="param-container">
+                            {% if category_params %}
+                                {% for category_param in category_params %}
+                                    <div class="row mb-2">
+                                        <div class="col-md-4">
+                                            <label class="form-label">{{ category_param.param_key.name }}</label>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <input type="text" class="form-control" name="param_{{ category_param.param_key.id }}" value="{{ product_params.get(category_param.param_key.id, '') }}" placeholder="请输入{{ category_param.param_key.name }}">
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted">请先选择商品分类</p>
+                            {% endif %}
+                        </div>
+                    </div>
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="category_id" class="form-label">商品分类</label>

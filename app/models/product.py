@@ -16,6 +16,60 @@ class Category(db.Model):    # 产品分类
         return f'<Category {self.name}>'
 
 
+class ProductParamKey(db.Model):
+    """商品参数键"""
+    __tablename__ = 'product_param_keys'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(32), unique=True, nullable=False)  # 参数名称
+    desc = db.Column(db.String(256))  # 参数描述
+    create_time = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<ProductParamKey {self.name}>'
+
+
+class CategoryParam(db.Model):
+    """分类参数关联"""
+    __tablename__ = 'category_params'
+    id = db.Column(db.Integer, primary_key=True)
+    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
+    param_key_id = db.Column(db.Integer, db.ForeignKey('product_param_keys.id'), nullable=False)
+    sort_order = db.Column(db.Integer, default=0)  # 排序顺序
+
+    # 关联关系
+    category = db.relationship('Category', backref=db.backref('params', lazy='dynamic'))
+    param_key = db.relationship('ProductParamKey', backref=db.backref('categories', lazy='dynamic'))
+
+    # 联合唯一约束
+    __table_args__ = (
+        db.UniqueConstraint('category_id', 'param_key_id', name='_category_param_uc'),
+    )
+
+    def __repr__(self):
+        return f'<CategoryParam {self.category.name} - {self.param_key.name}>'
+
+
+class ProductParamValue(db.Model):
+    """商品参数值"""
+    __tablename__ = 'product_param_values'
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
+    param_key_id = db.Column(db.Integer, db.ForeignKey('product_param_keys.id'), nullable=False)
+    value = db.Column(db.String(128), nullable=False)  # 参数值
+
+    # 关联关系
+    product = db.relationship('Product', backref=db.backref('params', lazy='dynamic'))
+    param_key = db.relationship('ProductParamKey', backref=db.backref('values', lazy='dynamic'))
+
+    # 联合唯一约束
+    __table_args__ = (
+        db.UniqueConstraint('product_id', 'param_key_id', name='_product_param_uc'),
+    )
+
+    def __repr__(self):
+        return f'<ProductParamValue {self.product.name} - {self.param_key.name}: {self.value}>'
+
+
 class Supplier(db.Model):
     __tablename__ = 'suppliers'
     id = db.Column(db.Integer, primary_key=True)

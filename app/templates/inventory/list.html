@@ -66,6 +66,7 @@
                             <th>商品编码</th>
                             <th>商品名称</th>
                             <th>规格</th>
+                            <th>商品参数</th>
                             <th>库位</th>
                             <th>批次号</th>
                             <th>库存数量</th>
@@ -82,6 +83,17 @@
                                 <td>{{ inventory.product.code }}</td>
                                 <td>{{ inventory.product.name }}</td>
                                 <td>{{ inventory.product.spec or '-' }}</td>
+                                <td>
+                                    {% if product_params.get(inventory.product.id) %}
+                                        <ul class="list-unstyled mb-0">
+                                            {% for key, value in product_params[inventory.product.id].items() %}
+                                                <li><strong>{{ key }}:</strong> {{ value }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
                                 <td>{{ inventory.location.code }} - {{ inventory.location.name }}</td>
                                 <td>{{ inventory.batch_no or '-'}}</td>
                                 <td>{{ inventory.quantity }}</td>
@@ -99,7 +111,7 @@
                             </tr>
                         {% else %}
                             <tr>
-                                <td colspan="11" class="text-center">暂无库存数据</td>
+                                <td colspan="12" class="text-center">暂无库存数据</td>
                             </tr>
                         {% endfor %}
                     </tbody>
