@@ -46,11 +46,11 @@ def create_app(config_name='default'):
 
     # 注册根路由
     @app.route('/')
-    def index():
+    def root():
         return redirect(url_for('auth.login'))
 
     # 注册index网页
     @app.route('/index')
-    def next_page():
+    def index():
         return render_template('base.html')
     return app

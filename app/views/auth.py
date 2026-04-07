@@ -21,8 +21,7 @@ def login():           #  auth/login绑定auth.login视图函数
             login_user(user,remember=remember)
             next_page = request.args.get('next')       # 获取next的参数值 /login?next=
             # 跳转到next参数指定的页面，如果没有则跳转到默认页面
-            return redirect(next_page or url_for('next_page'))    # next_page视图函数对应默认页面
-            """next_page端点函数没有定义"""
+            return redirect(next_page or url_for('index'))    # index视图函数对应默认页面
         else:
             flash('用户名或密码错误,或账号未激活', 'danger' )
 
