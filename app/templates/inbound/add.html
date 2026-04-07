@@ -9,17 +9,14 @@
         // 在DOM结构加载完成后立即执行代码的方法,不必等待图片,视频等资源完全加载
         $(document).ready(function() {
             //动态添加入库明细行
-            let rowIndex = 0;     //声明一个变量rowIndex记录当前行索引
-            $("#addItemBtn").click(function() {     //为ID为addItemBtn的元素绑定点击事件
-                //click()方法触发click事件
-                rowIndex++;             //每次点击添加按钮,行索引加1,确保每一行有唯一的ID
+            let rowIndex = 0;
+            $("#addItemBtn").click(function() {
+                rowIndex++;
                 const newRow = `
-                    <tr id="itemRow${rowIndex}">        //使用模板字符串(反引号)构建一个表格行的HTML
-                        //在表单中提交数组
-                        <td>    //Bootstrap样式 + 自定义类
+                    <tr id="itemRow${rowIndex}">
+                        <td>
                             <select class="form-select product-select" name="product_id[]" required>
-                                //一个选择商品的下拉框，使用Jinja2循环填充商品数据
-                                <option value="">请选择商品<option>
+                                <option value="">请选择商品</option>
                                 {% for product in products %}
                                     <option value="{{ product.id }}">
                                         {{ product.name }} ({{ product.code }})
@@ -29,8 +26,7 @@
                         </td>
                         <td>
                             <select class="form-select" name="location_id[]" required>
-                                //一个选择库位的下拉框，使用Jinja2循环填充库位数据
-                                <option value="">请选择库位<option>
+                                <option value="">请选择库位</option>
                                 {% for location in locations %}
                                     <option value="{{ location.id }}">
                                         {{ location.code }} - {{ location.name }}
@@ -39,14 +35,11 @@
                             </select>
                         </td>
                         <td>
-                            //批次号输入框(选填)
                             <input type="text" class="form-control" name="batch_no[]" placeholder="批次号(选填)">
                         </td>
                         <td>
-                            //数量输入框(必填，最小值为1)  Bootstrap样式 + 自定义类
                             <input type="number" class="form-control quantity-input" name="quantity[]" min="1" required placeholder="数量">
                         </td>
-                        //生产日期和过期日期的日期输入框
                         <td>
                             <input type="date" class="form-control" name="production_date[]">
                         </td>
@@ -54,9 +47,6 @@
                             <input type="date" class="form-control" name="expire_date[]">
                         </td>
                         <td>
-                            //一个删除按钮,按钮上有一个垃圾桶图标,并设置data-row属性为当前行索引,以便于删除时识别
-                            //remove-item:自定义类 用于JavaScript选择器识别删除按钮
-                            //data-row:自定义属性名,表示行索引标识 "${rowIndex}":JavaScript模板字符串语法,动态插入行索引值
                             <button type="button" class="btn btn-sm btn-danger remove-item" data-row="${rowIndex}">
                                 <i class="fa fa-trash"></i>
                             </button>
@@ -127,10 +117,7 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="related_order" class="form-label">关联采购单</label>
-                        <input type="text" class="form-control" id="related_order" name="related_order" placeholder="输入采购单号(选填)">
-                    </div>
+
                     <!--Bootstrap 栅格系统的自动换行功能-->
                     <div class="col-md-6 mb-3">
                         <label for="inbound_date" class="form-label">入库日期<span class="text-danger">*</span></label>

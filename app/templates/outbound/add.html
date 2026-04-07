@@ -99,10 +99,7 @@
             <form method="POST" action="{{ url_for('outbound.add') }}">
                 <!--出库单基本信息-->
                 <div class="row mb-4">          <!--Bootstrap栅格行 下边距1.5em-->
-                    <div class="col-md-6 mb-3">
-                        <label for="related_order" class="form-label">关联销售单</label>
-                        <input type="text" id="related_order" class="form-control" name="related_order" placeholder="输入销售单号(选填)">
-                    </div>
+
                     <div class="col-md-6 mb-3">
                         <label for="receiver" class="form-label">领用人<span class="text-danger">*</span></label>
                         <input type="text" id="receiver" class="form-control" name="receiver" required placeholder="请输入领用人姓名">

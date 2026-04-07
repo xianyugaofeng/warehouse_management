@@ -23,9 +23,7 @@ def list():
 
     query = OutboundOrder.query
     if keyword:
-        query = query.filter(OutboundOrder.order_no.ilike(f'%{keyword}%') |
-                             OutboundOrder.related_order.ilike(f'%{keyword}%')
-        )
+        query = query.filter(OutboundOrder.order_no.ilike(f'%{keyword}%'))
     if receiver:
         query = query.filter(OutboundOrder.receiver.ilike(f'%{receiver}%'))
     if start_date:
@@ -56,7 +54,6 @@ def add():
 
     if request.method == 'POST':
         # 接收表单数据
-        related_order = request.form.get('related_order')
         receiver = request.form.get('receiver')
         receive_phone = request.form.get('receive_phone')
         outbound_date = request.form.get('outbound_date', datetime.now().strftime('%Y-%m-%d'))
@@ -90,7 +87,6 @@ def add():
         total_amount = sum(int(qty) for qty in quantities if qty.isdigit())
         outbound_order = OutboundOrder(
             order_no=order_no,
-            related_order=related_order,
             receiver=receiver,
             operator_id=current_user.id,
             receive_phone=receive_phone,
@@ -137,5 +133,63 @@ def add():
                            products=products,
                            locations=locations,
                            now=datetime.now()
+    )
+
+
+# 出库明细查询
+@outbound_bp.route('/items')
+@permission_required('outbound_manage')
+@login_required
+def items():
+    # 接收查询参数
+    keyword = request.args.get('keyword', '')
+    product_id = request.args.get('product_id', '')
+    location_id = request.args.get('location_id', '')
+    start_date = request.args.get('start_date', '')
+    end_date = request.args.get('end_date', '')
+
+    # 构建查询
+    query = OutboundItem.query.join(OutboundOrder).join(Product).join(WarehouseLocation)
+    
+    # 应用过滤条件
+    if keyword:
+        query = query.filter(
+            Product.name.ilike(f'%{keyword}%') |
+            Product.code.ilike(f'%{keyword}%') |
+            OutboundOrder.order_no.ilike(f'%{keyword}%')
+        )
+    
+    if product_id:
+        query = query.filter(OutboundItem.product_id == product_id)
+    
+    if location_id:
+        query = query.filter(OutboundItem.location_id == location_id)
+    
+    if start_date:
+        query = query.filter(OutboundOrder.outbound_date >= start_date)
+    
+    if end_date:
+        query = query.filter(OutboundOrder.outbound_date <= end_date)
+
+    # 分页
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    pagination = query.order_by(OutboundItem.id.desc()).paginate(page=page, per_page=per_page)
+    items = pagination.items
+
+    # 获取所有商品和库位用于筛选
+    products = Product.query.all()
+    locations = WarehouseLocation.query.filter_by(status=True).all()
+
+    return render_template('outbound/items.html',
+                           items=items,
+                           pagination=pagination,
+                           keyword=keyword,
+                           product_id=product_id,
+                           location_id=location_id,
+                           start_date=start_date,
+                           end_date=end_date,
+                           products=products,
+                           locations=locations
     )
 

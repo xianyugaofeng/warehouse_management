@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}出库明细查询 - 仓库管理系统{% endblock %}
+
+{% block content %}
+    <div class="row mb-4">
+        <div class="col">
+            <h2>出库明细查询</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('outbound.list') }}">出库管理</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">出库明细查询</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body p-4">
+            <form method="GET" action="{{ url_for('outbound.items') }}" class="row g-3">
+                <div class="col-md-3">
+                    <label for="keyword" class="form-label">关键词</label>
+                    <input type="text" class="form-control" id="keyword" name="keyword" value="{{ keyword }}" placeholder="商品名称/编码/出库单号">
+                </div>
+                <div class="col-md-3">
+                    <label for="product_id" class="form-label">商品</label>
+                    <select class="form-select" id="product_id" name="product_id">
+                        <option value="">全部商品</option>
+                        {% for product in products %}
+                            <option value="{{ product.id }}" {% if product_id == product.id|string %}selected{% endif %}>
+                                {{ product.name }} ({{ product.code }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="location_id" class="form-label">库位</label>
+                    <select class="form-select" id="location_id" name="location_id">
+                        <option value="">全部库位</option>
+                        {% for location in locations %}
+                            <option value="{{ location.id }}" {% if location_id == location.id|string %}selected{% endif %}>
+                                {{ location.code }} - {{ location.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="date_range" class="form-label">日期范围</label>
+                    <div class="d-flex gap-2">
+                        <input type="date" class="form-control" name="start_date" value="{{ start_date }}">
+                        <input type="date" class="form-control" name="end_date" value="{{ end_date }}">
+                    </div>
+                </div>
+                <div class="col-md-12">
+                    <button type="submit" class="btn btn-primary">查询</button>
+                    <a href="{{ url_for('outbound.items') }}" class="btn btn-outline-secondary">重置</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>出库单号</th>
+                            <th>商品名称</th>
+                            <th>商品编码</th>
+                            <th>库位</th>
+                            <th>批次号</th>
+                            <th>数量</th>
+                            <th>领用人</th>
+                            <th>出库日期</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if items %}
+                            {% for item in items %}
+                                <tr>
+                                    <td>{{ item.order.order_no }}</td>
+                                    <td>{{ item.product.name }}</td>
+                                    <td>{{ item.product.code }}</td>
+                                    <td>{{ item.location.code }} - {{ item.location.name }}</td>
+                                    <td>{{ item.batch_no }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>{{ item.order.receiver }}</td>
+                                    <td>{{ item.order.outbound_date.strftime('%Y-%m-%d') }}</td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center">暂无数据</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分页 -->
+            {% if pagination %}
+                <div class="mt-4 d-flex justify-content-between align-items-center">
+                    <div class="text-muted">
+                        共 {{ pagination.total }} 条记录，当前第 {{ pagination.page }} 页
+                    </div>
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination">
+                            {% if pagination.has_prev %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('outbound.items', page=pagination.prev_num, keyword=keyword, product_id=product_id, location_id=location_id, start_date=start_date, end_date=end_date) }}" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for page_num in pagination.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+                                {% if page_num %}
+                                    {% if page_num == pagination.page %}
+                                        <li class="page-item active">
+                                            <a class="page-link" href="#">{{ page_num }}</a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('outbound.items', page=page_num, keyword=keyword, product_id=product_id, location_id=location_id, start_date=start_date, end_date=end_date) }}">{{ page_num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#">...</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if pagination.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('outbound.items', page=pagination.next_num, keyword=keyword, product_id=product_id, location_id=location_id, start_date=start_date, end_date=end_date) }}" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

@@ -6,7 +6,6 @@ class OutboundOrder(db.Model):
     __tablename__ = 'outbound_orders'
     id = db.Column(db.Integer, primary_key=True)
     order_no = db.Column(db.String(32), unique=True, nullable=False)   # 出库单号（自动生成）
-    related_order = db.Column(db.String(32))   # 销售单号
     operator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)   # 操作员
     receiver = db.Column(db.String(32), nullable=False)   # 领用人
     receive_phone = db.Column(db.String(16))   # 领用电话

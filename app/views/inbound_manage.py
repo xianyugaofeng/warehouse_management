@@ -22,8 +22,7 @@ def list():
 
     query = InboundOrder.query
     if keyword:
-        query = query.filter(InboundOrder.order_no.ilike(f'%{keyword}%') |
-                             InboundOrder.related_order.ilike(f'%{keyword}%'))
+        query = query.filter(InboundOrder.order_no.ilike(f'%{keyword}%'))
     if supplier_id:
         query = query.filter_by(supplier_id=supplier_id)
     if start_date:
@@ -59,7 +58,6 @@ def add():
     if request.method == 'POST':
         # 接收表单数据
         supplier_id = request.form.get('supplier_id')
-        related_order = request.form.get('related_order')
         inbound_date = request.form.get('inbound_date', datetime.now().strftime('%Y-%m-%d'))
         # 默认值为当前时间
         remark = request.form.get('remark')
@@ -78,7 +76,7 @@ def add():
             return render_template('inbound/add.html',
                                    products=products,
                                    suppliers=suppliers,
-                                   location=locations,
+                                   locations=locations,
                                    now=datetime.now()
             )
 
@@ -90,7 +88,6 @@ def add():
         inbound_order = InboundOrder(
             order_no=order_no,
             supplier_id=supplier_id,
-            related_order=related_order,
             operator_id=current_user.id,
             inbound_date=inbound_date,
             total_amount=total_amount,
@@ -140,3 +137,61 @@ def add():
                            locations=locations,
                            now=datetime.now()
     )  # GET请求或POST请求添加入库单失败
+
+
+# 入库明细查询
+@inbound_bp.route('/items')
+@permission_required('inbound_manage')
+@login_required
+def items():
+    # 接收查询参数
+    keyword = request.args.get('keyword', '')
+    product_id = request.args.get('product_id', '')
+    location_id = request.args.get('location_id', '')
+    start_date = request.args.get('start_date', '')
+    end_date = request.args.get('end_date', '')
+
+    # 构建查询
+    query = InboundItem.query.join(InboundOrder).join(Product).join(WarehouseLocation)
+    
+    # 应用过滤条件
+    if keyword:
+        query = query.filter(
+            Product.name.ilike(f'%{keyword}%') |
+            Product.code.ilike(f'%{keyword}%') |
+            InboundOrder.order_no.ilike(f'%{keyword}%')
+        )
+    
+    if product_id:
+        query = query.filter(InboundItem.product_id == product_id)
+    
+    if location_id:
+        query = query.filter(InboundItem.location_id == location_id)
+    
+    if start_date:
+        query = query.filter(InboundOrder.inbound_date >= start_date)
+    
+    if end_date:
+        query = query.filter(InboundOrder.inbound_date <= end_date)
+
+    # 分页
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    pagination = query.order_by(InboundItem.id.desc()).paginate(page=page, per_page=per_page)
+    items = pagination.items
+
+    # 获取所有商品和库位用于筛选
+    products = Product.query.all()
+    locations = WarehouseLocation.query.filter_by(status=True).all()
+
+    return render_template('inbound/items.html',
+                           items=items,
+                           pagination=pagination,
+                           keyword=keyword,
+                           product_id=product_id,
+                           location_id=location_id,
+                           start_date=start_date,
+                           end_date=end_date,
+                           products=products,
+                           locations=locations
+    )
