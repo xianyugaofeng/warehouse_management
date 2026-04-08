@@ -1,6 +1,7 @@
 from app import create_app, db
 from app.models import User, Role, Permission
-from app.models import Product, Category, Supplier, Customer, ProductParamKey, CategoryParam, ProductParamValue
+from app.models import Product, Category, Supplier, Customer
+from app.models import CategoryParam, ProductParamValue, ProductParamKey
 from app.models import Inventory, WarehouseLocation
 from app.models import InboundOrder, OutboundOrder
 
@@ -15,7 +16,9 @@ def make_shell_context():   # 在命令行使用flask shell命令启动Flask交�
         db=db, User=User, Role=Role, Permission=Permission,
         Product=Product, Category=Category, Supplier=Supplier, Customer=Customer,
         Inventory=Inventory, WarehouseLocation=WarehouseLocation,
-        InboundOrder=InboundOrder, OutboundOrder=OutboundOrder
+        InboundOrder=InboundOrder, OutboundOrder=OutboundOrder, 
+        ProductParamKey=ProductParamKey, CategoryParam=CategoryParam,
+        ProductParamValue=ProductParamValue
     )
 
 if __name__ == '__main__':
