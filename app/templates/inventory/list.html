@@ -59,12 +59,12 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-2 d-flex items-center">
                     <!--align-middle：使元素中心对齐-->
-                    <div class="form-check align-middle mt-4">
+                    <div class="form-check align-middle">
                         <input type="checkbox" class="form-check-input rounded border-gray-300 focus:ring-primary" id="warning_only" name="warning_only" value="1" {% if warning_only %}checked{% endif %}>         <!--创建复选框-->
                         <!--checked：布尔属性，设置复选框默认被选中-->
-                        <label for="warning_only" class="form-check-label">仅预警库存</label>
+                        <label for="warning_only" class="form-check-label ml-2">仅预警库存</label>
                     </div>
                 </div>
                 <div class="col-md-3">
