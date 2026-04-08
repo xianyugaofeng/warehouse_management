@@ -37,7 +37,6 @@ def init_sample_products():
                 code='ASUS-TX6-2026',
                 name='华硕天选6',
                 category_id=category.id,
-                supplier_id=supplier_id,
                 unit='台',
                 warning_stock=5,
                 remark='华硕天选6笔记本电脑，搭载锐龙7处理器和RTX 5050显卡'
@@ -90,7 +89,6 @@ def init_sample_products():
                 code='10181964004901',
                 name='机械革命极光X',
                 category_id=category.id,
-                supplier_id=supplier_id,
                 unit='台',
                 warning_stock=5,
                 remark='机械革命极光X笔记本电脑，搭载Intel Core i5处理器和RTX 5050显卡'
@@ -146,7 +144,6 @@ def init_sample_products():
                     code='100287758128',
                     name='小米 REDMI K90',
                     category_id=phone_category.id,
-                    supplier_id=supplier_id,
                     unit='台',
                     warning_stock=5,
                     remark='小米REDMI K90手机，搭载骁龙8至尊版处理器'
@@ -203,7 +200,6 @@ def init_sample_products():
                     code='100283677974',
                     name='vivo iQOO 15',
                     category_id=phone_category.id,
-                    supplier_id=supplier_id,
                     unit='台',
                     warning_stock=5,
                     remark='vivo iQOO 15手机，搭载第五代骁龙8至尊版处理器'
