@@ -9,7 +9,7 @@ supplier_bp = Blueprint('supplier', __name__)
 
 # 供应商列表
 @supplier_bp.route('/list')
-@permission_required('product_manage')
+@permission_required('information_manage')
 @login_required
 def list():
     # 多条件查询
@@ -36,7 +36,7 @@ def list():
 
 # 添加/编辑供应商
 @supplier_bp.route('/edit/<int:id>', methods=['GET', 'POST'])
-@permission_required('product_manage')
+@permission_required('information_manage')
 @login_required
 def edit(id=0):
     supplier = Supplier.query.get_or_404(id) if id else Supplier()
@@ -78,7 +78,7 @@ def edit(id=0):
 
 
 @supplier_bp.route('/delete/<int:id>')
-@permission_required('product_manage')
+@permission_required('information_manage')
 @login_required
 def delete(id):
     supplier = Supplier.query.get_or_404(id)

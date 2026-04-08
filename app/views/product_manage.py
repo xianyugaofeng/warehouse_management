@@ -9,7 +9,7 @@ product_bp = Blueprint('product', __name__)
 
 # 商品列表
 @product_bp.route('/list')               # 路由装饰器在最下面：路由可能不工作，或者认证检查不生效
-@permission_required('product_manage')
+@permission_required('information_manage')
 @login_required
 def list():
     # 多条件查询
@@ -45,7 +45,7 @@ def list():
 
 # 添加/编辑商品
 @product_bp.route('/edit/<int:id>', methods=['GET', 'POST'])
-@permission_required('product_manage')
+@permission_required('information_manage')
 @login_required
 def edit(id=0):
     product = Product.query.get_or_404(id) if id else Product()
@@ -124,7 +124,7 @@ def edit(id=0):
     )
 
 @product_bp.route('/delete/<int:id>')
-@permission_required('product_manage')
+@permission_required('information_manage')
 @login_required
 def delete(id):
     product = Product.query.get_or_404(id)
@@ -135,7 +135,7 @@ def delete(id):
 
 # 获取分类参数
 @product_bp.route('/get_category_params')
-@permission_required('product_manage')
+@permission_required('information_manage')
 @login_required
 def get_category_params():
     category_id = request.args.get('category_id', type=int)

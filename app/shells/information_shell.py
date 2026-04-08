@@ -189,11 +189,10 @@ def init_roles():
     """初始化角色权限"""
     # 定义角色权限
     roles = {
-        '管理员': ['product_manage', 'inventory_manage', 'inbound_manage',
-                  'outbound_manage', 'supplier_manage', 'customer_manage',
-                  'user_manage', 'report_view'],
-        '仓库管理员': ['product_manage', 'inventory_manage', 'inbound_manage', 'outbound_manage'],
-        '职员' : ['product_manage', 'inventory_manage', 'supplier_manage', 'customer_manage', 'user_manage']
+        '管理员': ['information_manage', 'inventory_manage', 'inbound_manage',
+                  'outbound_manage', 'user_manage', 'report_view'],
+        '仓库管理员': ['information_manage', 'inventory_manage', 'inbound_manage', 'outbound_manage', 'report_view'],
+        '职员' : ['information_manage', 'report_view']
     }
     
     for role_name, permissions in roles.items():

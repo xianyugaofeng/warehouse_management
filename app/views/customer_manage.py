@@ -9,7 +9,7 @@ customer_bp = Blueprint('customer', __name__)
 
 # 客户列表
 @customer_bp.route('/list')
-@permission_required('product_manage')
+@permission_required('information_manage')
 @login_required
 def list():
     # 多条件查询
@@ -36,7 +36,7 @@ def list():
 
 # 添加/编辑客户
 @customer_bp.route('/edit/<int:id>', methods=['GET', 'POST'])
-@permission_required('product_manage')
+@permission_required('information_manage')
 @login_required
 def edit(id=0):
     customer = Customer.query.get_or_404(id) if id else Customer()
@@ -78,7 +78,7 @@ def edit(id=0):
 
 
 @customer_bp.route('/delete/<int:id>')
-@permission_required('product_manage')
+@permission_required('information_manage')
 @login_required
 def delete(id):
     customer = Customer.query.get_or_404(id)

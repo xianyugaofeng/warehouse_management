@@ -5,13 +5,11 @@ from app import db, login_manager
 
 PERMISSIONS = {
     'user_manage': '用户管理',
-    'product_manage': '商品管理',
+    'information_manage': '信息管理',
     'inbound_manage': '入库管理',
     'outbound_manage': '出库管理',
     'inventory_manage': '库存管理',
-    'report_view': '报表查看',
-    'supplier_manage': '供应商管理',
-    'customer_manage': '客户管理'
+    'report_view': '报表查看'
 }
 
 # 角色-权限 多对多关联表
