@@ -487,7 +487,7 @@
                         {% if current_user.has_permission('product_manage') or current_user.has_permission('user_manage') %}
                             <div class="menu-header" data-target="basic-info">基本信息管理</div>
                             <div class="menu-content" id="basic-info">
-                                {% if current_user.has_permission('product_manage') %}
+                                {% if current_user.has_permission('information_manage') %}
                                     <a href="{{ url_for('product.list') }}" class="list-group-item list-group-item-action ml-3">
                                         <i class="fa fa-shopping-bag text-success me-2"></i>商品管理
                                     </a>
