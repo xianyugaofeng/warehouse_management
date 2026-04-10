@@ -45,36 +45,41 @@ def init_inbound_orders():
             print('库位数量不足，至少需要2个库位')
             return
         
-        # 不同类别商品使用不同库位
-        computer_location = locations[0]  # A-01-01 存放电脑
-        phone_location = locations[1]     # A-01-02 存放手机
-        
         # 检查是否已有入库单
         if InboundOrder.query.count() > 0:
             print('入库单已存在')
             return
         
-        # 创建入库单1：电脑商品入库（已完成）
+        # 每个商品使用独立的库位
+        computer_products = [p for p in products if p.category.name == '电脑']
+        phone_products = [p for p in products if p.category.name == '手机']
+        all_products = computer_products + phone_products
+        
+        if len(locations) < len(all_products):
+            print(f'库位数量不足，需要{len(all_products)}个库位，当前只有{len(locations)}个')
+            return
+        
+        # 创建入库单1：商品入库（已完成）
         order_no = generate_inbound_no()
         inbound_order1 = InboundOrder(
             order_no=order_no,
             supplier_id=supplier.id,
             operator_id=admin.id,
             inbound_date=datetime.now().date(),
-            total_amount=15,
+            total_amount=len(all_products) * 5,
             status='completed',
-            remark='电脑商品批量入库（初始化数据）'
+            remark='商品批量入库（初始化数据）'
         )
         db.session.add(inbound_order1)
         db.session.flush()
         
-        # 添加入库明细（电脑商品入库到 computer_location）
-        computer_products = [p for p in products if p.category.name == '电脑']
-        for i, product in enumerate(computer_products):
+        # 每个商品入库到独立的库位
+        for i, product in enumerate(all_products):
+            location = locations[i]
             item = InboundItem(
                 order_id=inbound_order1.id,
                 product_id=product.id,
-                location_id=computer_location.id,
+                location_id=location.id,
                 quantity=5,
                 batch_no=f'IN-{datetime.now().strftime("%Y%m%d")}-{i+1}',
                 production_date=datetime.now().date() - timedelta(days=30),
@@ -82,41 +87,11 @@ def init_inbound_orders():
             )
             db.session.add(item)
             # 更新库存
-            update_inventory(product.id, computer_location.id, item.batch_no, 5, is_bound=True)
+            update_inventory(product.id, location.id, item.batch_no, 5, is_bound=True)
         
-        # 创建入库单2：手机商品入库（已完成）
+        # 创建入库单2：待审核入库单
         order_no = generate_inbound_no()
         inbound_order2 = InboundOrder(
-            order_no=order_no,
-            supplier_id=supplier.id,
-            operator_id=admin.id,
-            inbound_date=datetime.now().date(),
-            total_amount=10,
-            status='completed',
-            remark='手机商品批量入库（初始化数据）'
-        )
-        db.session.add(inbound_order2)
-        db.session.flush()
-        
-        # 添加入库明细（手机商品入库到 phone_location）
-        phone_products = [p for p in products if p.category.name == '手机']
-        for i, product in enumerate(phone_products):
-            item = InboundItem(
-                order_id=inbound_order2.id,
-                product_id=product.id,
-                location_id=phone_location.id,
-                quantity=5,
-                batch_no=f'IN-{datetime.now().strftime("%Y%m%d")}-{i+10}',
-                production_date=datetime.now().date() - timedelta(days=30),
-                expire_date=datetime.now().date() + timedelta(days=365)
-            )
-            db.session.add(item)
-            # 更新库存
-            update_inventory(product.id, phone_location.id, item.batch_no, 5, is_bound=True)
-        
-        # 创建入库单3：待审核入库单
-        order_no = generate_inbound_no()
-        inbound_order3 = InboundOrder(
             order_no=order_no,
             supplier_id=supplier.id,
             operator_id=admin.id,
@@ -125,16 +100,17 @@ def init_inbound_orders():
             status='draft',
             remark='待审核入库单（初始化数据）'
         )
-        db.session.add(inbound_order3)
+        db.session.add(inbound_order2)
         db.session.flush()
         
         # 添加入库明细（不更新库存，因为还未审核）
-        # 待审核入库单也使用电脑库位
+        # 待审核入库单使用已有商品的库位
         for i, product in enumerate(computer_products[:2]):
+            location = locations[i]
             item = InboundItem(
-                order_id=inbound_order3.id,
+                order_id=inbound_order2.id,
                 product_id=product.id,
-                location_id=computer_location.id,
+                location_id=location.id,
                 quantity=4,
                 batch_no=f'IN-{datetime.now().strftime("%Y%m%d")}-{i+20}',
                 production_date=datetime.now().date() - timedelta(days=15),

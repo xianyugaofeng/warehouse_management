@@ -10,6 +10,7 @@ from app.utils.helpers import generate_transfer_no, execute_transfer
 
 transfer_bp = Blueprint('transfer', __name__)
 
+# 调拨单列表
 @transfer_bp.route('/list')
 @permission_required('inventory_manage')
 @login_required
@@ -43,6 +44,47 @@ def list():
                            end_date=end_date
     )
 
+# 调拨单审核列表
+@transfer_bp.route('/audit_list')
+@permission_required('inventory_manage')
+@login_required
+def audit_list():
+    keyword = request.args.get('keyword', '')
+    audit_status = request.args.get('audit_status', 'pending')
+    start_date = request.args.get('start_date', '')
+    end_date = request.args.get('end_date', '')
+
+    query = TransferOrder.query
+    if keyword:
+        query = query.filter(TransferOrder.order_no.ilike(f'%{keyword}%'))
+    if audit_status:
+        query = query.filter_by(audit_status=audit_status)
+    if start_date:
+        query = query.filter(TransferOrder.create_time >= start_date)
+    if end_date:
+        query = query.filter(TransferOrder.create_time <= end_date)
+
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    pagination = query.order_by(TransferOrder.create_time.desc()).paginate(page=page, per_page=per_page)
+    orders = pagination.items
+
+    # 统计待审核和已通过的数量
+    pending_count = TransferOrder.query.filter_by(audit_status='pending').count()
+    approved_count = TransferOrder.query.filter_by(audit_status='approved').count()
+
+    return render_template('transfer/audit_list.html',
+                           orders=orders,
+                           pagination=pagination,
+                           keyword=keyword,
+                           audit_status=audit_status,
+                           start_date=start_date,
+                           end_date=end_date,
+                           pending_count=pending_count,
+                           approved_count=approved_count
+    )
+
+# 添加调拨单
 @transfer_bp.route('/add', methods=['GET', 'POST'])
 @permission_required('inventory_manage')
 @login_required
