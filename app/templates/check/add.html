@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block title %}添加盘点单 - 仓库管理系统{% endblock %}
+
+{% block js %}
+<script>
+$(document).ready(function() {
+    let rowIndex = 0;
+    
+    $('input[name="filter_type"]').change(function() {
+        const filterType = $(this).val();
+        if (filterType === 'auto') {
+            $('#autoFilterSection').show();
+            $('#manualFilterSection').hide();
+        } else {
+            $('#autoFilterSection').hide();
+            $('#manualFilterSection').show();
+        }
+    });
+    
+    $("#addItemBtn").click(function() {
+        rowIndex++;
+        const newRow = `
+            <tr id="itemRow${rowIndex}">
+                <td>
+                    <select class="form-select product-select" name="product_id[]" required>
+                        <option value="">请选择商品</option>
+                        {% for product in products %}
+                        <option value="{{ product.id }}">{{ product.name }} ({{ product.code }})</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td>
+                    <select class="form-select location-select" name="location_id[]" required>
+                        <option value="">请选择库位</option>
+                        {% for location in locations %}
+                        <option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td>
+                    <input type="number" class="form-control" name="book_quantity[]" min="0" required placeholder="账面数量">
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-danger remove-item" data-row="${rowIndex}">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+        $("#itemTableBody").append(newRow);
+    });
+    
+    $(document).on("click", ".remove-item", function() {
+        const rowId = $(this).data("row");
+        $(`#itemRow${rowId}`).remove();
+    });
+    
+    $("form").submit(function() {
+        const filterType = $('input[name="filter_type"]:checked').val();
+        if (filterType === 'manual') {
+            const hasItems = $("#itemTableBody tr").length > 0;
+            if (!hasItems) {
+                alert("请至少添加一条盘点明细!");
+                return false;
+            }
+        }
+        return true;
+    });
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-6">
+    <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+        <i class="fa fa-clipboard-check mr-3 text-primary"></i>添加盘点单
+    </h2>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('check.list') }}">盘点管理</a></li>
+            <li class="breadcrumb-item active" aria-current="page">添加盘点单</li>
+        </ol>
+    </nav>
+</div>
+
+<div class="card mb-6 shadow-sm rounded-xl overflow-hidden">
+    <div class="card-body p-6">
+        <form method="POST" action="{{ url_for('check.add') }}">
+            <div class="row mb-4">
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">盘点方式</label>
+                    <div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="filter_type" id="filterAuto" value="auto" checked>
+                            <label class="form-check-label" for="filterAuto">按筛选条件自动生成</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="filter_type" id="filterManual" value="manual">
+                            <label class="form-check-label" for="filterManual">手动录入明细</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="autoFilterSection" class="mb-4">
+                <h5 class="mb-3">筛选条件</h5>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">按商品筛选</label>
+                        <select class="form-select" name="filter_product_id">
+                            <option value="">全部商品</option>
+                            {% for product in products %}
+                            <option value="{{ product.id }}">{{ product.name }} ({{ product.code }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">按分类筛选</label>
+                        <select class="form-select" name="filter_category_id">
+                            <option value="">全部分类</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">按库位筛选</label>
+                        <select class="form-select" name="filter_location_id">
+                            <option value="">全部库位</option>
+                            {% for location in locations %}
+                            <option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle"></i> 选择筛选条件后，系统将自动从库存表提取对应产品、库位的当前数量作为"账面数量"
+                </div>
+            </div>
+
+            <div id="manualFilterSection" class="mb-4" style="display: none;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>盘点明细</h5>
+                    <button type="button" id="addItemBtn" class="btn btn-sm btn-primary">
+                        <i class="fa fa-plus mr-1"></i>添加明细
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th width="35%">商品</th>
+                                <th width="35%">库位</th>
+                                <th width="20%">账面数量</th>
+                                <th width="10%">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemTableBody">
+                            <tr id="itemRow0">
+                                <td>
+                                    <select class="form-select product-select" name="product_id[]" required>
+                                        <option value="">请选择商品</option>
+                                        {% for product in products %}
+                                        <option value="{{ product.id }}">{{ product.name }} ({{ product.code }})</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <select class="form-select location-select" name="location_id[]" required>
+                                        <option value="">请选择库位</option>
+                                        {% for location in locations %}
+                                        <option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="number" class="form-control" name="book_quantity[]" min="0" required placeholder="账面数量">
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-sm btn-danger remove-item" data-row="0">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <label class="form-label">备注</label>
+                    <input type="text" class="form-control" name="remark" placeholder="输入备注信息(选填)">
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-3">
+                <a href="{{ url_for('check.list') }}" class="btn btn-secondary rounded-lg px-4">
+                    <i class="fa fa-arrow-left mr-2"></i>返回
+                </a>
+                <button type="submit" class="btn btn-primary rounded-lg px-4">
+                    <i class="fa fa-save mr-2"></i>创建盘点单
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -23,6 +23,12 @@ def generate_transfer_no():
     return f'TF{date_str}{random_str}'
 
 
+def generate_check_no():
+    date_str = datetime.now().strftime('%Y%m%d')
+    random_str = str(random.randint(100, 999))
+    return f'CK{date_str}{random_str}'
+
+
 # 库存更新函数(入库时增加, 出库时减少)
 def update_inventory(product_id, location_id, batch_no, quantity, is_bound=True):
     from app import db

@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}盘点单详情 - 仓库管理系统{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-6">
+    <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+        <i class="fa fa-clipboard-check mr-3 text-primary"></i>盘点单详情
+    </h2>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('check.list') }}">盘点管理</a></li>
+            <li class="breadcrumb-item active" aria-current="page">盘点单详情</li>
+        </ol>
+    </nav>
+</div>
+
+<div class="card mb-6 shadow-sm rounded-xl overflow-hidden">
+    <div class="card-header bg-gray-50 py-3">
+        <h5 class="mb-0">基本信息</h5>
+    </div>
+    <div class="card-body p-6">
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <strong>盘点单号：</strong>{{ order.check_no }}
+            </div>
+            <div class="col-md-4 mb-3">
+                <strong>盘点人：</strong>{{ order.checker.username if order.checker else '-' }}
+            </div>
+            <div class="col-md-4 mb-3">
+                <strong>盘点状态：</strong>
+                {% if order.check_status == 'pending' %}
+                <span class="badge bg-warning">待录入</span>
+                {% elif order.check_status == 'completed' %}
+                <span class="badge bg-success">已完成</span>
+                {% else %}
+                <span class="badge bg-secondary">已取消</span>
+                {% endif %}
+            </div>
+            <div class="col-md-4 mb-3">
+                <strong>冻结状态：</strong>
+                {% if order.frozen_status %}
+                <span class="badge bg-danger">已冻结</span>
+                {% else %}
+                <span class="badge bg-success">已解冻</span>
+                {% endif %}
+            </div>
+            <div class="col-md-4 mb-3">
+                <strong>创建时间：</strong>{{ order.create_time.strftime('%Y-%m-%d %H:%M:%S') }}
+            </div>
+            <div class="col-md-4 mb-3">
+                <strong>备注：</strong>{{ order.remark or '-' }}
+            </div>
+        </div>
+        
+        {% if order.filter_product_id or order.filter_category_id or order.filter_location_id %}
+        <hr>
+        <h6>筛选条件：</h6>
+        <div class="row">
+            {% if order.filter_product_id %}
+            <div class="col-md-4 mb-2">
+                <strong>商品：</strong>{{ order.filter_product.name if order.filter_product else '-' }}
+            </div>
+            {% endif %}
+            {% if order.filter_category_id %}
+            <div class="col-md-4 mb-2">
+                <strong>分类：</strong>{{ order.filter_category.name if order.filter_category else '-' }}
+            </div>
+            {% endif %}
+            {% if order.filter_location_id %}
+            <div class="col-md-4 mb-2">
+                <strong>库位：</strong>{{ order.filter_location.code if order.filter_location else '-' }}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mb-6 shadow-sm rounded-xl overflow-hidden">
+    <div class="card-header bg-gray-50 py-3">
+        <h5 class="mb-0">盘点明细</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th>商品</th>
+                        <th>库位</th>
+                        <th>账面数量</th>
+                        <th>实际数量</th>
+                        <th>差异数量</th>
+                        <th>盘点结果</th>
+                        <th>盘点时间</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in order.items %}
+                    {% set result = item.results.first() %}
+                    <tr>
+                        <td>{{ item.product.name if item.product else '-' }}</td>
+                        <td>{{ item.location.code if item.location else '-' }}</td>
+                        <td>{{ item.book_quantity }}</td>
+                        <td>{{ result.actual_quantity if result and result.actual_quantity >= 0 else '-' }}</td>
+                        <td>
+                            {% if result and result.diff_quantity %}
+                                {% if result.diff_quantity > 0 %}
+                                <span class="text-success fw-bold">+{{ result.diff_quantity }}</span>
+                                {% elif result.diff_quantity < 0 %}
+                                <span class="text-danger fw-bold">{{ result.diff_quantity }}</span>
+                                {% else %}
+                                <span class="text-muted">0</span>
+                                {% endif %}
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if result %}
+                                {% if result.check_result == 'profit' %}
+                                <span class="badge bg-success">盘盈</span>
+                                {% elif result.check_result == 'loss' %}
+                                <span class="badge bg-danger">盘亏</span>
+                                {% elif result.check_result == 'equal' %}
+                                <span class="badge bg-secondary">无差异</span>
+                                {% else %}
+                                <span class="badge bg-warning">待录入</span>
+                                {% endif %}
+                            {% else %}
+                            <span class="badge bg-warning">待录入</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ result.check_time.strftime('%Y-%m-%d %H:%M') if result and result.check_time else '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-end gap-3">
+    <a href="{{ url_for('check.list') }}" class="btn btn-secondary rounded-lg px-4">
+        <i class="fa fa-arrow-left mr-2"></i>返回列表
+    </a>
+    {% if order.check_status == 'pending' %}
+    <a href="{{ url_for('check.input_page', id=order.id) }}" class="btn btn-primary rounded-lg px-4">
+        <i class="fa fa-edit mr-2"></i>录入结果
+    </a>
+    <form method="POST" action="{{ url_for('check.cancel', id=order.id) }}" style="display: inline;">
+        <button type="submit" class="btn btn-danger rounded-lg px-4" onclick="return confirm('确定要取消此盘点单吗？取消后将解冻库存')">
+            <i class="fa fa-times mr-2"></i>取消盘点
+        </button>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

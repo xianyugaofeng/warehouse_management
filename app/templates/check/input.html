@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}盘点结果录入 - 仓库管理系统{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-6">
+    <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+        <i class="fa fa-edit mr-3 text-primary"></i>盘点结果录入
+    </h2>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('check.list') }}">盘点管理</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('check.detail', id=order.id) }}">盘点单详情</a></li>
+            <li class="breadcrumb-item active" aria-current="page">结果录入</li>
+        </ol>
+    </nav>
+</div>
+
+<div class="card mb-4 shadow-sm rounded-xl overflow-hidden">
+    <div class="card-header bg-gray-50 py-3">
+        <h5 class="mb-0">盘点单信息</h5>
+    </div>
+    <div class="card-body p-4">
+        <div class="row">
+            <div class="col-md-3 mb-2">
+                <strong>盘点单号：</strong>{{ order.check_no }}
+            </div>
+            <div class="col-md-3 mb-2">
+                <strong>盘点人：</strong>{{ order.checker.username if order.checker else '-' }}
+            </div>
+            <div class="col-md-3 mb-2">
+                <strong>盘点状态：</strong>
+                <span class="badge bg-warning">待录入</span>
+            </div>
+            <div class="col-md-3 mb-2">
+                <strong>冻结状态：</strong>
+                <span class="badge bg-danger">已冻结</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm rounded-xl overflow-hidden">
+    <div class="card-header bg-gray-50 py-3">
+        <h5 class="mb-0">盘点结果录入</h5>
+    </div>
+    <div class="card-body p-0">
+        <form method="POST" action="{{ url_for('check.input_page', id=order.id) }}">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th width="5%">序号</th>
+                            <th width="20%">商品</th>
+                            <th width="15%">库位</th>
+                            <th width="15%">账面数量</th>
+                            <th width="15%">实际数量</th>
+                            <th width="15%">差异数量</th>
+                            <th width="15%">盘点结果</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for result in results %}
+                        <tr>
+                            <td class="align-middle">{{ loop.index }}</td>
+                            <td class="align-middle">
+                                {{ result.item.product.name if result.item.product else '-' }}
+                                <br><small class="text-muted">{{ result.item.product.code if result.item.product else '' }}</small>
+                            </td>
+                            <td class="align-middle">
+                                {{ result.item.location.code if result.item.location else '-' }}
+                            </td>
+                            <td class="align-middle">
+                                <span class="badge bg-primary">{{ result.book_quantity }}</span>
+                            </td>
+                            <td class="align-middle">
+                                <input type="hidden" name="result_id[]" value="{{ result.id }}">
+                                <input type="number" class="form-control" name="actual_quantity[]" 
+                                       min="0" required placeholder="请输入实际数量"
+                                       value="{{ result.actual_quantity if result.actual_quantity and result.actual_quantity > 0 else '' }}">
+                            </td>
+                            <td class="align-middle">
+                                {% if result.diff_quantity and result.diff_quantity != 0 %}
+                                    {% if result.diff_quantity > 0 %}
+                                    <span class="text-success fw-bold">+{{ result.diff_quantity }}</span>
+                                    {% else %}
+                                    <span class="text-danger fw-bold">{{ result.diff_quantity }}</span>
+                                    {% endif %}
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="align-middle">
+                                {% if result.check_result == 'profit' %}
+                                <span class="badge bg-success">盘盈</span>
+                                {% elif result.check_result == 'loss' %}
+                                <span class="badge bg-danger">盘亏</span>
+                                {% elif result.check_result == 'equal' %}
+                                <span class="badge bg-secondary">无差异</span>
+                                {% else %}
+                                <span class="badge bg-warning">待录入</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="p-4 bg-gray-50 border-top">
+                <div class="alert alert-info mb-3">
+                    <i class="fa fa-info-circle"></i> 
+                    <strong>提示：</strong>请录入所有盘点明细的实际数量。所有结果录入完成后，系统将自动更新库存并完成盘点。
+                </div>
+                
+                <div class="d-flex justify-content-end gap-3">
+                    <a href="{{ url_for('check.detail', id=order.id) }}" class="btn btn-secondary rounded-lg px-4">
+                        <i class="fa fa-arrow-left mr-2"></i>返回详情
+                    </a>
+                    <a href="{{ url_for('check.list') }}" class="btn btn-outline-secondary rounded-lg px-4">
+                        <i class="fa fa-list mr-2"></i>返回列表
+                    </a>
+                    <button type="submit" class="btn btn-primary rounded-lg px-4">
+                        <i class="fa fa-save mr-2"></i>确认录入
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

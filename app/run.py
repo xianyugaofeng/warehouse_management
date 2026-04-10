@@ -5,6 +5,7 @@ from app.models import CategoryParam, ProductParamValue, ProductParamKey
 from app.models import Inventory, WarehouseLocation
 from app.models import InboundOrder, OutboundOrder
 from app.models import TransferOrder, TransferItem
+from app.models import CheckInventory, CheckInventoryItem, CheckInventoryResult
 
 app = create_app()
 
@@ -19,6 +20,8 @@ def make_shell_context():   # 在命令行使用flask shell命令启动Flask交�
         Inventory=Inventory, WarehouseLocation=WarehouseLocation,
         InboundOrder=InboundOrder, OutboundOrder=OutboundOrder,
         TransferOrder=TransferOrder, TransferItem=TransferItem,
+        CheckInventory=CheckInventory, CheckInventoryItem=CheckInventoryItem, 
+        CheckInventoryResult=CheckInventoryResult,
         ProductParamKey=ProductParamKey, CategoryParam=CategoryParam,
         ProductParamValue=ProductParamValue
     )
