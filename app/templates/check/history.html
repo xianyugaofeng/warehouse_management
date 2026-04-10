@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}盘点历史记录 - 仓库管理系统{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-6">
+    <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+        <i class="fa fa-history mr-3 text-primary"></i>盘点历史记录
+    </h2>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('check.list') }}">盘点管理</a></li>
+            <li class="breadcrumb-item active" aria-current="page">盘点历史记录</li>
+        </ol>
+    </nav>
+</div>
+
+<div class="card mb-6 shadow-sm rounded-xl overflow-hidden">
+    <div class="card-body p-6">
+        <form method="GET" action="{{ url_for('check.history') }}" class="mb-4">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label small text-muted">盘点单号</label>
+                    <input type="text" class="form-control rounded-lg border-gray-300" name="keyword" value="{{ keyword }}" placeholder="请输入盘点单号">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">库位</label>
+                    <select class="form-select rounded-lg border-gray-300" name="filter_location_id">
+                        <option value="">全部库位</option>
+                        {% for location in locations %}
+                        <option value="{{ location.id }}" {% if filter_location_id == location.id|string %}selected{% endif %}>
+                            {{ location.code }} - {{ location.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">产品分类</label>
+                    <select class="form-select rounded-lg border-gray-300" name="filter_category_id">
+                        <option value="">全部分类</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if filter_category_id == category.id|string %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">开始日期</label>
+                    <input type="date" class="form-control rounded-lg border-gray-300" name="start_date" value="{{ start_date }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">结束日期</label>
+                    <input type="date" class="form-control rounded-lg border-gray-300" name="end_date" value="{{ end_date }}">
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary rounded-lg w-100">
+                        <i class="fa fa-search"></i> 查询
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th>盘点单号</th>
+                        <th>盘点人</th>
+                        <th>筛选条件</th>
+                        <th>盘点明细数</th>
+                        <th>盘盈数量</th>
+                        <th>盘亏数量</th>
+                        <th>盘点时间</th>
+                        <th>备注</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    {% set profit_count = order.results | selectattr('check_result', 'equalto', 'profit') | list | length %}
+                    {% set loss_count = order.results | selectattr('check_result', 'equalto', 'loss') | list | length %}
+                    <tr>
+                        <td><strong>{{ order.check_no }}</strong></td>
+                        <td>{{ order.checker.username if order.checker else '-' }}</td>
+                        <td>
+                            {% if order.filter_product_id %}
+                            <span class="badge bg-info me-1">商品: {{ order.filter_product.name }}</span>
+                            {% endif %}
+                            {% if order.filter_category_id %}
+                            <span class="badge bg-info me-1">分类: {{ order.filter_category.name }}</span>
+                            {% endif %}
+                            {% if order.filter_location_id %}
+                            <span class="badge bg-info">库位: {{ order.filter_location.code }}</span>
+                            {% endif %}
+                            {% if not order.filter_product_id and not order.filter_category_id and not order.filter_location_id %}
+                            <span class="text-muted">手动录入</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ order.items | length }}</td>
+                        <td><span class="text-success fw-bold">{{ profit_count }}</span></td>
+                        <td><span class="text-danger fw-bold">{{ loss_count }}</span></td>
+                        <td>{{ order.create_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>{{ order.remark or '-' }}</td>
+                        <td>
+                            <a href="{{ url_for('check.history_detail', id=order.id) }}" class="btn btn-sm btn-info rounded-lg">
+                                <i class="fa fa-eye"></i> 查看结果
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9" class="text-center text-gray-500 py-4">暂无盘点历史记录</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if pagination.pages > 1 %}
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if pagination.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('check.history', page=pagination.prev_num, keyword=keyword, filter_location_id=filter_location_id, filter_category_id=filter_category_id, start_date=start_date, end_date=end_date) }}">上一页</a>
+                </li>
+                {% endif %}
+                
+                {% for page_num in pagination.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num == pagination.page %}
+                        <li class="page-item active"><a class="page-link" href="#">{{ page_num }}</a></li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('check.history', page=page_num, keyword=keyword, filter_location_id=filter_location_id, filter_category_id=filter_category_id, start_date=start_date, end_date=end_date) }}">{{ page_num }}</a>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if pagination.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('check.history', page=pagination.next_num, keyword=keyword, filter_location_id=filter_location_id, filter_category_id=filter_category_id, start_date=start_date, end_date=end_date) }}">下一页</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

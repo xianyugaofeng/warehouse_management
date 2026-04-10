@@ -332,3 +332,61 @@ def get_inventory():
         })
     
     return jsonify({'success': True, 'data': result})
+
+
+@check_bp.route('/history')
+@permission_required('inventory_manage')
+@login_required
+def history():
+    keyword = request.args.get('keyword', '')
+    filter_location_id = request.args.get('filter_location_id', '')
+    filter_category_id = request.args.get('filter_category_id', '')
+    start_date = request.args.get('start_date', '')
+    end_date = request.args.get('end_date', '')
+
+    query = CheckInventory.query.filter_by(check_status='completed')
+    
+    if keyword:
+        query = query.filter(CheckInventory.check_no.ilike(f'%{keyword}%'))
+    if filter_location_id:
+        query = query.filter_by(filter_location_id=filter_location_id)
+    if filter_category_id:
+        query = query.filter_by(filter_category_id=filter_category_id)
+    if start_date:
+        query = query.filter(CheckInventory.create_time >= start_date)
+    if end_date:
+        query = query.filter(CheckInventory.create_time <= end_date)
+
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    pagination = query.order_by(CheckInventory.create_time.desc()).paginate(page=page, per_page=per_page)
+    orders = pagination.items
+
+    locations = WarehouseLocation.query.filter_by(status=True).all()
+    categories = Category.query.all()
+
+    return render_template('check/history.html',
+                           orders=orders,
+                           pagination=pagination,
+                           keyword=keyword,
+                           filter_location_id=filter_location_id,
+                           filter_category_id=filter_category_id,
+                           start_date=start_date,
+                           end_date=end_date,
+                           locations=locations,
+                           categories=categories
+    )
+
+
+@check_bp.route('/history/<int:id>')
+@permission_required('inventory_manage')
+@login_required
+def history_detail(id):
+    order = CheckInventory.query.get_or_404(id)
+    
+    if order.check_status != 'completed':
+        flash('只能查看已完成状态的盘点单', 'warning')
+        return redirect(url_for('check.history'))
+    
+    results = order.results.all()
+    return render_template('check/history_detail.html', order=order, results=results)
