@@ -222,6 +222,7 @@ def items():
     product_id = request.args.get('product_id', '')
     location_id = request.args.get('location_id', '')
     customer_id = request.args.get('customer_id', '')
+    outbound_type = request.args.get('outbound_type', '')
     start_date = request.args.get('start_date', '')
     end_date = request.args.get('end_date', '')
     order_id = request.args.get('order_id', '')
@@ -240,6 +241,9 @@ def items():
     
     if customer_id:
         query = query.filter(OutboundOrder.customer_id == customer_id)
+    
+    if outbound_type:
+        query = query.filter(OutboundOrder.outbound_type == outbound_type)
     
     if product_id:
         query = query.filter(OutboundItem.product_id == product_id)
@@ -274,6 +278,7 @@ def items():
                            product_id=product_id,
                            location_id=location_id,
                            customer_id=customer_id,
+                           outbound_type=outbound_type,
                            start_date=start_date,
                            end_date=end_date,
                            order_id=order_id,
@@ -289,4 +294,50 @@ def items():
 def detail(id):
     order = OutboundOrder.query.get_or_404(id)
     return render_template('outbound/detail.html', order=order)
+
+# 出库单审核列表
+@outbound_bp.route('/audit_list')
+@permission_required('outbound_manage')
+@login_required
+def audit_list():
+    keyword = request.args.get('keyword', '')
+    customer_id = request.args.get('customer_id', '')
+    status = request.args.get('status', 'draft')
+    start_date = request.args.get('start_date', '')
+    end_date = request.args.get('end_date', '')
+
+    query = OutboundOrder.query
+    if keyword:
+        query = query.filter(OutboundOrder.order_no.ilike(f'%{keyword}%'))
+    if customer_id:
+        query = query.filter_by(customer_id=customer_id)
+    if status:
+        query = query.filter_by(status=status)
+    if start_date:
+        query = query.filter(OutboundOrder.outbound_date >= start_date)
+    if end_date:
+        query = query.filter(OutboundOrder.outbound_date <= end_date)
+
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    pagination = query.order_by(OutboundOrder.create_time.desc()).paginate(page=page, per_page=per_page)
+    orders = pagination.items
+
+    # 统计待审核和已通过的数量
+    draft_count = OutboundOrder.query.filter_by(status='draft').count()
+    completed_count = OutboundOrder.query.filter_by(status='completed').count()
+
+    customers = Customer.query.all()
+    return render_template('outbound/audit_list.html',
+                           orders=orders,
+                           pagination=pagination,
+                           keyword=keyword,
+                           customer_id=customer_id,
+                           status=status,
+                           start_date=start_date,
+                           end_date=end_date,
+                           customers=customers,
+                           draft_count=draft_count,
+                           completed_count=completed_count
+    )
 

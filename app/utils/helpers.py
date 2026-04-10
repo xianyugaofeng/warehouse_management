@@ -36,6 +36,13 @@ def update_inventory(product_id, location_id, batch_no, quantity, is_bound=True)
     ).first()   # 返回一个inventory对象
 
     if is_bound:
+        # 入库时检查库位是否已有其他商品
+        conflict_product = Inventory.check_location_product_conflict(
+            location_id, product_id, exclude_batch_no=batch_no if inventory else None
+        )
+        if conflict_product:
+            raise ValueError(f'该库位已存放其他商品（{conflict_product}），一个库位只能存放一种商品')
+        
         if inventory:
             inventory.quantity += quantity
         else:
@@ -73,6 +80,11 @@ def update_inventory(product_id, location_id, batch_no, quantity, is_bound=True)
 def execute_transfer(product_id, source_location_id, target_location_id, quantity):
     from app import db
     from app.models.inventory import Inventory
+
+    # 检查目标库位是否已有其他商品
+    conflict_product = Inventory.check_location_product_conflict(target_location_id, product_id)
+    if conflict_product:
+        raise ValueError(f'目标库位已存放其他商品（{conflict_product}），一个库位只能存放一种商品')
 
     # 查询原库位的库存（该商品在该库位的所有批次库存，按生产日期排序）
     source_inventories = Inventory.query.filter_by(

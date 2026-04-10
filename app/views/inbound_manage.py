@@ -275,3 +275,49 @@ def items():
 def detail(id):
     order = InboundOrder.query.get_or_404(id)
     return render_template('inbound/detail.html', order=order)
+
+# 入库单审核列表
+@inbound_bp.route('/audit_list')
+@permission_required('inbound_manage')
+@login_required
+def audit_list():
+    keyword = request.args.get('keyword', '')
+    supplier_id = request.args.get('supplier_id', '')
+    status = request.args.get('status', 'draft')
+    start_date = request.args.get('start_date', '')
+    end_date = request.args.get('end_date', '')
+
+    query = InboundOrder.query
+    if keyword:
+        query = query.filter(InboundOrder.order_no.ilike(f'%{keyword}%'))
+    if supplier_id:
+        query = query.filter_by(supplier_id=supplier_id)
+    if status:
+        query = query.filter_by(status=status)
+    if start_date:
+        query = query.filter(InboundOrder.inbound_date >= start_date)
+    if end_date:
+        query = query.filter(InboundOrder.inbound_date <= end_date)
+
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    pagination = query.order_by(InboundOrder.create_time.desc()).paginate(page=page, per_page=per_page)
+    orders = pagination.items
+
+    # 统计待审核和已通过的数量
+    draft_count = InboundOrder.query.filter_by(status='draft').count()
+    completed_count = InboundOrder.query.filter_by(status='completed').count()
+
+    suppliers = Supplier.query.all()
+    return render_template('inbound/audit_list.html',
+                           orders=orders,
+                           pagination=pagination,
+                           keyword=keyword,
+                           supplier_id=supplier_id,
+                           status=status,
+                           start_date=start_date,
+                           end_date=end_date,
+                           suppliers=suppliers,
+                           draft_count=draft_count,
+                           completed_count=completed_count
+    )

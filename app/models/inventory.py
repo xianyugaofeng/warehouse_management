@@ -49,3 +49,21 @@ class Inventory(db.Model):
         if not self.product or self.product.warning_stock is None:
             return False
         return self.quantity <= self.product.warning_stock
+
+    @staticmethod
+    def check_location_product_conflict(location_id, product_id, exclude_batch_no=None):
+        """
+        检查库位是否已有其他商品
+        :param location_id: 库位ID
+        :param product_id: 商品ID
+        :param exclude_batch_no: 排除的批次号（用于更新现有库存时排除自己）
+        :return: 如果有冲突返回冲突的商品名称，否则返回 None
+        """
+        query = Inventory.query.filter_by(location_id=location_id)
+        if exclude_batch_no:
+            query = query.filter(Inventory.batch_no != exclude_batch_no)
+        
+        existing = query.filter(Inventory.product_id != product_id).first()
+        if existing:
+            return existing.product.name if existing.product else '未知商品'
+        return None

@@ -501,50 +501,51 @@
                             </div>
                         {% endif %}
                         
-                        <!-- 出入库管理 -->
-                        {% if current_user.has_permission('inbound_manage') or current_user.has_permission('outbound_manage') or current_user.has_permission('inventory_manage') %}
-                            <div class="menu-header" data-target="inout-manage">出入库管理</div>
-                            <div class="menu-content" id="inout-manage">
-                                {% if current_user.has_permission('inbound_manage') %}
-                                    <a href="{{ url_for('inbound.list') }}" class="list-group-item list-group-item-action ml-3">
-                                        <i class="fa fa-arrow-down text-primary me-2"></i>入库单列表
-                                    </a>
-                                {% endif %}
-                                {% if current_user.has_permission('outbound_manage') %}
-                                    <a href="{{ url_for('outbound.list') }}" class="list-group-item list-group-item-action ml-3">
-                                        <i class="fa fa-arrow-up text-success me-2"></i>出库单列表
-                                    </a>
-                                {% endif %}
-                                {% if current_user.has_permission('inventory_manage') %}
-                                    <a href="{{ url_for('inventory.list') }}" class="list-group-item list-group-item-action ml-3">
-                                        <i class="fa fa-cubes text-warning me-2"></i>库存列表
-                                    </a>
-                                    <a href="{{ url_for('location.list') }}" class="list-group-item list-group-item-action ml-3">
-                                        <i class="fa fa-map-marker text-info me-2"></i>库位管理
-                                    </a>
-                                {% endif %}
+                        <!-- 入库管理 -->
+                        {% if current_user.has_permission('inbound_manage') %}
+                            <div class="menu-header" data-target="inbound-manage">入库管理</div>
+                            <div class="menu-content" id="inbound-manage">
+                                <a href="{{ url_for('inbound.list') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-file-text-o text-primary me-2"></i>入库单管理
+                                </a>
+                                <a href="{{ url_for('inbound.audit_list') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-check-circle text-success me-2"></i>入库单审核
+                                </a>
+                                <a href="{{ url_for('inbound.items') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-search text-info me-2"></i>入库明细查询
+                                </a>
                             </div>
                         {% endif %}
                         
-                        <!-- 库存查询 -->
-                        {% if current_user.has_permission('inbound_manage') or current_user.has_permission('outbound_manage') or current_user.has_permission('inventory_manage') %}
-                            <div class="menu-header" data-target="inventory-query">库存查询</div>
-                            <div class="menu-content" id="inventory-query">
-                                {% if current_user.has_permission('inbound_manage') %}
-                                    <a href="{{ url_for('inbound.items') }}" class="list-group-item list-group-item-action ml-3">
-                                        <i class="fa fa-search text-primary me-2"></i>入库明细查询
-                                    </a>
-                                {% endif %}
-                                {% if current_user.has_permission('outbound_manage') %}
-                                    <a href="{{ url_for('outbound.items') }}" class="list-group-item list-group-item-action ml-3">
-                                        <i class="fa fa-search text-success me-2"></i>出库明细查询
-                                    </a>
-                                {% endif %}
-                                {% if current_user.has_permission('inventory_manage') %}
-                                    <a href="{{ url_for('inventory.detail') }}" class="list-group-item list-group-item-action ml-3">
-                                        <i class="fa fa-search text-warning me-2"></i>库存明细查询
-                                    </a>
-                                {% endif %}
+                        <!-- 出库管理 -->
+                        {% if current_user.has_permission('outbound_manage') %}
+                            <div class="menu-header" data-target="outbound-manage">出库管理</div>
+                            <div class="menu-content" id="outbound-manage">
+                                <a href="{{ url_for('outbound.list') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-file-text-o text-primary me-2"></i>出库单管理
+                                </a>
+                                <a href="{{ url_for('outbound.audit_list') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-check-circle text-success me-2"></i>出库单审核
+                                </a>
+                                <a href="{{ url_for('outbound.items') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-search text-info me-2"></i>出库明细查询
+                                </a>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- 库存管理 -->
+                        {% if current_user.has_permission('inventory_manage') %}
+                            <div class="menu-header" data-target="inventory-manage">库存管理</div>
+                            <div class="menu-content" id="inventory-manage">
+                                <a href="{{ url_for('inventory.list') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-cubes text-warning me-2"></i>库存列表
+                                </a>
+                                <a href="{{ url_for('inventory.detail') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-search text-info me-2"></i>库存明细查询
+                                </a>
+                                <a href="{{ url_for('location.list') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-map-marker text-primary me-2"></i>库位管理
+                                </a>
                             </div>
                         {% endif %}
                         

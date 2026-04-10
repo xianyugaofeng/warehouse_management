@@ -50,7 +50,7 @@ def init_inbound_orders():
             print('入库单已存在')
             return
         
-        # 创建入库单1：电脑商品入库
+        # 创建入库单1：电脑商品入库（已完成）
         order_no = generate_inbound_no()
         inbound_order1 = InboundOrder(
             order_no=order_no,
@@ -58,7 +58,8 @@ def init_inbound_orders():
             operator_id=admin.id,
             inbound_date=datetime.now().date(),
             total_amount=15,
-            remark='电脑商品批量入库'
+            status='completed',
+            remark='电脑商品批量入库（初始化数据）'
         )
         db.session.add(inbound_order1)
         db.session.flush()
@@ -79,7 +80,7 @@ def init_inbound_orders():
             # 更新库存
             update_inventory(product.id, location.id, item.batch_no, 5, is_bound=True)
         
-        # 创建入库单2：手机商品入库
+        # 创建入库单2：手机商品入库（已完成）
         order_no = generate_inbound_no()
         inbound_order2 = InboundOrder(
             order_no=order_no,
@@ -87,7 +88,8 @@ def init_inbound_orders():
             operator_id=admin.id,
             inbound_date=datetime.now().date(),
             total_amount=10,
-            remark='手机商品批量入库'
+            status='completed',
+            remark='手机商品批量入库（初始化数据）'
         )
         db.session.add(inbound_order2)
         db.session.flush()
@@ -108,8 +110,35 @@ def init_inbound_orders():
             # 更新库存
             update_inventory(product.id, location.id, item.batch_no, 5, is_bound=True)
         
+        # 创建入库单3：待审核入库单
+        order_no = generate_inbound_no()
+        inbound_order3 = InboundOrder(
+            order_no=order_no,
+            supplier_id=supplier.id,
+            operator_id=admin.id,
+            inbound_date=datetime.now().date(),
+            total_amount=8,
+            status='draft',
+            remark='待审核入库单（初始化数据）'
+        )
+        db.session.add(inbound_order3)
+        db.session.flush()
+        
+        # 添加入库明细（不更新库存，因为还未审核）
+        for i, product in enumerate(computer_products[:2]):
+            item = InboundItem(
+                order_id=inbound_order3.id,
+                product_id=product.id,
+                location_id=location.id,
+                quantity=4,
+                batch_no=f'IN-{datetime.now().strftime("%Y%m%d")}-{i+20}',
+                production_date=datetime.now().date() - timedelta(days=15),
+                expire_date=datetime.now().date() + timedelta(days=365)
+            )
+            db.session.add(item)
+        
         db.session.commit()
-        print('入库单样例添加成功')
+        print('入库单样例添加成功（包含1个待审核入库单）')
 
 
 def init_outbound_orders():
@@ -142,7 +171,7 @@ def init_outbound_orders():
             print('出库单已存在')
             return
         
-        # 创建出库单1：电脑商品出库
+        # 创建出库单1：电脑商品出库（已完成）
         order_no = generate_outbound_no()
         outbound_order1 = OutboundOrder(
             order_no=order_no,
@@ -151,7 +180,8 @@ def init_outbound_orders():
             receive_phone=customer.phone,
             outbound_date=datetime.now().date(),
             total_amount=4,
-            remark='电脑商品出库'
+            status='completed',
+            remark='电脑商品出库（初始化数据）'
         )
         db.session.add(outbound_order1)
         db.session.flush()
@@ -173,7 +203,7 @@ def init_outbound_orders():
                 # 更新库存
                 update_inventory(product.id, inventory.location_id, inventory.batch_no, 2, is_bound=False)
         
-        # 创建出库单2：手机商品出库
+        # 创建出库单2：手机商品出库（已完成）
         order_no = generate_outbound_no()
         outbound_order2 = OutboundOrder(
             order_no=order_no,
@@ -182,7 +212,8 @@ def init_outbound_orders():
             receive_phone=customer.phone,
             outbound_date=datetime.now().date(),
             total_amount=2,
-            remark='手机商品出库'
+            status='completed',
+            remark='手机商品出库（初始化数据）'
         )
         db.session.add(outbound_order2)
         db.session.flush()
@@ -204,8 +235,37 @@ def init_outbound_orders():
                 # 更新库存
                 update_inventory(product.id, inventory.location_id, inventory.batch_no, 2, is_bound=False)
         
+        # 创建出库单3：待审核出库单
+        order_no = generate_outbound_no()
+        outbound_order3 = OutboundOrder(
+            order_no=order_no,
+            customer_id=customer.id,
+            operator_id=admin.id,
+            receive_phone=customer.phone,
+            outbound_date=datetime.now().date(),
+            total_amount=3,
+            status='draft',
+            remark='待审核出库单（初始化数据）'
+        )
+        db.session.add(outbound_order3)
+        db.session.flush()
+        
+        # 添加出库明细（不更新库存，因为还未审核）
+        phone_products = [p for p in products if p.category.name == '手机']
+        if phone_products:
+            inventory = Inventory.query.filter_by(product_id=phone_products[0].id).first()
+            if inventory:
+                item = OutboundItem(
+                    order_id=outbound_order3.id,
+                    product_id=phone_products[0].id,
+                    location_id=inventory.location_id,
+                    quantity=3,
+                    batch_no=inventory.batch_no
+                )
+                db.session.add(item)
+        
         db.session.commit()
-        print('出库单样例添加成功')
+        print('出库单样例添加成功（包含1个待审核出库单）')
 
 
 def main():
