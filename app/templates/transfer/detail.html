@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}调拨单详情 - 仓库管理系统{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+            <i class="fa fa-exchange mr-3 text-primary"></i>调拨单详情
+        </h2>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('transfer.list') }}">调拨管理</a></li>
+                <li class="breadcrumb-item active" aria-current="page">调拨单详情</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="card shadow-sm rounded-xl overflow-hidden mb-6">
+        <div class="card-header bg-gradient-to-r from-blue-50 to-blue-100 py-3 px-4 border-b border-gray-200">
+            <h5 class="mb-0 font-semibold text-gray-700">
+                <i class="fa fa-file-text-o mr-2 text-primary"></i>基本信息
+            </h5>
+        </div>
+        <div class="card-body p-6">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="text-muted small mb-1">调拨单号</label>
+                    <p class="font-semibold text-gray-800">{{ order.order_no }}</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="text-muted small mb-1">审核状态</label>
+                    <p>
+                        {% if order.audit_status == 'pending' %}
+                            <span class="badge bg-warning text-white">未审核</span>
+                        {% elif order.audit_status == 'approved' %}
+                            <span class="badge bg-success text-white">已审核</span>
+                        {% elif order.audit_status == 'rejected' %}
+                            <span class="badge bg-danger text-white">已驳回</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="text-muted small mb-1">制单人</label>
+                    <p class="font-semibold text-gray-800">{{ order.creator.username if order.creator else '-' }}</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="text-muted small mb-1">制单时间</label>
+                    <p class="font-semibold text-gray-800">{{ order.create_time.strftime('%Y-%m-%d %H:%M:%S') if order.create_time else '-' }}</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="text-muted small mb-1">审核人</label>
+                    <p class="font-semibold text-gray-800">{{ order.auditor.username if order.auditor else '-' }}</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="text-muted small mb-1">审核时间</label>
+                    <p class="font-semibold text-gray-800">{{ order.audit_time.strftime('%Y-%m-%d %H:%M:%S') if order.audit_time else '-' }}</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="text-muted small mb-1">备注</label>
+                    <p class="font-semibold text-gray-800">{{ order.remark or '-' }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm rounded-xl overflow-hidden">
+        <div class="card-header bg-gradient-to-r from-blue-50 to-blue-100 py-3 px-4 border-b border-gray-200">
+            <h5 class="mb-0 font-semibold text-gray-700">
+                <i class="fa fa-list-alt mr-2 text-primary"></i>调拨明细
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="bg-gray-50">
+                        <tr class="text-gray-700 border-b-2 border-gray-300">
+                            <th class="py-3 px-4 font-semibold">商品名称</th>
+                            <th class="py-3 px-4 font-semibold">商品编码</th>
+                            <th class="py-3 px-4 font-semibold">原库位</th>
+                            <th class="py-3 px-4 font-semibold">目标库位</th>
+                            <th class="py-3 px-4 font-semibold text-center">调拨数量</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order.items %}
+                        <tr class="border-b border-gray-200 hover:bg-gray-50 transition-all duration-200">
+                            <td class="py-3 px-4">{{ item.product.name if item.product else '-' }}</td>
+                            <td class="py-3 px-4">{{ item.product.code if item.product else '-' }}</td>
+                            <td class="py-3 px-4">
+                                {{ item.source_location.code if item.source_location else '-' }} - 
+                                {{ item.source_location.name if item.source_location else '-' }}
+                            </td>
+                            <td class="py-3 px-4">
+                                {{ item.target_location.code if item.target_location else '-' }} - 
+                                {{ item.target_location.name if item.target_location else '-' }}
+                            </td>
+                            <td class="py-3 px-4 text-center font-semibold text-primary">{{ item.quantity }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-8 text-gray-500">
+                                <i class="fa fa-inbox fa-3x mb-3 d-block text-gray-300"></i>
+                                暂无调拨明细
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-end gap-3 mt-4">
+        {% if order.audit_status == 'pending' %}
+        <form method="POST" action="{{ url_for('transfer.audit', id=order.id) }}" class="d-inline">
+            <input type="hidden" name="audit_result" value="approved">
+            <button type="submit" class="btn btn-success rounded-lg px-4" onclick="return confirm('确认审核通过吗？审核通过后将执行库存转移操作。')">
+                <i class="fa fa-check mr-2"></i>审核通过
+            </button>
+        </form>
+        <form method="POST" action="{{ url_for('transfer.audit', id=order.id) }}" class="d-inline">
+            <input type="hidden" name="audit_result" value="rejected">
+            <button type="submit" class="btn btn-danger rounded-lg px-4" onclick="return confirm('确认驳回该调拨单吗？')">
+                <i class="fa fa-times mr-2"></i>驳回
+            </button>
+        </form>
+        {% endif %}
+        <a href="{{ url_for('transfer.list') }}" class="btn btn-secondary rounded-lg px-4">
+            <i class="fa fa-arrow-left mr-2"></i>返回列表
+        </a>
+    </div>
+{% endblock %}

@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% block title %}调拨明细查询 - 仓库管理系统{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+            <i class="fa fa-search mr-3 text-primary"></i>调拨明细查询
+        </h2>
+    </div>
+
+    <div class="card mb-6 shadow-sm rounded-xl overflow-hidden">
+        <div class="card-body p-6">
+            <form method="GET" action="{{ url_for('transfer.items') }}" class="row g-4">
+                <div class="col-md-3">
+                    <label for="keyword" class="form-label">关键词</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
+                            <i class="fa fa-search text-gray-400"></i>
+                        </span>
+                        <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="keyword" name="keyword" value="{{ keyword }}" placeholder="商品名称/编码/调拨单号">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label for="product_id" class="form-label">商品</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
+                            <i class="fa fa-shopping-bag text-gray-400"></i>
+                        </span>
+                        <select class="form-select rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="product_id" name="product_id">
+                            <option value="">全部商品</option>
+                            {% for product in products %}
+                                <option value="{{ product.id }}" {% if product_id == product.id|string %}selected{% endif %}>
+                                    {{ product.name }} ({{ product.code }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label for="source_location_id" class="form-label">原库位</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
+                            <i class="fa fa-map-marker text-gray-400"></i>
+                        </span>
+                        <select class="form-select rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="source_location_id" name="source_location_id">
+                            <option value="">全部库位</option>
+                            {% for location in locations %}
+                                <option value="{{ location.id }}" {% if source_location_id == location.id|string %}selected{% endif %}>
+                                    {{ location.code }} - {{ location.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label for="target_location_id" class="form-label">目标库位</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
+                            <i class="fa fa-map-marker text-gray-400"></i>
+                        </span>
+                        <select class="form-select rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="target_location_id" name="target_location_id">
+                            <option value="">全部库位</option>
+                            {% for location in locations %}
+                                <option value="{{ location.id }}" {% if target_location_id == location.id|string %}selected{% endif %}>
+                                    {{ location.code }} - {{ location.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label for="audit_status" class="form-label">审核状态</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
+                            <i class="fa fa-check-circle text-gray-400"></i>
+                        </span>
+                        <select class="form-select rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="audit_status" name="audit_status">
+                            <option value="">全部状态</option>
+                            <option value="pending" {% if audit_status == 'pending' %}selected{% endif %}>未审核</option>
+                            <option value="approved" {% if audit_status == 'approved' %}selected{% endif %}>已审核</option>
+                            <option value="rejected" {% if audit_status == 'rejected' %}selected{% endif %}>已驳回</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label for="date_range" class="form-label">日期范围</label>
+                    <div class="d-flex gap-2">
+                        <input type="date" class="form-control rounded-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" name="start_date" value="{{ start_date }}">
+                        <input type="date" class="form-control rounded-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" name="end_date" value="{{ end_date }}">
+                    </div>
+                </div>
+                <div class="col-md-12">
+                    <button type="submit" class="btn btn-primary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
+                        <i class="fa fa-search mr-2"></i>查询
+                    </button>
+                    <a href="{{ url_for('transfer.items') }}" class="btn btn-outline-secondary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg ml-2">
+                        <i class="fa fa-refresh mr-2"></i>重置
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm rounded-xl overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered">
+                    <thead class="bg-gray-50">
+                        <tr class="text-gray-700 border-b-2 border-gray-300">
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">调拨单号</th>
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">商品名称</th>
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">商品编码</th>
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">原库位</th>
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">目标库位</th>
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">调拨数量</th>
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">审核状态</th>
+                            <th class="py-3 px-4 font-semibold text-center">制单时间</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white">
+                        {% if items %}
+                            {% for item in items %}
+                                <tr class="transition-all duration-300 hover:bg-gray-50">
+                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 font-medium">
+                                        <a href="{{ url_for('transfer.detail', id=item.order.id) }}" class="text-primary hover:underline">
+                                            {{ item.order.order_no }}
+                                        </a>
+                                    </td>
+                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">{{ item.product.name if item.product else '-' }}</td>
+                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ item.product.code if item.product else '-' }}</td>
+                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">
+                                        {{ item.source_location.code if item.source_location else '-' }} - 
+                                        {{ item.source_location.name if item.source_location else '-' }}
+                                    </td>
+                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">
+                                        {{ item.target_location.code if item.target_location else '-' }} - 
+                                        {{ item.target_location.name if item.target_location else '-' }}
+                                    </td>
+                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center font-semibold text-primary">{{ item.quantity }}</td>
+                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">
+                                        {% if item.order.audit_status == 'pending' %}
+                                            <span class="badge bg-warning text-white rounded-full px-3 py-1">未审核</span>
+                                        {% elif item.order.audit_status == 'approved' %}
+                                            <span class="badge bg-success text-white rounded-full px-3 py-1">已审核</span>
+                                        {% elif item.order.audit_status == 'rejected' %}
+                                            <span class="badge bg-danger text-white rounded-full px-3 py-1">已驳回</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-3 px-4 border-b border-gray-200 text-center">
+                                        {{ item.order.create_time.strftime('%Y-%m-%d %H:%M') if item.order.create_time else '-' }}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="8" class="py-12 text-center text-gray-500 border border-gray-200">
+                                    <div class="flex flex-col items-center">
+                                        <i class="fa fa-search text-4xl mb-4 text-gray-300"></i>
+                                        <p>暂无数据</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if pagination %}
+                <div class="p-4 border-t border-gray-200 bg-gray-50">
+                    <div class="flex flex-wrap justify-between items-center gap-4">
+                        <p class="text-sm text-gray-600">
+                            显示 {{ pagination.page * pagination.per_page - pagination.per_page + 1 }} 到 {{ pagination.page * pagination.per_page if pagination.page * pagination.per_page < pagination.total else pagination.total }} 条，共 {{ pagination.total }} 条
+                        </p>
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination space-x-1">
+                                {% if pagination.has_prev %}
+                                    <li class="page-item">
+                                        <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300" href="{{ url_for('transfer.items', page=pagination.prev_num, keyword=keyword, product_id=product_id, source_location_id=source_location_id, target_location_id=target_location_id, audit_status=audit_status, start_date=start_date, end_date=end_date) }}">
+                                            <i class="fa fa-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link rounded-lg border-gray-300 bg-gray-100 text-gray-400">
+                                            <i class="fa fa-chevron-left"></i>
+                                        </span>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for page_num in pagination.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+                                    {% if page_num %}
+                                        {% if page_num == pagination.page %}
+                                            <li class="page-item active">
+                                                <span class="page-link rounded-lg bg-primary border-primary text-white px-3 py-1">{{ page_num }}</span>
+                                            </li>
+                                        {% else %}
+                                            <li class="page-item">
+                                                <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300 px-3 py-1" href="{{ url_for('transfer.items', page=page_num, keyword=keyword, product_id=product_id, source_location_id=source_location_id, target_location_id=target_location_id, audit_status=audit_status, start_date=start_date, end_date=end_date) }}">{{ page_num }}</a>
+                                            </li>
+                                        {% endif %}
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link rounded-lg border-gray-300 bg-gray-100 text-gray-400 px-3 py-1">...</span>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if pagination.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300" href="{{ url_for('transfer.items', page=pagination.next_num, keyword=keyword, product_id=product_id, source_location_id=source_location_id, target_location_id=target_location_id, audit_status=audit_status, start_date=start_date, end_date=end_date) }}">
+                                            <i class="fa fa-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link rounded-lg border-gray-300 bg-gray-100 text-gray-400">
+                                            <i class="fa fa-chevron-right"></i>
+                                        </span>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

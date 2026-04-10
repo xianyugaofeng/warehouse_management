@@ -7,4 +7,5 @@ from .product import Product, Category, Supplier, Customer, ProductParamKey, Cat
 from .inventory import Inventory, WarehouseLocation
 from .inbound import InboundItem, InboundOrder
 from .outbound import OutboundItem, OutboundOrder
+from .transfer import TransferOrder, TransferItem
 

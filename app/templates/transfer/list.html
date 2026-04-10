@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}调拨单列表 - 仓库管理系统{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+            <i class="fa fa-exchange mr-3 text-primary"></i>调拨单列表
+        </h2>
+        <a href="{{ url_for('transfer.add') }}" class="btn btn-primary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
+            <i class="fa fa-plus mr-2"></i>新建调拨单
+        </a>
+    </div>
+
+    <div class="card shadow-sm rounded-xl overflow-hidden mb-6">
+        <div class="card-body p-4">
+            <form method="GET" action="{{ url_for('transfer.list') }}">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <input type="text" class="form-control rounded-lg border-gray-300" name="keyword" value="{{ keyword }}" placeholder="调拨单号">
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select rounded-lg border-gray-300" name="audit_status">
+                            <option value="">审核状态</option>
+                            <option value="pending" {% if audit_status == 'pending' %}selected{% endif %}>未审核</option>
+                            <option value="approved" {% if audit_status == 'approved' %}selected{% endif %}>已审核</option>
+                            <option value="rejected" {% if audit_status == 'rejected' %}selected{% endif %}>已驳回</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="date" class="form-control rounded-lg border-gray-300" name="start_date" value="{{ start_date }}">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="date" class="form-control rounded-lg border-gray-300" name="end_date" value="{{ end_date }}">
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary rounded-lg">
+                            <i class="fa fa-search mr-2"></i>查询
+                        </button>
+                        <a href="{{ url_for('transfer.list') }}" class="btn btn-secondary rounded-lg ml-2">
+                            <i class="fa fa-refresh mr-2"></i>重置
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm rounded-xl overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="bg-gray-50">
+                        <tr class="text-gray-700 border-b-2 border-gray-300">
+                            <th class="py-3 px-4 font-semibold">调拨单号</th>
+                            <th class="py-3 px-4 font-semibold">制单人</th>
+                            <th class="py-3 px-4 font-semibold">制单时间</th>
+                            <th class="py-3 px-4 font-semibold">审核状态</th>
+                            <th class="py-3 px-4 font-semibold">审核人</th>
+                            <th class="py-3 px-4 font-semibold">审核时间</th>
+                            <th class="py-3 px-4 font-semibold text-center">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr class="border-b border-gray-200 hover:bg-gray-50 transition-all duration-200">
+                            <td class="py-3 px-4">
+                                <a href="{{ url_for('transfer.detail', id=order.id) }}" class="text-primary hover:underline">
+                                    {{ order.order_no }}
+                                </a>
+                            </td>
+                            <td class="py-3 px-4">{{ order.creator.username if order.creator else '-' }}</td>
+                            <td class="py-3 px-4">{{ order.create_time.strftime('%Y-%m-%d %H:%M') if order.create_time else '-' }}</td>
+                            <td class="py-3 px-4">
+                                {% if order.audit_status == 'pending' %}
+                                    <span class="badge bg-warning text-white">未审核</span>
+                                {% elif order.audit_status == 'approved' %}
+                                    <span class="badge bg-success text-white">已审核</span>
+                                {% elif order.audit_status == 'rejected' %}
+                                    <span class="badge bg-danger text-white">已驳回</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-3 px-4">{{ order.auditor.username if order.auditor else '-' }}</td>
+                            <td class="py-3 px-4">{{ order.audit_time.strftime('%Y-%m-%d %H:%M') if order.audit_time else '-' }}</td>
+                            <td class="py-3 px-4 text-center">
+                                <a href="{{ url_for('transfer.detail', id=order.id) }}" class="btn btn-sm btn-info rounded-lg">
+                                    <i class="fa fa-eye"></i> 详情
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-8 text-gray-500">
+                                <i class="fa fa-inbox fa-3x mb-3 d-block text-gray-300"></i>
+                                暂无调拨单数据
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if pagination.pages > 1 %}
+            <div class="card-footer bg-white py-3">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link rounded-lg" href="{{ url_for('transfer.list', page=pagination.prev_num, keyword=keyword, audit_status=audit_status, start_date=start_date, end_date=end_date) }}">
+                                <i class="fa fa-chevron-left"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                            {% if page_num %}
+                                {% if page_num == pagination.page %}
+                                <li class="page-item active">
+                                    <span class="page-link rounded-lg">{{ page_num }}</span>
+                                </li>
+                                {% else %}
+                                <li class="page-item">
+                                    <a class="page-link rounded-lg" href="{{ url_for('transfer.list', page=page_num, keyword=keyword, audit_status=audit_status, start_date=start_date, end_date=end_date) }}">{{ page_num }}</a>
+                                </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link rounded-lg" href="{{ url_for('transfer.list', page=pagination.next_num, keyword=keyword, audit_status=audit_status, start_date=start_date, end_date=end_date) }}">
+                                <i class="fa fa-chevron-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

@@ -31,6 +31,7 @@ def create_app(config_name='default'):
     from app.views.customer_manage import customer_bp
     from app.views.supplier_manage import supplier_bp
     from app.views.location_manage import location_bp
+    from app.views.transfer_manage import transfer_bp
 
     # 注册蓝图（这会注册所有蓝图中的路由）
     app.register_blueprint(user_bp, url_prefix='/user')
@@ -43,6 +44,7 @@ def create_app(config_name='default'):
     app.register_blueprint(customer_bp, url_prefix='/customer')
     app.register_blueprint(supplier_bp, url_prefix='/supplier')
     app.register_blueprint(location_bp, url_prefix='/location')
+    app.register_blueprint(transfer_bp, url_prefix='/transfer')
 
     # 注册根路由
     @app.route('/')
