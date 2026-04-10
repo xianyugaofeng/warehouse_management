@@ -17,6 +17,7 @@ inbound_bp = Blueprint('inbound', __name__)
 def list():
     keyword = request.args.get('keyword', '')     # 接收参数keyword supplier_id start_date end_date page
     supplier_id = request.args.get('supplier_id', '')
+    inbound_type = request.args.get('inbound_type', '')
     start_date = request.args.get('start_date', '')
     end_date = request.args.get('end_date', '')
 
@@ -25,6 +26,8 @@ def list():
         query = query.filter(InboundOrder.order_no.ilike(f'%{keyword}%'))
     if supplier_id:
         query = query.filter_by(supplier_id=supplier_id)
+    if inbound_type:
+        query = query.filter_by(inbound_type=inbound_type)
     if start_date:
         query = query.filter(InboundOrder.inbound_date >= start_date)
     if end_date:
@@ -41,6 +44,7 @@ def list():
                            pagination=pagination,
                            keyword=keyword,
                            supplier_id=supplier_id,
+                           inbound_type=inbound_type,
                            start_date=start_date,
                            end_date=end_date,
                            suppliers=suppliers
@@ -57,9 +61,9 @@ def add():
 
     if request.method == 'POST':
         # 接收表单数据
+        inbound_type = request.form.get('inbound_type', 'replenish')
         supplier_id = request.form.get('supplier_id')
         inbound_date = request.form.get('inbound_date', datetime.now().strftime('%Y-%m-%d'))
-        # 默认值为当前时间
         remark = request.form.get('remark')
 
         # 接收明细数据(前端通过JS添加多条明细)
@@ -83,20 +87,20 @@ def add():
         # 创建入库单
         order_no = generate_inbound_no()
         total_amount = sum(int(qty) for qty in quantities if qty.isdigit())
-        # isdigit()检查字符串中是否只包含数字 负数会返回False
-        # 生成器表达式
         inbound_order = InboundOrder(
             order_no=order_no,
+            inbound_type=inbound_type,
             supplier_id=supplier_id,
             operator_id=current_user.id,
             inbound_date=inbound_date,
             total_amount=total_amount,
+            status='draft',
             remark=remark
         )
         db.session.add(inbound_order)
-        db.session.flush()      # 刷新获取order_id,用于明细关联
+        db.session.flush()
 
-        # 处理入库明细并更新库存
+        # 创建入库明细（不更新库存）
         try:
             for i in range(len(product_ids)):
                 product_id = product_ids[i]
@@ -107,7 +111,13 @@ def add():
                 expire_date = expire_dates[i] if expire_dates[i] else None
 
                 if quantity <= 0:
-                    return None
+                    flash('数量必须大于0', 'danger')
+                    return render_template('inbound/add.html',
+                                           products=products,
+                                           suppliers=suppliers,
+                                           locations=locations,
+                                           now=datetime.now()
+                    )
 
                 # 创建入库明细
                 item = InboundItem(
@@ -121,12 +131,9 @@ def add():
                 )
                 db.session.add(item)
 
-                # 更新库存
-                update_inventory(product_id, location_id, batch_no, quantity, is_bound=True)
-
             db.session.commit()
-            flash('入库单创建成功', 'success')
-            return redirect(url_for('inbound.list'))
+            flash('入库单创建成功，请确认入库', 'success')
+            return redirect(url_for('inbound.detail', id=inbound_order.id))
         except Exception as e:
             db.session.rollback()
             flash(f'创建失败:{str(e)}', 'danger')
@@ -136,7 +143,55 @@ def add():
                            suppliers=suppliers,
                            locations=locations,
                            now=datetime.now()
-    )  # GET请求或POST请求添加入库单失败
+    )
+
+# 审核入库单
+@inbound_bp.route('/audit/<int:id>', methods=['POST'])
+@permission_required('inbound_manage')
+@login_required
+def audit(id):
+    order = InboundOrder.query.get_or_404(id)
+    
+    if order.status != 'draft':
+        flash('只有草稿状态的入库单才能审核', 'warning')
+        return redirect(url_for('inbound.detail', id=id))
+    
+    if not order.items.first():
+        flash('入库单没有明细，无法审核', 'warning')
+        return redirect(url_for('inbound.detail', id=id))
+    
+    # 获取审核结果
+    audit_result = request.form.get('audit_result')
+    
+    try:
+        if audit_result == 'approved':
+            # 审核通过：更新库存
+            for item in order.items:
+                update_inventory(item.product_id, item.location_id, item.batch_no, item.quantity, is_bound=True)
+            
+            # 更新入库单状态为已完成
+            order.status = 'completed'
+            db.session.commit()
+            
+            flash('审核通过，库存已更新', 'success')
+            return redirect(url_for('inbound.list'))
+        
+        elif audit_result == 'rejected':
+            # 审核未通过：删除入库单（级联删除明细）
+            db.session.delete(order)
+            db.session.commit()
+            
+            flash('审核未通过，入库单已删除', 'warning')
+            return redirect(url_for('inbound.list'))
+        
+        else:
+            flash('无效的审核结果', 'danger')
+            return redirect(url_for('inbound.detail', id=id))
+            
+    except Exception as e:
+        db.session.rollback()
+        flash(f'审核失败:{str(e)}', 'danger')
+        return redirect(url_for('inbound.detail', id=id))
 
 
 # 入库明细查询
@@ -149,6 +204,7 @@ def items():
     product_id = request.args.get('product_id', '')
     location_id = request.args.get('location_id', '')
     supplier_id = request.args.get('supplier_id', '')
+    inbound_type = request.args.get('inbound_type', '')
     start_date = request.args.get('start_date', '')
     end_date = request.args.get('end_date', '')
     order_id = request.args.get('order_id', '')
@@ -167,6 +223,9 @@ def items():
     
     if supplier_id:
         query = query.filter(InboundOrder.supplier_id == supplier_id)
+
+    if inbound_type:
+        query = query.filter(InboundOrder.inbound_type == inbound_type)
 
     if product_id:
         query = query.filter(InboundItem.product_id == product_id)
@@ -200,6 +259,7 @@ def items():
                            keyword=keyword,
                            product_id=product_id,
                            location_id=location_id,
+                           inbound_type=inbound_type,
                            start_date=start_date,
                            end_date=end_date,
                            order_id=order_id,

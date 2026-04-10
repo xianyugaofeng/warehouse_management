@@ -6,6 +6,7 @@ class InboundOrder(db.Model):
     __tablename__ = 'inbound_orders'
     id = db.Column(db.Integer, primary_key=True)
     order_no = db.Column(db.String(32), unique=True, nullable=False)    # 入库单号（自动生成）
+    inbound_type = db.Column(db.String(16), default='replenish', nullable=False)  # 入库类型(replenish补货/return退货/purchase收购)
     supplier_id = db.Column(db.Integer, db.ForeignKey('suppliers.id'))   # 关联供应商
     operator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # 关联操作员
     inbound_date = db.Column(db.Date, default=datetime.utcnow, nullable=False)  # 入库日期

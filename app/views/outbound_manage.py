@@ -18,6 +18,7 @@ outbound_bp = Blueprint('outbound', __name__)
 def list():
     keyword = request.args.get('keyword', '')
     customer_id = request.args.get('customer_id', '')
+    outbound_type = request.args.get('outbound_type', '')
     start_date = request.args.get('start_date', '')
     end_date = request.args.get('end_date', '')
 
@@ -26,6 +27,8 @@ def list():
         query = query.filter(OutboundOrder.order_no.ilike(f'%{keyword}%'))
     if customer_id:
         query = query.filter(OutboundOrder.customer_id == customer_id)
+    if outbound_type:
+        query = query.filter_by(outbound_type=outbound_type)
     if start_date:
         query = query.filter(OutboundOrder.outbound_date >= start_date)
     if end_date:
@@ -43,6 +46,7 @@ def list():
                            pagination=pagination,
                            keyword=keyword,
                            customer_id=customer_id,
+                           outbound_type=outbound_type,
                            start_date=start_date,
                            end_date=end_date,
                            customers=customers
@@ -55,9 +59,11 @@ def list():
 def add():
     products = Product.query.all()
     locations = WarehouseLocation.query.filter_by(status=True).all()
+    customers = Customer.query.all()
 
     if request.method == 'POST':
         # 接收表单数据
+        outbound_type = request.form.get('outbound_type', 'delivery')
         customer_id = request.form.get('customer_id')
         receive_phone = request.form.get('receive_phone')
         outbound_date = request.form.get('outbound_date', datetime.now().strftime('%Y-%m-%d'))
@@ -71,7 +77,7 @@ def add():
 
         # 验证数据
         if not product_ids or len(product_ids) != len(quantities):
-            flash('请添加至少一条入库明细', 'danger')
+            flash('请添加至少一条出库明细', 'danger')
             return render_template('outbound/add.html',
                                    products=products,
                                    locations=locations,
@@ -92,17 +98,19 @@ def add():
         total_amount = sum(int(qty) for qty in quantities if qty.isdigit())
         outbound_order = OutboundOrder(
             order_no=order_no,
+            outbound_type=outbound_type,
             customer_id=customer_id,
             operator_id=current_user.id,
             receive_phone=receive_phone,
             outbound_date=outbound_date,
             total_amount=total_amount,
+            status='draft',
             remark=remark
         )
         db.session.add(outbound_order)
         db.session.flush()
 
-        # 处理出库明细并更新缓存
+        # 创建出库明细（不更新库存）
         try:
             for i in range(len(product_ids)):
                 product_id = product_ids[i]
@@ -110,8 +118,14 @@ def add():
                 batch_no = batch_nos[i] or f'B{datetime.now().strftime("%Y%m%d")}{i+1}'
                 quantity = int(quantities[i]) if quantities[i].isdigit() else 0
 
-                if quantity <=0:
-                    continue
+                if quantity <= 0:
+                    flash('数量必须大于0', 'danger')
+                    return render_template('outbound/add.html',
+                                           products=products,
+                                           locations=locations,
+                                           customers=customers,
+                                           now=datetime.now()
+                    )
 
                 # 创建出库明细
                 item = OutboundItem(
@@ -123,18 +137,12 @@ def add():
                 )
                 db.session.add(item)
 
-                # 更新库存(减少)
-                update_inventory(product_id, location_id, batch_no, quantity, is_bound=False)
-
             db.session.commit()
-            flash('出库单创建成功', 'success')
-            return redirect(url_for('outbound.list'))
+            flash('出库单创建成功，请审核出库', 'success')
+            return redirect(url_for('outbound.detail', id=outbound_order.id))
         except Exception as e:
             db.session.rollback()
             flash(f'创建失败：{str(e)}', 'danger')
-
-    # 获取所有客户
-    customers = Customer.query.all()
 
     return render_template('outbound/add.html',
                            products=products,
@@ -142,6 +150,54 @@ def add():
                            customers=customers,
                            now=datetime.now()
     )
+
+# 审核出库单
+@outbound_bp.route('/audit/<int:id>', methods=['POST'])
+@permission_required('outbound_manage')
+@login_required
+def audit(id):
+    order = OutboundOrder.query.get_or_404(id)
+    
+    if order.status != 'draft':
+        flash('只有草稿状态的出库单才能审核', 'warning')
+        return redirect(url_for('outbound.detail', id=id))
+    
+    if not order.items.first():
+        flash('出库单没有明细，无法审核', 'warning')
+        return redirect(url_for('outbound.detail', id=id))
+    
+    # 获取审核结果
+    audit_result = request.form.get('audit_result')
+    
+    try:
+        if audit_result == 'approved':
+            # 审核通过：更新库存（减少）
+            for item in order.items:
+                update_inventory(item.product_id, item.location_id, item.batch_no, item.quantity, is_bound=False)
+            
+            # 更新出库单状态为已完成
+            order.status = 'completed'
+            db.session.commit()
+            
+            flash('审核通过，库存已更新', 'success')
+            return redirect(url_for('outbound.list'))
+        
+        elif audit_result == 'rejected':
+            # 审核未通过：删除出库单（级联删除明细）
+            db.session.delete(order)
+            db.session.commit()
+            
+            flash('审核未通过，出库单已删除', 'warning')
+            return redirect(url_for('outbound.list'))
+        
+        else:
+            flash('无效的审核结果', 'danger')
+            return redirect(url_for('outbound.detail', id=id))
+            
+    except Exception as e:
+        db.session.rollback()
+        flash(f'审核失败:{str(e)}', 'danger')
+        return redirect(url_for('outbound.detail', id=id))
 
 
 # 出库明细查询

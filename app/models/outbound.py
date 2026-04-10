@@ -7,6 +7,7 @@ class OutboundOrder(db.Model):
     __tablename__ = 'outbound_orders'
     id = db.Column(db.Integer, primary_key=True)
     order_no = db.Column(db.String(32), unique=True, nullable=False)   # 出库单号（自动生成）
+    outbound_type = db.Column(db.String(16), default='delivery', nullable=False)  # 出库类型(delivery发货/return退购/scrap报废)
     operator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)   # 操作员
     customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)   # 关联客户
     receive_phone = db.Column(db.String(16))   # 联系电话
