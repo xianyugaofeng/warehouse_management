@@ -3,24 +3,15 @@
 
 {% block content %}
     <div class="d-flex justify-content-between align-items-center mb-6">
-        <!--子元素水平排列 两端对齐 垂直居中-->
         <h2 class="text-2xl font-bold text-gray-800 flex items-center">
-            <i class="fa fa-cubes mr-3 text-primary"></i>库存列表
+            <i class="fa fa-exclamation-triangle text-danger mr-3"></i>库存预警
         </h2>
-        <div class="flex space-x-2">
-            <a href="{{ url_for('inventory.list', warning_only=1) }}" class="btn btn-sm {% if warning_only %}btn-danger{% else %}btn-outline-danger{% endif %} shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
-                <i class="fa fa-exclamation-triangle mr-1"></i>仅看预警库存
-            </a>
-            <a href="{{ url_for('inventory.detail') }}" class="btn btn-sm btn-outline-primary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
-                <i class="fa fa-list-alt mr-1"></i>库存明细查询
-            </a>
-        </div>
     </div>
 
     <!--搜索表单-->
     <div class="card mb-6 shadow-sm rounded-xl overflow-hidden">
         <div class="card-body p-6">
-            <form action="{{ url_for('inventory.list') }}" method="GET" class="row g-4">
+            <form action="{{ url_for('inventory.warning') }}" method="GET" class="row g-4">
                 <div class="col-md-3">
                     <div class="input-group">
                         <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
@@ -59,14 +50,6 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-2 d-flex items-center">
-                    <!--align-middle：使元素中心对齐-->
-                    <div class="form-check align-middle">
-                        <input type="checkbox" class="form-check-input rounded border-gray-300 focus:ring-primary" id="warning_only" name="warning_only" value="1" {% if warning_only %}checked{% endif %}>         <!--创建复选框-->
-                        <!--checked：布尔属性，设置复选框默认被选中-->
-                        <label for="warning_only" class="form-check-label ml-2">仅预警库存</label>
-                    </div>
-                </div>
                 <div class="col-md-3">
                     <button type="submit" class="btn btn-secondary w-100 rounded-lg hover:bg-gray-700 transform hover:-translate-y-1 transition-all duration-300">
                         <i class="fa fa-search mr-2"></i>搜索
@@ -89,11 +72,7 @@
                             <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">批次号</th>
                             <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">库存数量</th>
                             <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">预警阈值</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">库存状态</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">生产日期</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">过期日期</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">最后更新时间</th>
-                            <th class="py-3 px-4 font-semibold text-center">操作</th>
+                            <th class="py-3 px-4 font-semibold text-center">最后更新时间</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white">
@@ -105,32 +84,11 @@
                                 <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ inventory.batch_no or '-'}}</td>
                                 <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ inventory.quantity }}</td>
                                 <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ inventory.product.warning_stock }}</td>
-                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">
-                                    {% if inventory.stock_status == 'normal' %}
-                                        <span class="badge bg-success rounded-full px-3 py-1">正常</span>
-                                    {% elif inventory.stock_status == 'damaged' %}
-                                        <span class="badge bg-warning rounded-full px-3 py-1">损坏</span>
-                                    {% elif inventory.stock_status == 'frozen' %}
-                                        <span class="badge bg-danger rounded-full px-3 py-1">冻结</span>
-                                    {% else %}
-                                        <span class="badge bg-secondary rounded-full px-3 py-1">未知</span>
-                                    {% endif %}
-                                    {% if inventory.is_warning() %}
-                                        <br><span class="badge bg-danger rounded-full px-2 py-1 mt-1">库存预警</span>
-                                    {% endif %}
-                                </td>
-                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ inventory.production_date.strftime('%Y-%m-%d') if inventory.production_date else '-' }}</td>
-                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ inventory.expire_date.strftime('%Y-%m-%d') if inventory.expire_date else '-' }}</td>
-                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ inventory.update_time.strftime('%Y-%m-%d %H:%M') }}</td>
-                                <td class="py-3 px-4 border-b border-gray-200 text-center">
-                                    <a href="{{ url_for('inventory.update_status', id=inventory.id) }}" class="btn btn-sm btn-outline-primary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
-                                        <i class="fa fa-edit mr-1"></i>修改状态
-                                    </a>
-                                </td>
+                                <td class="py-3 px-4 border-b border-gray-200 text-center">{{ inventory.update_time.strftime('%Y-%m-%d %H:%M') }}</td>
                             </tr>
                         {% else %}
                             <tr>
-                                <td colspan="11" class="py-12 text-center text-gray-500 border border-gray-200">
+                                <td colspan="7" class="py-12 text-center text-gray-500 border border-gray-200">
                                     <div class="flex flex-col items-center">
                                         <i class="fa fa-cubes text-4xl mb-4 text-gray-300"></i>
                                         <p>暂无库存数据</p>
@@ -152,7 +110,7 @@
                         <ul class="pagination space-x-1">
                             {% if pagination.has_prev %}
                                 <li class="page-item">
-                                    <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300" href="{{ url_for('inventory.list', page=pagination.prev_num, keyword=keyword, category_id=category_id, location_id=location_id, warning_only=1 if warning_only else 0) }}">
+                                    <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300" href="{{ url_for('inventory.warning', page=pagination.prev_num, keyword=keyword, category_id=category_id, location_id=location_id) }}">
                                         <i class="fa fa-chevron-left"></i>
                                     </a>
                                 </li>
@@ -171,7 +129,7 @@
                                         </li>
                                     {% else %}
                                         <li class="page-item">
-                                            <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300 px-3 py-1" href="{{ url_for('inventory.list', page=page, keyword=keyword, category_id=category_id, location_id=location_id, warning_only=1 if warning_only else 0) }}">
+                                            <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300 px-3 py-1" href="{{ url_for('inventory.warning', page=page, keyword=keyword, category_id=category_id, location_id=location_id) }}">
                                                 {{ page }}
                                             </a>
                                         </li>
@@ -184,7 +142,7 @@
                             {% endfor %}
                             {% if pagination.has_next %}
                                 <li class="page-item">
-                                    <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300" href="{{ url_for('inventory.list', page=pagination.next_num, keyword=keyword, category_id=category_id, location_id=location_id, warning_only=1 if warning_only else 0) }}">
+                                    <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300" href="{{ url_for('inventory.warning', page=pagination.next_num, keyword=keyword, category_id=category_id, location_id=location_id) }}">}}">
                                         <i class="fa fa-chevron-right"></i>
                                     </a>
                                 </li>

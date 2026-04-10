@@ -35,8 +35,8 @@ def init_transfer_orders():
             return
         
         locations = WarehouseLocation.query.filter_by(status=True).all()
-        if len(locations) < 2:
-            print('库位数量不足，至少需要2个库位才能进行调拨')
+        if len(locations) < 4:
+            print('库位数量不足，至少需要4个库位才能进行调拨')
             return
         
         # 检查是否有库存
@@ -49,9 +49,13 @@ def init_transfer_orders():
             print('调拨单已存在')
             return
         
-        # 获取有库存的商品和库位
-        source_location = locations[0]
-        target_location = locations[1]
+        # 根据库存分布确定源库位和目标库位
+        # 电脑商品：从 A-01-01 调拨到 B-01-01
+        # 手机商品：从 A-01-02 调拨到 B-01-02
+        computer_source_location = locations[0]   # A-01-01
+        phone_source_location = locations[1]      # A-01-02
+        computer_target_location = locations[4]   # B-01-01
+        phone_target_location = locations[5]      # B-01-02
         
         # 创建调拨单1：电脑商品调拨
         order_no = generate_transfer_no()
@@ -64,22 +68,22 @@ def init_transfer_orders():
         db.session.add(transfer_order1)
         db.session.flush()
         
-        # 添加调拨明细
+        # 添加调拨明细（电脑商品从 computer_source_location 调拨到 computer_target_location）
         computer_products = [p for p in products if p.category.name == '电脑'][:2]
         transfer_count = 0
         for product in computer_products:
             # 获取商品在源库位的库存
             inventory = Inventory.query.filter_by(
                 product_id=product.id,
-                location_id=source_location.id
+                location_id=computer_source_location.id
             ).filter(Inventory.quantity > 0).first()
             
             if inventory and inventory.quantity >= 2:
                 item = TransferItem(
                     order_id=transfer_order1.id,
                     product_id=product.id,
-                    source_location_id=source_location.id,
-                    target_location_id=target_location.id,
+                    source_location_id=computer_source_location.id,
+                    target_location_id=computer_target_location.id,
                     quantity=2
                 )
                 db.session.add(item)
@@ -115,22 +119,22 @@ def init_transfer_orders():
         db.session.add(transfer_order2)
         db.session.flush()
         
-        # 添加调拨明细
+        # 添加调拨明细（手机商品从 phone_source_location 调拨到 phone_target_location）
         phone_products = [p for p in products if p.category.name == '手机'][:1]
         transfer_count = 0
         for product in phone_products:
             # 获取商品在源库位的库存
             inventory = Inventory.query.filter_by(
                 product_id=product.id,
-                location_id=source_location.id
+                location_id=phone_source_location.id
             ).filter(Inventory.quantity > 0).first()
             
             if inventory and inventory.quantity >= 1:
                 item = TransferItem(
                     order_id=transfer_order2.id,
                     product_id=product.id,
-                    source_location_id=source_location.id,
-                    target_location_id=target_location.id,
+                    source_location_id=phone_source_location.id,
+                    target_location_id=phone_target_location.id,
                     quantity=1
                 )
                 db.session.add(item)

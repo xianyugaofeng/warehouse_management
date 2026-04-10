@@ -537,11 +537,14 @@
                         {% if current_user.has_permission('inventory_manage') %}
                             <div class="menu-header" data-target="inventory-manage">库存管理</div>
                             <div class="menu-content" id="inventory-manage">
-                                <a href="{{ url_for('inventory.list') }}" class="list-group-item list-group-item-action ml-3">
-                                    <i class="fa fa-cubes text-warning me-2"></i>库存列表
+                                <a href="{{ url_for('inventory.warning') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-exclamation-triangle text-danger me-2"></i>库存预警
                                 </a>
                                 <a href="{{ url_for('inventory.detail') }}" class="list-group-item list-group-item-action ml-3">
-                                    <i class="fa fa-search text-info me-2"></i>库存明细查询
+                                    <i class="fa fa-search text-info me-2"></i>库存查询
+                                </a>
+                                <a href="{{ url_for('inventory.status') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-edit text-warning me-2"></i>库存状态管理
                                 </a>
                                 <a href="{{ url_for('location.list') }}" class="list-group-item list-group-item-action ml-3">
                                     <i class="fa fa-map-marker text-primary me-2"></i>库位管理
