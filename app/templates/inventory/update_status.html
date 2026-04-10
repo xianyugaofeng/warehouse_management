@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}修改库存状态 - 仓库管理系统{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+            <i class="fa fa-edit mr-3 text-primary"></i>修改库存状态
+        </h2>
+        <a href="{{ url_for('inventory.list') }}" class="btn btn-outline-secondary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
+            <i class="fa fa-arrow-left mr-2"></i>返回列表
+        </a>
+    </div>
+
+    <div class="card mb-6 shadow-sm rounded-xl overflow-hidden">
+        <div class="card-header bg-gray-50 border-b border-gray-200 py-4">
+            <h5 class="text-lg font-semibold text-gray-700">库存信息</h5>
+        </div>
+        <div class="card-body p-6">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <span class="text-gray-600">商品编码:</span>
+                        <span class="font-medium ml-2">{{ inventory.product.code }}</span>
+                    </div>
+                    <div class="mb-3">
+                        <span class="text-gray-600">商品名称:</span>
+                        <span class="font-medium ml-2">{{ inventory.product.name }}</span>
+                    </div>
+                    <div class="mb-3">
+                        <span class="text-gray-600">库位:</span>
+                        <span class="font-medium ml-2">{{ inventory.location.code }} - {{ inventory.location.name }}</span>
+                    </div>
+                    <div class="mb-3">
+                        <span class="text-gray-600">批次号:</span>
+                        <span class="font-medium ml-2">{{ inventory.batch_no or '-' }}</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <span class="text-gray-600">库存数量:</span>
+                        <span class="font-medium ml-2">{{ inventory.quantity }}</span>
+                    </div>
+                    <div class="mb-3">
+                        <span class="text-gray-600">当前状态:</span>
+                        <span class="ml-2">
+                            {% if inventory.stock_status == 'normal' %}
+                                <span class="badge bg-success rounded-full px-3 py-1">正常</span>
+                            {% elif inventory.stock_status == 'damaged' %}
+                                <span class="badge bg-warning rounded-full px-3 py-1">损坏</span>
+                            {% elif inventory.stock_status == 'frozen' %}
+                                <span class="badge bg-danger rounded-full px-3 py-1">冻结</span>
+                            {% else %}
+                                <span class="badge bg-secondary rounded-full px-3 py-1">未知</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="mb-3">
+                        <span class="text-gray-600">生产日期:</span>
+                        <span class="font-medium ml-2">{{ inventory.production_date.strftime('%Y-%m-%d') if inventory.production_date else '-' }}</span>
+                    </div>
+                    <div class="mb-3">
+                        <span class="text-gray-600">过期日期:</span>
+                        <span class="font-medium ml-2">{{ inventory.expire_date.strftime('%Y-%m-%d') if inventory.expire_date else '-' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm rounded-xl overflow-hidden">
+        <div class="card-header bg-gray-50 border-b border-gray-200 py-4">
+            <h5 class="text-lg font-semibold text-gray-700">修改状态</h5>
+        </div>
+        <div class="card-body p-6">
+            <form method="POST" action="{{ url_for('inventory.update_status', id=inventory.id) }}">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="stock_status" class="form-label">库存状态<span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
+                                <i class="fa fa-tag text-gray-400"></i>
+                            </span>
+                            <select class="form-select rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="stock_status" name="stock_status" required>
+                                <option value="normal" {% if inventory.stock_status == 'normal' %}selected{% endif %}>正常</option>
+                                <option value="damaged" {% if inventory.stock_status == 'damaged' %}selected{% endif %}>损坏</option>
+                                <option value="frozen" {% if inventory.stock_status == 'frozen' %}selected{% endif %}>冻结</option>
+                            </select>
+                        </div>
+                        <small class="text-muted mt-1 d-block">
+                            <i class="fa fa-info-circle mr-1"></i>
+                            正常/损坏状态允许出库，冻结状态禁止出库
+                        </small>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="status_remark" class="form-label">状态备注</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
+                                <i class="fa fa-comment text-gray-400"></i>
+                            </span>
+                            <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="status_remark" name="status_remark" value="{{ inventory.status_remark or '' }}" placeholder="请填写状态变更原因（选填）" maxlength="256">
+                        </div>
+                        <small class="text-muted mt-1 d-block">
+                            <i class="fa fa-info-circle mr-1"></i>
+                            例如：损坏原因、冻结原因等
+                        </small>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
+                        <i class="fa fa-save mr-2"></i>保存修改
+                    </button>
+                    <a href="{{ url_for('inventory.list') }}" class="btn btn-outline-secondary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg ml-2">
+                        <i class="fa fa-times mr-2"></i>取消
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        /* 自定义动画效果 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .card {
+            animation: fadeInUp 0.5s ease-out;
+        }
+    </style>
+{% endblock %}

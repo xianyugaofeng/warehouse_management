@@ -1,5 +1,6 @@
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required
+from app import db
 from app.models.inventory import Inventory, WarehouseLocation
 from app.models.product import Product, Category, ProductParamValue
 from app.utils.auth import permission_required
@@ -100,4 +101,36 @@ def detail():
                            keyword=keyword,
                            product_params=product_params
     )
+
+# 修改库存状态
+@inventory_bp.route('/update_status/<int:id>', methods=['GET', 'POST'])
+@permission_required('inventory_manage')
+@login_required
+def update_status(id):
+    inventory = Inventory.query.get_or_404(id)
+    
+    if request.method == 'POST':
+        # 接收表单数据
+        stock_status = request.form.get('stock_status')
+        status_remark = request.form.get('status_remark', '')
+        
+        # 验证状态值
+        if stock_status not in ['normal', 'damaged', 'frozen']:
+            flash('无效的库存状态', 'danger')
+            return redirect(url_for('inventory.update_status', id=id))
+        
+        # 更新库存状态
+        try:
+            inventory.stock_status = stock_status
+            inventory.status_remark = status_remark
+            db.session.commit()
+            
+            status_names = {'normal': '正常', 'damaged': '损坏', 'frozen': '冻结'}
+            flash(f'库存状态已更新为：{status_names[stock_status]}', 'success')
+            return redirect(url_for('inventory.list'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'更新失败：{str(e)}', 'danger')
+    
+    return render_template('inventory/update_status.html', inventory=inventory)
 

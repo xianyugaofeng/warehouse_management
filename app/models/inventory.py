@@ -29,6 +29,8 @@ class Inventory(db.Model):
     batch_no = db.Column(db.String(32))  # 批次号
     production_date = db.Column(db.Date)  # 生产日期
     expire_date = db.Column(db.Date)  # 过期日期
+    stock_status = db.Column(db.String(16), default='normal', nullable=False)  # 库存状态(normal正常/damaged损坏/frozen冻结)
+    status_remark = db.Column(db.String(256))  # 状态备注（损坏原因、冻结原因）
     update_time = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)  # 最后更新时间
     # 关联商品
     product = db.relationship('Product')

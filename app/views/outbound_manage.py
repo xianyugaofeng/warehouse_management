@@ -173,7 +173,19 @@ def audit(id):
         if audit_result == 'approved':
             # 审核通过：更新库存（减少）
             for item in order.items:
-                update_inventory(item.product_id, item.location_id, item.batch_no, item.quantity, is_bound=False)
+                try:
+                    update_inventory(item.product_id, item.location_id, item.batch_no, item.quantity, is_bound=False)
+                except ValueError as e:
+                    error_msg = str(e)
+                    if '库存不可用' in error_msg or '已冻结' in error_msg:
+                        flash(f'出库失败：{error_msg}', 'danger')
+                    elif '库存不足' in error_msg:
+                        flash(f'出库失败：{error_msg}', 'danger')
+                    elif '库存不存在' in error_msg:
+                        flash(f'出库失败：{error_msg}', 'danger')
+                    else:
+                        flash(f'出库失败：{error_msg}', 'danger')
+                    return redirect(url_for('outbound.detail', id=id))
             
             # 更新出库单状态为已完成
             order.status = 'completed'

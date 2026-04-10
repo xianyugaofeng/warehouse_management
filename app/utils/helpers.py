@@ -36,12 +36,22 @@ def update_inventory(product_id, location_id, batch_no, quantity, is_bound=True)
                 product_id=product_id,
                 location_id=location_id,
                 batch_no=batch_no,
-                quantity=quantity
+                quantity=quantity,
+                stock_status='normal'
             )
             db.session.add(inventory)
     else:
-        if not inventory or inventory.quantity < quantity:
-            raise ValueError(f'<库存不足:商品ID{product_id},  库位ID{location_id}, 批次{batch_no}')
+        if not inventory:
+            raise ValueError(f'库存不存在: 商品ID{product_id}, 库位ID{location_id}, 批次{batch_no}')
+        
+        # 检查库存状态
+        if inventory.stock_status == 'frozen':
+            raise ValueError(f'库存不可用（已冻结）: 商品ID{product_id}, 库位ID{location_id}, 批次{batch_no}')
+        
+        # 检查库存数量
+        if inventory.quantity < quantity:
+            raise ValueError(f'库存不足: 商品ID{product_id}, 库位ID{location_id}, 批次{batch_no}')
+        
         inventory.quantity -= quantity
         # 库存为0时是否删除记录
         if inventory.quantity == 0:
