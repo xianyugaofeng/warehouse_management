@@ -2,133 +2,176 @@
 {% block title %}分类详情 - 仓库管理系统{% endblock %}
 
 {% block content %}
-<div class="row mb-6">
-    <div class="col">
+    <div class="d-flex justify-content-between align-items-center mb-6">
         <h2 class="text-2xl font-bold text-gray-800 flex items-center">
             <i class="fa fa-tags mr-3 text-primary"></i>分类详情
         </h2>
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ url_for('category.category_list') }}">分类管理</a></li>
-                <li class="breadcrumb-item active" aria-current="page">分类详情</li>
-            </ol>
-        </nav>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('category.edit', id=category.id) }}" class="btn btn-warning shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
+                <i class="fa fa-edit mr-2"></i>编辑分类
+            </a>
+            <a href="{{ url_for('category.category_list') }}" class="btn btn-outline-secondary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
+                <i class="fa fa-arrow-left mr-2"></i>返回列表
+            </a>
+        </div>
     </div>
-</div>
 
-<div class="row">
-    <div class="col-md-6">
-        <div class="card shadow-sm rounded-xl overflow-hidden mb-4">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0 font-semibold">基本信息</h5>
+    <div class="card mb-6 shadow-sm rounded-xl overflow-hidden">
+        <div class="card-header bg-gray-50 border-b border-gray-200 py-4">
+            <h5 class="text-lg font-semibold text-gray-700">基本信息</h5>
+        </div>
+        <div class="card-body p-6">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <span class="text-gray-600">分类名称:</span>
+                        <span class="font-medium ml-2">{{ category.name }}</span>
+                    </div>
+                    <div class="mb-3">
+                        <span class="text-gray-600">分类描述:</span>
+                        <span class="font-medium ml-2">{{ category.desc or '-' }}</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <span class="text-gray-600">创建时间:</span>
+                        <span class="font-medium ml-2">{{ category.create_time.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                    </div>
+                    <div class="mb-3">
+                        <span class="text-gray-600">商品数量:</span>
+                        <span class="ml-2">
+                            <span class="badge bg-success rounded-full px-3 py-1">{{ category.products.count() }}</span>
+                        </span>
+                    </div>
+                </div>
             </div>
-            <div class="card-body p-6">
-                <table class="table table-borderless">
-                    <tr>
-                        <th class="text-muted" style="width: 120px;">分类名称：</th>
-                        <td><strong>{{ category.name }}</strong></td>
-                    </tr>
-                    <tr>
-                        <th class="text-muted">分类描述：</th>
-                        <td>{{ category.desc or '-' }}</td>
-                    </tr>
-                    <tr>
-                        <th class="text-muted">创建时间：</th>
-                        <td>{{ category.create_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                    </tr>
-                    <tr>
-                        <th class="text-muted">商品数量：</th>
-                        <td>
-                            <span class="badge bg-success rounded-pill">
-                                {{ category.products.count() }}
-                            </span>
-                        </td>
-                    </tr>
+        </div>
+    </div>
+
+    <div class="card mb-6 shadow-sm rounded-xl overflow-hidden">
+        <div class="card-header bg-gray-50 border-b border-gray-200 py-4">
+            <h5 class="text-lg font-semibold text-gray-700">分类参数</h5>
+        </div>
+        <div class="card-body p-6">
+            {% if category_params %}
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered">
+                    <thead class="bg-gray-50">
+                        <tr class="text-gray-700 border-b-2 border-gray-300">
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">序号</th>
+                            <th class="py-3 px-4 font-semibold text-center">参数名称</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white">
+                        {% for cp in category_params %}
+                            <tr class="transition-all duration-300 hover:bg-gray-50">
+                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ loop.index }}</td>
+                                <td class="py-3 px-4 border-b border-gray-200 font-medium">{{ cp.param_key.name }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-8 text-gray-500">
+                <i class="fa fa-tags text-4xl mb-4 text-gray-300"></i>
+                <p>暂无参数</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card shadow-sm rounded-xl overflow-hidden">
+        <div class="card-header bg-gray-50 border-b border-gray-200 py-4 d-flex justify-content-between align-items-center">
+            <h5 class="text-lg font-semibold text-gray-700">该分类下的商品（前10个）</h5>
+            <span class="badge bg-primary rounded-full px-3 py-1">
+                共 {{ category.products.count() }} 个商品
+            </span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered">
+                    <thead class="bg-gray-50">
+                        <tr class="text-gray-700 border-b-2 border-gray-300">
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">商品编码</th>
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">商品名称</th>
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">单位</th>
+                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">预警库存</th>
+                            <th class="py-3 px-4 font-semibold text-center">创建时间</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white">
+                        {% for product in products %}
+                            <tr class="transition-all duration-300 hover:bg-gray-50">
+                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ product.code }}</td>
+                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 font-medium">{{ product.name }}</td>
+                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ product.unit or '-' }}</td>
+                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ product.warning_stock }}</td>
+                                <td class="py-3 px-4 border-b border-gray-200 text-center">{{ product.create_time.strftime('%Y-%m-%d') }}</td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="py-12 text-center text-gray-500 border border-gray-200">
+                                    <div class="flex flex-col items-center">
+                                        <i class="fa fa-shopping-bag text-4xl mb-4 text-gray-300"></i>
+                                        <p>暂无商品</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
                 </table>
             </div>
         </div>
     </div>
     
-    <div class="col-md-6">
-        <div class="card shadow-sm rounded-xl overflow-hidden mb-4">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0 font-semibold">分类参数</h5>
-            </div>
-            <div class="card-body p-6">
-                {% if category_params %}
-                <ul class="list-group">
-                    {% for cp in category_params %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        {{ cp.param_key.name }}
-                        <span class="badge bg-info rounded-pill">参数</span>
-                    </li>
-                    {% endfor %}
-                </ul>
-                {% else %}
-                <p class="text-muted text-center py-3">暂无参数</p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-12">
-        <div class="card shadow-sm rounded-xl overflow-hidden">
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 font-semibold">该分类下的商品（前10个）</h5>
-                <span class="badge bg-light text-primary rounded-full px-3 py-1">
-                    共 {{ category.products.count() }} 个商品
-                </span>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped mb-0">
-                        <thead class="bg-light">
-                            <tr>
-                                <th class="text-center" style="width: 60px;">序号</th>
-                                <th>商品编码</th>
-                                <th>商品名称</th>
-                                <th class="text-center">单位</th>
-                                <th class="text-center">预警库存</th>
-                                <th class="text-center">创建时间</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for product in products %}
-                            <tr>
-                                <td class="align-middle text-center">{{ loop.index }}</td>
-                                <td class="align-middle">{{ product.code }}</td>
-                                <td class="align-middle"><strong>{{ product.name }}</strong></td>
-                                <td class="align-middle text-center">{{ product.unit or '-' }}</td>
-                                <td class="align-middle text-center">{{ product.warning_stock }}</td>
-                                <td class="align-middle text-center">
-                                    {{ product.create_time.strftime('%Y-%m-%d') }}
-                                </td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td colspan="6" class="text-center py-4 text-muted">
-                                    暂无商品
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row mt-4">
-    <div class="col-12">
-        <a href="{{ url_for('category.edit', id=category.id) }}" class="btn btn-warning">
-            <i class="fa fa-edit mr-1"></i>编辑分类
-        </a>
-        <a href="{{ url_for('category.category_list') }}" class="btn btn-secondary ml-2">
-            <i class="fa fa-arrow-left mr-1"></i>返回列表
-        </a>
-    </div>
-</div>
+    <style>
+        /* 自定义动画效果 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .card {
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        h2 {
+            animation: slideIn 0.4s ease-out;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .table-responsive {
+                font-size: 0.875rem;
+            }
+            
+            .table th,
+            .table td {
+                padding: 0.75rem;
+            }
+            
+            .btn {
+                font-size: 0.75rem;
+                padding: 0.25rem 0.5rem;
+            }
+        }
+    </style>
 {% endblock %}

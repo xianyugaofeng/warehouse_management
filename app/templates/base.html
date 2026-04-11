@@ -538,7 +538,7 @@
                         
                         <!-- 调拨管理 -->
                         {% if current_user.has_permission('inventory_manage') %}
-                            <div class="menu-header" data-target="transfer-manage">仓库调拨管理</div>
+                            <div class="menu-header" data-target="transfer-manage">调拨管理</div>
                             <div class="menu-content" id="transfer-manage">
                                 <a href="{{ url_for('transfer.list') }}" class="list-group-item list-group-item-action ml-3">
                                     <i class="fa fa-file-text-o text-primary me-2"></i>调拨单管理
@@ -564,6 +564,22 @@
                                 </a>
                                 <a href="{{ url_for('check.history') }}" class="list-group-item list-group-item-action ml-3">
                                     <i class="fa fa-history text-info me-2"></i>盘点历史查询
+                                </a>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- 库存管理 -->
+                        {% if current_user.has_permission('inventory_manage') %}
+                            <div class="menu-header" data-target="inventory-manage">库存管理</div>
+                            <div class="menu-content" id="inventory-manage">
+                                <a href="{{ url_for('inventory.warning') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-exclamation-triangle text-warning me-2"></i>库存预警
+                                </a>
+                                <a href="{{ url_for('inventory.detail') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-search text-info me-2"></i>库存明细查询
+                                </a>
+                                <a href="{{ url_for('inventory.status') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-cogs text-primary me-2"></i>库存状态管理
                                 </a>
                             </div>
                         {% endif %}
@@ -644,9 +660,12 @@
     <script>
         // 菜单折叠功能
         $(document).ready(function() {
-            // 初始状态：所有菜单展开
-            $('.menu-content').removeClass('collapsed');
-            $('.menu-header').removeClass('collapsed');
+            // 初始状态：所有菜单折叠
+            $('.menu-content').addClass('collapsed');
+            $('.menu-header').addClass('collapsed');
+            
+            // 从localStorage恢复菜单状态
+            restoreMenuState();
             
             // 点击菜单标题切换折叠状态
             $('.menu-header').click(function() {
@@ -656,6 +675,9 @@
                 // 切换当前菜单的状态
                 targetContent.toggleClass('collapsed');
                 $(this).toggleClass('collapsed');
+                
+                // 保存菜单状态到localStorage
+                saveMenuState(targetId, !targetContent.hasClass('collapsed'));
                 
                 // 添加折叠/展开的动画效果
                 if (targetContent.hasClass('collapsed')) {
@@ -671,6 +693,31 @@
                     }, 300);
                 }
             });
+            
+            // 保存菜单状态到localStorage
+            function saveMenuState(menuId, isExpanded) {
+                var menuStates = JSON.parse(localStorage.getItem('menuStates') || '{}');
+                menuStates[menuId] = isExpanded;
+                localStorage.setItem('menuStates', JSON.stringify(menuStates));
+            }
+            
+            // 从localStorage恢复菜单状态
+            function restoreMenuState() {
+                var menuStates = JSON.parse(localStorage.getItem('menuStates') || '{}');
+                
+                // 遍历所有菜单，恢复保存的状态
+                $('.menu-header').each(function() {
+                    var targetId = $(this).data('target');
+                    var targetContent = $('#' + targetId);
+                    
+                    // 如果该菜单在localStorage中有保存的状态，且为展开状态
+                    if (menuStates[targetId] === true) {
+                        targetContent.removeClass('collapsed');
+                        $(this).removeClass('collapsed');
+                        $(this).css('border-left-color', 'var(--primary-color)');
+                    }
+                });
+            }
             
             // 为菜单项添加点击动画效果
             $('.list-group-item').click(function(e) {
