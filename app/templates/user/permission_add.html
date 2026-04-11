@@ -2,60 +2,152 @@
 {% block title %}添加权限 - 仓库管理系统{% endblock %}
 
 {% block content %}
-<div class="row mb-6">
-    <div class="col">
-        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
-            <i class="fa fa-key mr-3 text-primary"></i>添加权限
-        </h2>
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ url_for('user.list') }}">用户管理</a></li>
-                <li class="breadcrumb-item"><a href="{{ url_for('user.permission_list') }}">权限管理</a></li>
-                <li class="breadcrumb-item active" aria-current="page">添加权限</li>
-            </ol>
-        </nav>
-    </div>
-</div>
-
-<div class="card shadow-sm rounded-xl overflow-hidden">
-    <div class="card-body p-6">
-        <form method="POST" class="space-y-4">
-            <div class="row g-4">
-                <div class="col-md-6">
-                    <label for="name" class="form-label">权限名称 <span class="text-danger">*</span></label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                            <i class="fa fa-code text-gray-400"></i>
-                        </span>
-                        <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="name" name="name" required placeholder="请输入权限名称">
-                    </div>
-                    <div class="form-text mt-1 text-gray-600">权限名称应使用小写字母和下划线，如 product_manage</div>
-                </div>
-                <div class="col-md-6">
-                    <label for="desc" class="form-label">权限描述 <span class="text-danger">*</span></label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                            <i class="fa fa-file-text text-gray-400"></i>
-                        </span>
-                        <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="desc" name="desc" required placeholder="请输入权限描述">
-                    </div>
-                    <div class="form-text mt-1 text-gray-600">权限的中文描述，如 商品管理</div>
-                </div>
-            </div>
-            <div class="pt-4 text-end">
-                <a href="{{ url_for('user.permission_list') }}" class="btn btn-secondary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg mr-2">
-                    <i class="fa fa-times mr-2"></i>取消
-                </a>
-                <button type="submit" class="btn btn-primary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
-                    <i class="fa fa-save mr-2"></i>保存
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-    
     <style>
-        /* 自定义动画效果 */
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #b24bf3, #ff6b9d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            position: relative;
+        }
+        
+        .page-title-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            box-shadow: 
+                0 0 25px rgba(17, 153, 142, 0.5),
+                0 0 50px rgba(56, 239, 125, 0.3),
+                inset 0 0 15px rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+        
+        .page-title-icon i {
+            font-size: 1.5rem;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+        
+        .form-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 20px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            box-shadow: 
+                0 10px 35px rgba(0, 0, 0, 0.1),
+                0 0 40px rgba(102, 126, 234, 0.2);
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .form-card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00d4ff, #b24bf3, #ff6b9d, #00d4ff, #b24bf3);
+            background-size: 400% 400%;
+            border-radius: 22px;
+            z-index: -1;
+            animation: neonBorderGlow 6s ease infinite, breatheGlow 3s ease-in-out infinite;
+            opacity: 0.7;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+        
+        .input-group-text {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-right: none;
+            border-radius: 12px 0 0 12px;
+            color: #667eea;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control {
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-radius: 0 12px 12px 0;
+            padding: 0.75rem 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1), 0 0 20px rgba(102, 126, 234, 0.2);
+        }
+        
+        .form-text {
+            color: #64748b;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+        
+        .btn-neon-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            color: #ffffff;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-neon-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+        
+        .btn-neon-secondary {
+            background: linear-gradient(135deg, #6c757d, #495057);
+            border: none;
+            color: #ffffff;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.4);
+        }
+        
+        .btn-neon-secondary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(108, 117, 125, 0.6);
+        }
+        
+        @keyframes neonBorderGlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        @keyframes breatheGlow {
+            0%, 100% {
+                opacity: 0.5;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.01);
+            }
+        }
+        
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -67,39 +159,66 @@
             }
         }
         
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-        
-        .card {
-            animation: fadeInUp 0.5s ease-out;
-        }
-        
-        h2 {
-            animation: slideIn 0.4s ease-out;
-        }
-        
-        /* 响应式调整 */
         @media (max-width: 768px) {
-            .row.g-4 {
-                flex-direction: column;
+            .page-title {
+                font-size: 1.35rem;
             }
             
-            .col-md-6 {
-                width: 100%;
+            .page-title-icon {
+                width: 40px;
+                height: 40px;
+                margin-right: 10px;
             }
             
-            .btn {
-                font-size: 0.75rem;
-                padding: 0.25rem 0.5rem;
+            .page-title-icon i {
+                font-size: 1.2rem;
+            }
+            
+            .btn-neon-primary,
+            .btn-neon-secondary {
+                padding: 0.5rem 1rem;
+                font-size: 0.875rem;
             }
         }
     </style>
+
+    <div class="d-flex justify-content-between align-items-center mb-4 page-header">
+        <div class="d-flex align-items-center">
+            <div class="page-title-icon"><i class="fa fa-key"></i></div>
+            <h2 class="page-title mb-0">添加权限</h2>
+        </div>
+    </div>
+
+    <div class="form-card">
+        <div class="card-body p-4">
+            <form method="POST">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label for="name" class="form-label">权限名称 <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa fa-code"></i></span>
+                            <input type="text" class="form-control" id="name" name="name" required placeholder="请输入权限名称">
+                        </div>
+                        <div class="form-text">权限名称应使用小写字母和下划线，如 product_manage</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="desc" class="form-label">权限描述 <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa fa-file-text"></i></span>
+                            <input type="text" class="form-control" id="desc" name="desc" required placeholder="请输入权限描述">
+                        </div>
+                        <div class="form-text">权限的中文描述，如 商品管理</div>
+                    </div>
+                </div>
+                <div class="pt-4 text-end">
+                    <a href="{{ url_for('user.permission_list') }}" class="btn btn-neon-secondary mr-2">
+                        <i class="fa fa-times mr-2"></i>取消
+                    </a>
+                    <button type="submit" class="btn btn-neon-primary">
+                        <i class="fa fa-save mr-2"></i>保存
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 {% endblock %}
