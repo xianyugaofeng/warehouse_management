@@ -189,12 +189,20 @@ def audit(id):
     try:
         if audit_result == 'approved':
             for item in order.items:
-                execute_transfer(
-                    product_id=item.product_id,
-                    source_location_id=item.source_location_id,
-                    target_location_id=item.target_location_id,
-                    quantity=item.quantity
-                )
+                try:
+                    execute_transfer(
+                        product_id=item.product_id,
+                        source_location_id=item.source_location_id,
+                        target_location_id=item.target_location_id,
+                        quantity=item.quantity
+                    )
+                except ValueError as e:
+                    error_msg = str(e)
+                    if '可用库存不足' in error_msg and '已冻结' in error_msg:
+                        flash(f'调拨失败：{error_msg}', 'danger')
+                    else:
+                        flash(f'调拨失败：{error_msg}', 'danger')
+                    return redirect(url_for('transfer.detail', id=id))
 
             order.audit_status = 'approved'
             order.auditor_id = current_user.id

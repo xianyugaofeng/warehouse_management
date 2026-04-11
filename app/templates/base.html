@@ -583,7 +583,7 @@
                         
                         <!-- 权限控制 -->
                         {% if current_user.has_permission('user_manage') %}
-                            <div class="menu-header" data-target="permission-control">权限控制</div>
+                            <div class="menu-header" data-target="permission-control">系统管理</div>
                             <div class="menu-content" id="permission-control">
                                 <a href="{{ url_for('user.list') }}" class="list-group-item list-group-item-action ml-3">
                                     <i class="fa fa-users text-primary me-2"></i>用户管理
