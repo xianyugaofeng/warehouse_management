@@ -569,6 +569,12 @@
                         {% if current_user.has_permission('report_view') %}
                             <div class="menu-header" data-target="report-stats">报表统计</div>
                             <div class="menu-content" id="report-stats">
+                                <a href="{{ url_for('report.inbound_report') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-sign-in text-success me-2"></i>入库报表
+                                </a>
+                                <a href="{{ url_for('report.outbound_report') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-sign-out text-danger me-2"></i>出库报表
+                                </a>
                                 <a href="{{ url_for('report.inventory_products') }}" class="list-group-item list-group-item-action ml-3">
                                     <i class="fa fa-bar-chart text-primary me-2"></i>库存报表
                                 </a>

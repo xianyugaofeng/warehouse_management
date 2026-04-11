@@ -146,3 +146,75 @@ def dashboard():
                            health_score=health_score,
                            inbound_total=inbound_total,
                            outbound_total=outbound_total)
+
+# 入库报表
+@report_bp.route('/inbound_report')
+@permission_required('report_view')
+@login_required
+def inbound_report():
+    # 查询每个商品的入库总数和当前库存
+    inbound_data = db.session.query(
+        Product.name.label('product_name'),
+        Product.code.label('product_code'),
+        db.func.sum(InboundItem.quantity).label('inbound_quantity'),
+        db.func.sum(Inventory.quantity).label('inventory_quantity')
+    ).outerjoin(
+        InboundItem, Product.id == InboundItem.product_id
+    ).outerjoin(
+        Inventory, Product.id == Inventory.product_id
+    ).group_by(Product.id).order_by(db.func.sum(InboundItem.quantity).desc()).all()
+    
+    # 转换为字典列表
+    report_data = []
+    max_quantity = 0
+    for item in inbound_data:
+        inbound_qty = float(item.inbound_quantity) if item.inbound_quantity else 0
+        inventory_qty = float(item.inventory_quantity) if item.inventory_quantity else 0
+        report_data.append({
+            'product_name': item.product_name,
+            'product_code': item.product_code,
+            'inbound_quantity': inbound_qty,
+            'inventory_quantity': inventory_qty
+        })
+        if inbound_qty > max_quantity:
+            max_quantity = inbound_qty
+    
+    return render_template('report/inbound_report.html',
+                           report_data=report_data,
+                           max_quantity=max_quantity)
+
+# 出库报表
+@report_bp.route('/outbound_report')
+@permission_required('report_view')
+@login_required
+def outbound_report():
+    # 查询每个商品的出库总数和当前库存
+    outbound_data = db.session.query(
+        Product.name.label('product_name'),
+        Product.code.label('product_code'),
+        db.func.sum(OutboundItem.quantity).label('outbound_quantity'),
+        db.func.sum(Inventory.quantity).label('inventory_quantity')
+    ).outerjoin(
+        OutboundItem, Product.id == OutboundItem.product_id
+    ).outerjoin(
+        Inventory, Product.id == Inventory.product_id
+    ).group_by(Product.id).order_by(db.func.sum(OutboundItem.quantity).desc()).all()
+    
+    # 转换为字典列表
+    report_data = []
+    max_quantity = 0
+    for item in outbound_data:
+        outbound_qty = float(item.outbound_quantity) if item.outbound_quantity else 0
+        inventory_qty = float(item.inventory_quantity) if item.inventory_quantity else 0
+        report_data.append({
+            'product_name': item.product_name,
+            'product_code': item.product_code,
+            'outbound_quantity': outbound_qty,
+            'inventory_quantity': inventory_qty
+        })
+        if outbound_qty > max_quantity:
+            max_quantity = outbound_qty
+    
+    return render_template('report/outbound_report.html',
+                           report_data=report_data,
+                           max_quantity=max_quantity)

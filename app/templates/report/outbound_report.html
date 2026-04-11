@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}出库报表 - 仓库管理系统{% endblock %}
+
+{% block content %}
+<div class="row mb-6">
+    <div class="col">
+        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+            <i class="fa fa-sign-out-alt mr-3 text-danger"></i>出库报表
+        </h2>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('report.dashboard') }}">报表统计</a></li>
+                <li class="breadcrumb-item active" aria-current="page">出库报表</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row mb-6">
+    <div class="col-12">
+        <div class="card shadow-sm rounded-xl overflow-hidden">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 font-semibold">全部仓库商品出库情况清单</h5>
+                <span class="badge bg-light text-primary rounded-full px-3 py-1">共 {{ report_data|length }} 条记录</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="text-center" style="width: 60px;">序号</th>
+                                <th>商品名称</th>
+                                <th class="text-center" style="width: 100px;">出库数</th>
+                                <th class="text-center" style="width: 200px;">出库数</th>
+                                <th class="text-center" style="width: 120px;">库存</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in report_data %}
+                            <tr>
+                                <td class="align-middle text-center">{{ loop.index }}</td>
+                                <td class="align-middle">
+                                    <strong>{{ item.product_name }}</strong>
+                                    <br><small class="text-muted">{{ item.product_code }}</small>
+                                </td>
+                                <td class="align-middle text-center">
+                                    <span class="font-weight-bold text-danger">{{ item.outbound_quantity|int }}</span>
+                                </td>
+                                <td class="align-middle">
+                                    <div class="progress" style="height: 25px; background-color: #f0f0f0; border-radius: 4px;">
+                                        {% if max_quantity > 0 %}
+                                        {% set width = (item.outbound_quantity / max_quantity * 100)|round(1) %}
+                                        {% else %}
+                                        {% set width = 0 %}
+                                        {% endif %}
+                                        <div class="progress-bar bg-info" role="progressbar" 
+                                             style="width: {{ width }}%; min-width: 20px;"
+                                             aria-valuenow="{{ item.outbound_quantity }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="{{ max_quantity }}">
+                                            {{ item.outbound_quantity|int }}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="align-middle text-center">
+                                    {% if item.inventory_quantity >= 0 %}
+                                    <span class="badge badge-success rounded-circle p-2" style="background-color: #52c41a; color: white;">
+                                        {{ item.inventory_quantity|int }}
+                                    </span>
+                                    {% else %}
+                                    <span class="badge badge-danger rounded-circle p-2" style="background-color: #ff4d4f; color: white;">
+                                        {{ item.inventory_quantity|int }}
+                                    </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .progress {
+        position: relative;
+    }
+    .progress-bar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: bold;
+        color: #333;
+    }
+    .badge-success, .badge-danger {
+        font-size: 13px;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
