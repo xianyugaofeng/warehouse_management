@@ -2,83 +2,48 @@
 {% block title %}注册 - 仓库管理系统{% endblock %}
 
 {% block content %}
-    <div class="row justify-content-center mt-8">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow-sm rounded-xl overflow-hidden">
-                <div class="card-header bg-primary text-white text-center py-4">
-                    <h4 class="mb-0 text-xl font-bold">用户注册</h4>
-                </div>
-                <div class="card-body p-6">
-                    <form method="POST" action="{{ url_for('auth.register') }}">
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <label for="username" class="form-label">
-                                    用户名<span class="text-danger">*</span>
-                                </label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                        <i class="fa fa-user text-gray-400"></i>
-                                    </span>
-                                    <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="username" name="username" required placeholder="请输入用户名">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="password" class="form-label">
-                                    密码<span class="text-danger">*</span>
-                                </label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                        <i class="fa fa-lock text-gray-400"></i>
-                                    </span>
-                                    <input type="password" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="password" name="password" required placeholder="请输入密码">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <label for="real_name" class="form-label">真实姓名</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                        <i class="fa fa-id-card text-gray-400"></i>
-                                    </span>
-                                    <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="real_name" name="real_name" placeholder="请输入真实姓名">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="phone" class="form-label">手机号</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                        <i class="fa fa-phone text-gray-400"></i>
-                                    </span>
-                                    <input type="tel" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="phone" name="phone" placeholder="请输入手机号">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-4">
-                            <label for="email" class="form-label">邮箱</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                    <i class="fa fa-envelope text-gray-400"></i>
-                                </span>
-                                <input type="email" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="email" name="email" placeholder="请输入邮箱">
-                            </div>
-                        </div>
-                        <div class="d-grid gap-3">
-                            <button type="submit" class="btn btn-primary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
-                                <i class="fa fa-user-plus mr-2"></i>注册
-                            </button>
-                            <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
-                                <i class="fa fa-arrow-left mr-2"></i>返回登录
-                            </a>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-    
     <style>
-        /* 自定义动画效果 */
+        /* 页面标题霓虹效果 */
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #b24bf3, #ff6b9d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            position: relative;
+        }
+        
+        /* 表单卡片 - 渐变蓝紫边框 */
+        .form-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 3px solid transparent;
+            background-clip: padding-box;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.15),
+                0 0 40px rgba(102, 126, 234, 0.2),
+                inset 0 0 20px rgba(255, 255, 255, 0.8);
+            position: relative;
+            padding: 2rem;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .form-card::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            background: linear-gradient(135deg, #00d4ff, #667eea, #b24bf3);
+            border-radius: 22px;
+            z-index: -1;
+        }
+        
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -90,20 +55,221 @@
             }
         }
         
-        .card {
-            animation: fadeInUp 0.5s ease-out;
+        /* 表单标签样式 */
+        .form-label {
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.6rem;
+            font-size: 1rem;
+            letter-spacing: 0.3px;
+        }
+        
+        .form-label .text-danger {
+            margin-left: 3px;
+            font-size: 1.1rem;
+        }
+        
+        /* 输入框组样式 */
+        .input-group {
+            position: relative;
+        }
+        
+        .input-group-text {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 12px 0 0 12px;
+            color: #ffffff;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        .input-group-text i {
+            font-size: 1.1rem;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+        }
+        
+        .input-group:focus-within .input-group-text {
+            background: linear-gradient(135deg, #00d4ff, #667eea);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+        }
+        
+        .form-control, .form-select {
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-left: none;
+            border-radius: 0 12px 12px 0;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #1e293b;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.98);
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.2), 0 0 25px rgba(0, 212, 255, 0.15);
+            background: #ffffff;
+            color: #0f172a;
+        }
+        
+        .form-control::placeholder {
+            color: #64748b;
+            font-weight: 400;
+        }
+        
+        /* 按钮样式 */
+        .btn-save {
+            background: linear-gradient(135deg, #00d4ff, #667eea, #b24bf3);
+            border: none;
+            border-radius: 12px;
+            color: #ffffff;
+            padding: 0.85rem 2.2rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 25px rgba(0, 212, 255, 0.4), 0 0 30px rgba(178, 75, 243, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-save i {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+        }
+        
+        .btn-save::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn-save:hover::before {
+            left: 100%;
+        }
+        
+        .btn-save:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 35px rgba(0, 212, 255, 0.6), 0 0 50px rgba(178, 75, 243, 0.4);
+            color: #ffffff;
+        }
+        
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.98);
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            color: #667eea;
+            padding: 0.7rem 2.2rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-cancel i {
+            text-shadow: none;
+        }
+        
+        .btn-cancel:hover {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: transparent;
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-cancel:hover i {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
         }
         
         /* 响应式调整 */
         @media (max-width: 768px) {
-            .input-group {
-                font-size: 0.875rem;
+            .form-card {
+                padding: 1.25rem;
             }
             
-            .btn {
-                font-size: 0.75rem;
-                padding: 0.25rem 0.5rem;
+            .page-title {
+                font-size: 1.35rem;
+            }
+            
+            .btn-save, .btn-cancel {
+                padding: 0.6rem 1.25rem;
+                font-size: 0.875rem;
             }
         }
     </style>
+
+    <div class="row justify-content-center mt-8">
+        <div class="col-md-8 col-lg-6">
+            <div class="form-card">
+                <div class="text-center mb-6">
+                    <h2 class="page-title mb-2">用户注册</h2>
+                </div>
+                <form method="POST" action="{{ url_for('auth.register') }}">
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
+                            <label for="username" class="form-label">用户名<span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fa fa-user"></i>
+                                </span>
+                                <input type="text" class="form-control" id="username" name="username" required placeholder="请输入用户名">
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="password" class="form-label">密码<span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fa fa-lock"></i>
+                                </span>
+                                <input type="password" class="form-control" id="password" name="password" required placeholder="请输入密码">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
+                            <label for="real_name" class="form-label">真实姓名</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fa fa-id-card"></i>
+                                </span>
+                                <input type="text" class="form-control" id="real_name" name="real_name" placeholder="请输入真实姓名">
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="phone" class="form-label">手机号</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fa fa-phone"></i>
+                                </span>
+                                <input type="tel" class="form-control" id="phone" name="phone" placeholder="请输入手机号">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label for="email" class="form-label">邮箱</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fa fa-envelope"></i>
+                            </span>
+                            <input type="email" class="form-control" id="email" name="email" placeholder="请输入邮箱">
+                        </div>
+                    </div>
+                    <div class="d-grid gap-3">
+                        <button type="submit" class="btn btn-save">
+                            <i class="fa fa-user-plus mr-2"></i>注册
+                        </button>
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-cancel">
+                            <i class="fa fa-arrow-left mr-2"></i>返回登录
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 {% endblock %}
