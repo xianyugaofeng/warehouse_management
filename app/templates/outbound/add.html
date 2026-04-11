@@ -1,25 +1,20 @@
 {% extends "base.html" %}
 {% block title %}添加出库单 - 仓库管理系统{% endblock %}
 
-{% block js %}          <!--JavaScript脚本 用于处理出库单表单的动态交互和验证-->
-    <!--动态添加入库明细行-->
-    <!--删除指定的入库明细行-->
-    <!--在表单提交时进行验证,确保至少有一条明细,且所有数量都大于0-->
+{% block js %}
     <script>
-        // 在DOM结构加载完成后立即执行代码的方法,不必等待图片,视频等资源完全加载
         $(document).ready(function() {
             let rowIndex = 0;
-            //动态添加明细行
             $('#addItemBtn').click(function() {
                 rowIndex++;
                 const newRow = `
                     <tr id="itemRow${rowIndex}">
                         <td>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                    <i class="fa fa-shopping-bag text-gray-400"></i>
+                            <div class="input-group form-input-group">
+                                <span class="input-group-text">
+                                    <i class="fa fa-shopping-bag"></i>
                                 </span>
-                                <select class="form-select product-select rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" name="product_id[]" required>
+                                <select class="form-select product-select" name="product_id[]" required>
                                     <option value="">请选择商品</option>
                                     {% for product in products %}
                                         <option value="{{ product.id }}">
@@ -30,11 +25,11 @@
                             </div>
                         </td>
                         <td>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                    <i class="fa fa-map-marker text-gray-400"></i>
+                            <div class="input-group form-input-group">
+                                <span class="input-group-text">
+                                    <i class="fa fa-map-marker"></i>
                                 </span>
-                                <select class="form-select rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" name="location_id[]" required>
+                                <select class="form-select" name="location_id[]" required>
                                     <option value="">请选择库位</option>
                                     {% for location in locations %}
                                         <option value="{{ location.id }}">
@@ -45,23 +40,23 @@
                             </div>
                         </td>
                         <td>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                    <i class="fa fa-barcode text-gray-400"></i>
+                            <div class="input-group form-input-group">
+                                <span class="input-group-text">
+                                    <i class="fa fa-barcode"></i>
                                 </span>
-                                <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" name="batch_no[]" placeholder="批次号(选填)">
+                                <input type="text" class="form-control" name="batch_no[]" placeholder="批次号(选填)">
                             </div>
                         </td>
                         <td>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                    <i class="fa fa-cubes text-gray-400"></i>
+                            <div class="input-group form-input-group">
+                                <span class="input-group-text">
+                                    <i class="fa fa-cubes"></i>
                                 </span>
-                                <input type="number" class="form-control quantity-input rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" name="quantity[]" min="1" required placeholder="数量">
+                                <input type="number" class="form-control quantity-input" name="quantity[]" min="1" required placeholder="数量">
                             </div>
                         </td>
                         <td>
-                            <button type="button" class="btn btn-sm btn-danger shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg remove-item" data-row="${rowIndex}">
+                            <button type="button" class="btn btn-remove remove-item" data-row="${rowIndex}">
                                 <i class="fa fa-trash"></i>
                             </button>
                         </td>
@@ -69,12 +64,10 @@
                 `;
                 $("#itemTableBody").append(newRow);
             });
-            //删除明细行
             $(document).on("click", ".remove-item", function() {
                 const rowId = $(this).data("row");
                 $(`#itemRow${rowId}`).remove();
             });
-            //表单提交验证
             $("form").submit(function() {
                 const hasItems = $("#itemTableBody tr").length > 0
                 if (!hasItems) {
@@ -82,7 +75,6 @@
                     return false;
                 }
                 let isValid = true;
-                //验证数量输入
                 $(".quantity-input").each(function() {
                     if ($(this).val() <= 0 || !$(this).val()) {
                         alert('数量必须大于0');
@@ -90,181 +82,322 @@
                         return false;
                     }
                 });
-                //验证领用人
-                if (!$("#receiver").val()) {      //检查ID为receiver的元素输入框的值是否为空
+                if (!$("#receiver").val()) {
                     alert('请填写领用人');
                     isValid = false;
                 }
-                return isValid;         //如果所有验证都通过，则允许表单提交
+                return isValid;
             });
         });
     </script>
 {% endblock %}
 
 {% block content %}
-    <div class="row mb-6">
-        <div class="col">
-            <h2 class="text-2xl font-bold text-gray-800 flex items-center">
-                <i class="fa fa-arrow-up mr-3 text-primary"></i>添加出库单
-            </h2>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ url_for('outbound.list') }}">出库管理</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">添加出库单</li>
-                </ol>
-            </nav>
-        </div>
-    </div>
-
-    <div class="card shadow-sm rounded-xl overflow-hidden">
-        <div class="card-body p-6">
-            <form method="POST" action="{{ url_for('outbound.add') }}">
-                <!--出库单基本信息-->
-                <div class="row g-4 mb-6">          <!--Bootstrap栅格行 下边距1.5em-->
-
-                    <div class="col-md-6">
-                        <label for="customer_id" class="form-label">客户<span class="text-danger">*</span></label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                <i class="fa fa-users text-gray-400"></i>
-                            </span>
-                            <select class="form-select rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="customer_id" name="customer_id" required>
-                                <option value="">请选择客户</option>
-                                {% for customer in customers %}
-                                    <option value="{{ customer.id }}">
-                                        {{ customer.name }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="receive_phone" class="form-label">联系电话</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                <i class="fa fa-phone text-gray-400"></i>
-                            </span>
-                            <input type="tel" id="receive_phone" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" name="receive_phone" placeholder="请输入联系电话(选填)">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="outbound_date" class="form-label">出库日期<span class="text-danger">*</span></label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                <i class="fa fa-calendar text-gray-400"></i>
-                            </span>
-                            <input type="date" id="outbound_date" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" name="outbound_date" value="{{ now.strftime('%Y-%m-%d') if now else '' }}" required>
-                        </div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <label for="remark" class="form-label">备注</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                <i class="fa fa-comment text-gray-400"></i>
-                            </span>
-                            <input type="text" id="remark" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" name="remark" placeholder="输入备注信息(选填)">
-                        </div>
-                    </div>
-                </div>
-
-                <hr class="my-4 border-gray-200">   <!--水平分隔线-->
-
-                <!--出库明细-->
-                <div class="mb-6">      <!--下边距为1.5rem 容器包裹整个入库明细区域-->
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <!--子元素水平排列 两端对齐 垂直居中-->
-                        <h5 class="text-lg font-semibold text-gray-700">出库明细</h5>
-                        <button type="button" id="addItemBtn" class="btn btn-sm btn-primary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
-                            <i class="fa fa-plus mr-1"></i>添加明细      <!--已为#addItemBtn按钮绑定click事件-->
-                        </button>           <!--绑定事件:为表格添加明细行-->
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-bordered rounded-lg overflow-hidden">
-                            <thead class="bg-gray-50">
-                                <tr class="text-gray-700 border-b-2 border-gray-300">
-                                    <th width="25%" class="py-3 px-4 border-r border-gray-200 font-semibold text-center">商品</th>
-                                    <th width="20%" class="py-3 px-4 border-r border-gray-200 font-semibold text-center">库位</th>
-                                    <th width="20%" class="py-3 px-4 border-r border-gray-200 font-semibold text-center">批次号</th>
-                                    <th width="15%" class="py-3 px-4 border-r border-gray-200 font-semibold text-center">数量</th>
-                                    <th width="20%" class="py-3 px-4 font-semibold text-center">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody id="itemTableBody" class="bg-white">          <!--用于click事件动态添加表格明细行-->
-                                <!--初始空行-->
-                                <tr id="itemRow0" class="transition-all duration-300 hover:bg-gray-50">
-                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">
-                                        <div class="input-group">
-                                            <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                                <i class="fa fa-shopping-bag text-gray-400"></i>
-                                            </span>
-                                            <select class="form-select product-select rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" name="product_id[]" required>
-                                                <option value="">请选择商品</option>
-                                                {% for product in products %}
-                                                    <option value="{{ product.id }}">
-                                                        {{ product.name }} ({{ product.code }})
-                                                    </option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                    </td>
-                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">
-                                        <div class="input-group">
-                                            <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                                <i class="fa fa-map-marker text-gray-400"></i>
-                                            </span>
-                                            <select class="form-select rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" name="location_id[]" required>
-                                                <option value="">请选择库位</option>
-                                                {% for location in locations %}
-                                                    <option value="{{ location.id }}">
-                                                        {{ location.code }} - {{ location.name }}
-                                                    </option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                    </td>
-                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">
-                                        <div class="input-group">
-                                            <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                                <i class="fa fa-barcode text-gray-400"></i>
-                                            </span>
-                                            <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" name="batch_no[]" placeholder="批次号(选填)">
-                                        </div>
-                                    </td>
-                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">
-                                        <div class="input-group">
-                                            <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                                <i class="fa fa-cubes text-gray-400"></i>
-                                            </span>
-                                            <input type="number" class="form-control quantity-input rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" name="quantity[]" min="1" required placeholder="数量">
-                                        </div>
-                                    </td>
-                                    <td class="py-3 px-4 border-b border-gray-200 text-center">
-                                        <button type="button" class="btn btn-sm btn-danger rounded-lg hover:bg-red-600 transform hover:-translate-y-1 transition-all duration-300 remove-item" data-row="0">
-                                            <i class="fa fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!--提交按钮-->
-                <div class="d-flex gap-3">
-                    <button type="submit" class="btn btn-primary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
-                        <i class="fa fa-save mr-2"></i>提交出库单
-                    </button>
-                    <a href="{{ url_for('outbound.list') }}" class="btn btn-outline-secondary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
-                        <i class="fa fa-times mr-2"></i>取消
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
-    
     <style>
-        /* 自定义动画效果 */
+        /* 页面标题霓虹效果 */
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #b24bf3, #ff6b9d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            position: relative;
+        }
+        
+        .page-title-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #00d4ff, #667eea);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            box-shadow: 
+                0 0 25px rgba(0, 212, 255, 0.5),
+                0 0 50px rgba(102, 126, 234, 0.3),
+                inset 0 0 15px rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+        
+        .page-title-icon i {
+            font-size: 1.5rem;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+        
+        /* 面包屑导航样式 */
+        .breadcrumb {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 25px;
+            padding: 0.5rem 1.25rem;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .breadcrumb-item a {
+            color: #667eea;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .breadcrumb-item a:hover {
+            color: #b24bf3;
+            text-shadow: 0 0 8px rgba(178, 75, 243, 0.5);
+        }
+        
+        .breadcrumb-item.active {
+            color: #b24bf3;
+            font-weight: 600;
+        }
+        
+        /* 表单卡片 - 渐变蓝紫边框 */
+        .form-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 3px solid transparent;
+            background-clip: padding-box;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.15),
+                0 0 40px rgba(102, 126, 234, 0.2),
+                inset 0 0 20px rgba(255, 255, 255, 0.8);
+            position: relative;
+            padding: 2rem;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .form-card::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            background: linear-gradient(135deg, #00d4ff, #667eea, #b24bf3);
+            border-radius: 22px;
+            z-index: -1;
+        }
+        
+        /* 输入框组样式 */
+        .form-input-group .input-group-text {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 12px 0 0 12px;
+            color: #ffffff;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        .form-input-group .input-group-text i {
+            font-size: 1.1rem;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+        }
+        
+        .form-input-group:focus-within .input-group-text {
+            background: linear-gradient(135deg, #00d4ff, #667eea);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+        }
+        
+        .form-input-group .form-control,
+        .form-input-group .form-select {
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-left: none;
+            border-radius: 0 12px 12px 0;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #1e293b;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.95);
+        }
+        
+        .form-input-group .form-control:focus,
+        .form-input-group .form-select:focus {
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.2), 0 0 25px rgba(0, 212, 255, 0.15);
+            background: #ffffff;
+            color: #0f172a;
+        }
+        
+        /* 表单标签样式 */
+        .form-label {
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.6rem;
+            font-size: 1rem;
+            letter-spacing: 0.3px;
+        }
+        
+        /* 表格样式 */
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+        
+        .data-table thead {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .data-table th {
+            padding: 1rem 1.25rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .data-table td {
+            padding: 0.875rem 1.25rem;
+            border-bottom: 1px solid rgba(102, 126, 234, 0.15);
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .data-table tbody tr {
+            transition: all 0.3s ease;
+        }
+        
+        .data-table tbody tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+        
+        /* 按钮样式 */
+        .btn-save {
+            background: linear-gradient(135deg, #00d4ff, #667eea, #b24bf3);
+            border: none;
+            border-radius: 12px;
+            color: #ffffff;
+            padding: 0.85rem 2.2rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 25px rgba(0, 212, 255, 0.4), 0 0 30px rgba(178, 75, 243, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-save i {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+        }
+        
+        .btn-save::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn-save:hover::before {
+            left: 100%;
+        }
+        
+        .btn-save:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 35px rgba(0, 212, 255, 0.6), 0 0 50px rgba(178, 75, 243, 0.4);
+            color: #ffffff;
+        }
+        
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.98);
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            color: #667eea;
+            padding: 0.7rem 2.2rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-cancel i {
+            text-shadow: none;
+        }
+        
+        .btn-cancel:hover {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: transparent;
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-cancel:hover i {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+        }
+        
+        .btn-add-item {
+            background: linear-gradient(135deg, #10b981, #3b82f6);
+            border: none;
+            border-radius: 10px;
+            color: #ffffff;
+            padding: 0.5rem 1.25rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);
+        }
+        
+        .btn-add-item:hover {
+            background: linear-gradient(135deg, #3b82f6, #10b981);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.5);
+            color: #ffffff;
+        }
+        
+        .btn-remove {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+            border: none;
+            border-radius: 8px;
+            color: #ffffff;
+            padding: 0.45rem 0.9rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(255, 107, 107, 0.3);
+        }
+        
+        .btn-remove:hover {
+            background: linear-gradient(135deg, #ee5a6f, #ff6b6b);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.5);
+            color: #ffffff;
+        }
+        
+        /* 分隔线 */
+        .divider {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.3), transparent);
+            margin: 1.5rem 0;
+        }
+        
+        /* 卡片标题 */
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 1rem;
+        }
+        
+        /* 动画效果 */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -276,48 +409,197 @@
             }
         }
         
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-        
-        .card {
-            animation: fadeInUp 0.5s ease-out;
-        }
-        
-        h2 {
-            animation: slideIn 0.4s ease-out;
-        }
-        
         /* 响应式调整 */
         @media (max-width: 768px) {
-            .row.g-4 {
-                flex-direction: column;
+            .form-card {
+                padding: 1.25rem;
             }
             
-            .col-md-6 {
-                width: 100%;
+            .page-title {
+                font-size: 1.35rem;
             }
             
-            .table-responsive {
+            .page-title-icon {
+                width: 40px;
+                height: 40px;
+                margin-right: 10px;
+            }
+            
+            .page-title-icon i {
+                font-size: 1.2rem;
+            }
+            
+            .breadcrumb {
+                display: none;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 0.75rem;
                 font-size: 0.875rem;
             }
             
-            .table th,
-            .table td {
-                padding: 0.75rem;
-            }
-            
-            .btn {
-                font-size: 0.75rem;
-                padding: 0.25rem 0.5rem;
+            .btn-save,
+            .btn-cancel {
+                padding: 0.6rem 1.25rem;
+                font-size: 0.875rem;
             }
         }
     </style>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            <div class="page-title-icon">
+                <i class="fa fa-arrow-up"></i>
+            </div>
+            <h2 class="page-title mb-0">添加出库单</h2>
+        </div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('outbound.list') }}">出库管理</a></li>
+                <li class="breadcrumb-item active" aria-current="page">添加出库单</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="form-card">
+        <form method="POST" action="{{ url_for('outbound.add') }}">
+            <!--出库单基本信息-->
+            <div class="row g-4 mb-6">
+                <div class="col-md-6">
+                    <label for="customer_id" class="form-label">客户<span class="text-danger">*</span></label>
+                    <div class="input-group form-input-group">
+                        <span class="input-group-text">
+                            <i class="fa fa-users"></i>
+                        </span>
+                        <select class="form-select" id="customer_id" name="customer_id" required>
+                            <option value="">请选择客户</option>
+                            {% for customer in customers %}
+                                <option value="{{ customer.id }}">
+                                    {{ customer.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label for="receive_phone" class="form-label">联系电话</label>
+                    <div class="input-group form-input-group">
+                        <span class="input-group-text">
+                            <i class="fa fa-phone"></i>
+                        </span>
+                        <input type="tel" id="receive_phone" class="form-control" name="receive_phone" placeholder="请输入联系电话(选填)">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label for="outbound_date" class="form-label">出库日期<span class="text-danger">*</span></label>
+                    <div class="input-group form-input-group">
+                        <span class="input-group-text">
+                            <i class="fa fa-calendar"></i>
+                        </span>
+                        <input type="date" id="outbound_date" class="form-control" name="outbound_date" value="{{ now.strftime('%Y-%m-%d') if now else '' }}" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label for="remark" class="form-label">备注</label>
+                    <div class="input-group form-input-group">
+                        <span class="input-group-text">
+                            <i class="fa fa-comment"></i>
+                        </span>
+                        <input type="text" id="remark" class="form-control" name="remark" placeholder="输入备注信息(选填)">
+                    </div>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!--出库明细-->
+            <div class="mb-6">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="card-title">出库明细</h5>
+                    <button type="button" id="addItemBtn" class="btn btn-add-item">
+                        <i class="fa fa-plus mr-1"></i>添加明细
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table data-table">
+                        <thead>
+                            <tr>
+                                <th width="25%" class="text-center">商品</th>
+                                <th width="20%" class="text-center">库位</th>
+                                <th width="20%" class="text-center">批次号</th>
+                                <th width="15%" class="text-center">数量</th>
+                                <th width="20%" class="text-center">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemTableBody">
+                            <tr id="itemRow0">
+                                <td>
+                                    <div class="input-group form-input-group">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-shopping-bag"></i>
+                                        </span>
+                                        <select class="form-select product-select" name="product_id[]" required>
+                                            <option value="">请选择商品</option>
+                                            {% for product in products %}
+                                                <option value="{{ product.id }}">
+                                                    {{ product.name }} ({{ product.code }})
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-group form-input-group">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-map-marker"></i>
+                                        </span>
+                                        <select class="form-select" name="location_id[]" required>
+                                            <option value="">请选择库位</option>
+                                            {% for location in locations %}
+                                                <option value="{{ location.id }}">
+                                                    {{ location.code }} - {{ location.name }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-group form-input-group">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-barcode"></i>
+                                        </span>
+                                        <input type="text" class="form-control" name="batch_no[]" placeholder="批次号(选填)">
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-group form-input-group">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-cubes"></i>
+                                        </span>
+                                        <input type="number" class="form-control quantity-input" name="quantity[]" min="1" required placeholder="数量">
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-remove remove-item" data-row="0">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!--提交按钮-->
+            <div class="d-flex gap-3">
+                <button type="submit" class="btn btn-save">
+                    <i class="fa fa-save mr-2"></i>提交出库单
+                </button>
+                <a href="{{ url_for('outbound.list') }}" class="btn btn-cancel">
+                    <i class="fa fa-times mr-2"></i>取消
+                </a>
+            </div>
+        </form>
+    </div>
 {% endblock %}

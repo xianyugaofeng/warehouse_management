@@ -118,177 +118,97 @@
 {% endblock %}
 
 {% block content %}
-    <div class="d-flex justify-content-between align-items-center mb-6">      
-        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
-            <i class="fa fa-arrow-down mr-3 text-primary"></i>添加入库单
-        </h2>
-        <nav aria-label="breadcrumb">       <!--无障碍访问标签，为屏幕阅读器描述这是面包屑导航-->
-            <ol class="breadcrumb">         <!--Bootstrap 面包屑导航样式-->
-                <li class="breadcrumb-item"><a href="{{ url_for('inbound.list') }}">入库管理</a></li>
-                <li class="breadcrumb-item active" aria-current="page">添加入库单</li>
-                <!--breadcrumb-item active:面包屑项高亮显示-->
-            </ol>
-        </nav>
-    </div>
-
-    <div class="card mb-6 shadow-sm rounded-xl overflow-hidden">
-        <div class="card-body p-6">
-            <form method="POST" action="{{ url_for('inbound.add') }}">
-                <!--入库单基本信息-->
-                <div class="row mb-4">      <!--Bootstrap栅格行 下边距1.5em-->
-                    <div class="col-md-6 mb-3">
-                        <label for="supplier_id" class="form-label">供应商<span class="text-danger">*</span></label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                <i class="fa fa-building text-gray-400"></i>
-                            </span>
-                            <select class="form-select rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="supplier_id" name="supplier_id">
-                                <option value="">请选择供应商</option>
-                                {% for supplier in suppliers %}
-                                    <option value="{{ supplier.id }}">
-                                        {{ supplier.name }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-
-                    <!--Bootstrap 栅格系统的自动换行功能-->
-                    <div class="col-md-6 mb-3">
-                        <label for="inbound_date" class="form-label">入库日期<span class="text-danger">*</span></label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                <i class="fa fa-calendar text-gray-400"></i>
-                            </span>
-                            <input type="date" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="inbound_date" name="inbound_date" value="{{ now.strftime('%Y-%m-%d') if now else '' }}" required>
-                        </div>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="remark" class="form-label">备注</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                <i class="fa fa-comment text-gray-400"></i>
-                            </span>
-                            <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="remark" name="remark" placeholder="输入备注信息(选填)">
-                        </div>
-                    </div>
-                </div>
-
-                <hr class="my-4 border-gray-200">   <!--水平分隔线-->
-
-                <!--入库明细-->
-                <div class="mb-6">  <!--下边距为1.5rem 容器包裹整个入库明细区域-->
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <!--子元素水平排列 两端对齐 垂直居中-->
-                        <h5 class="text-lg font-semibold text-gray-700">入库明细</h5>
-                        <button type="button" id="addItemBtn" class="btn btn-sm btn-primary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
-                            <i class="fa fa-plus mr-1"></i>添加明细      <!--已为#addItemBtn按钮绑定click事件-->
-                        </button>           <!--绑定事件:为表格添加明细行-->
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-bordered rounded-lg overflow-hidden">
-                            <thead class="bg-gray-50">
-                                <tr class="text-gray-700 border-b-2 border-gray-300">
-                                    <th width="20%" class="py-3 px-4 border-r border-gray-200 font-semibold text-center">商品</th>
-                                    <th width="15%" class="py-3 px-4 border-r border-gray-200 font-semibold text-center">库位</th>
-                                    <th width="14%" class="py-3 px-4 border-r border-gray-200 font-semibold text-center">批次号</th>
-                                    <th width="15%" class="py-3 px-4 border-r border-gray-200 font-semibold text-center">数量</th>
-                                    <th width="12%" class="py-3 px-4 border-r border-gray-200 font-semibold text-center">生产日期</th>
-                                    <th width="12%" class="py-3 px-4 border-r border-gray-200 font-semibold text-center">过期日期</th>
-                                    <th width="12%" class="py-3 px-4 font-semibold text-center">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody id="itemTableBody" class="bg-white">      <!--用于click事件动态添加表格明细行-->
-                                <!--初始空行-->
-                                <tr id="itemRow0" class="transition-all duration-300 hover:bg-gray-50">
-                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">
-                                        <div class="input-group" style="width: 100%;">
-                                            <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                                <i class="fa fa-shopping-bag text-gray-400"></i>
-                                            </span>
-                                            <select class="form-select product-select rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" name="product_id[]" required style="flex: 1;">
-                                                <option value="">请选择商品</option>
-                                                {% for product in products %}
-                                                    <option value="{{ product.id }}">
-                                                        {{ product.name }} ({{ product.code }})
-                                                    </option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                    </td>
-                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">
-                                        <div class="input-group" style="width: 100%;">
-                                            <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                                <i class="fa fa-map-marker text-gray-400"></i>
-                                            </span>
-                                            <select class="form-select rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" name="location_id[]" required style="flex: 1;">
-                                                <option value="">请选择库位</option>
-                                                {% for location in locations %}
-                                                    <option value="{{ location.id }}">
-                                                        {{ location.code }} - {{ location.name }}
-                                                    </option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                    </td>
-                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">
-                                        <div class="input-group" style="width: 100%;">
-                                            <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                                <i class="fa fa-hashtag text-gray-400"></i>
-                                            </span>
-                                            <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" name="batch_no[]" placeholder="批次号(选填)" style="flex: 1;">
-                                        </div>
-                                    </td>
-                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">
-                                        <div class="input-group" style="width: 100%;">
-                                            <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                                <i class="fa fa-cubes text-gray-400"></i>
-                                            </span>
-                                            <input type="number" class="form-control quantity-input rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" name="quantity[]" min="1" required placeholder="数量" style="flex: 1; min-width: 80px;">
-                                        </div>
-                                    </td>
-                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">
-                                        <div class="input-group" style="width: 100%;">
-                                            <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                                <i class="fa fa-calendar text-gray-400"></i>
-                                            </span>
-                                            <input type="date" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" name="production_date[]" style="flex: 1;">
-                                        </div>
-                                    </td>
-                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">
-                                        <div class="input-group" style="width: 100%;">
-                                            <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                                <i class="fa fa-calendar-times-o text-gray-400"></i>
-                                            </span>
-                                            <input type="date" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" name="expire_date[]" style="flex: 1;">
-                                        </div>
-                                    </td>
-                                    <td class="py-3 px-4 border-b border-gray-200 text-center">
-                                        <button type="button" class="btn btn-sm btn-danger rounded-lg hover:bg-red-600 transform hover:-translate-y-1 transition-all duration-300 remove-item" data-row="0">
-                                            <i class="fa fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!--提交按钮-->
-                <div class="d-flex gap-2">      <!--Bootstrap弹性布局 子元素之间间距 0.5rem -->
-                    <button type="submit" class="btn btn-primary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
-                        <i class="fa fa-check mr-2"></i>提交入库单
-                    </button>
-                    <a href="{{ url_for('inbound.list') }}" class="btn btn-outline-secondary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
-                        <i class="fa fa-times mr-2"></i>取消
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
-    
     <style>
-        /* 自定义动画效果 */
+        /* 页面标题霓虹效果 */
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #b24bf3, #ff6b9d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            position: relative;
+        }
+        
+        .page-title-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #00d4ff, #667eea);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            box-shadow: 
+                0 0 25px rgba(0, 212, 255, 0.5),
+                0 0 50px rgba(102, 126, 234, 0.3),
+                inset 0 0 15px rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+        
+        .page-title-icon i {
+            font-size: 1.5rem;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+        
+        /* 面包屑导航样式 */
+        .breadcrumb {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 25px;
+            padding: 0.5rem 1.25rem;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .breadcrumb-item a {
+            color: #667eea;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .breadcrumb-item a:hover {
+            color: #b24bf3;
+            text-shadow: 0 0 8px rgba(178, 75, 243, 0.5);
+        }
+        
+        .breadcrumb-item.active {
+            color: #b24bf3;
+            font-weight: 600;
+        }
+        
+        /* 表单卡片 - 渐变蓝紫边框 */
+        .form-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 3px solid transparent;
+            background-clip: padding-box;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.15),
+                0 0 40px rgba(102, 126, 234, 0.2),
+                inset 0 0 20px rgba(255, 255, 255, 0.8);
+            position: relative;
+            padding: 2rem;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .form-card::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            background: linear-gradient(135deg, #00d4ff, #667eea, #b24bf3);
+            border-radius: 22px;
+            z-index: -1;
+        }
+        
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -300,44 +220,550 @@
             }
         }
         
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+        /* 表单标签样式 */
+        .form-label {
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.6rem;
+            font-size: 1rem;
+            letter-spacing: 0.3px;
         }
         
-        .card {
-            animation: fadeInUp 0.5s ease-out;
+        .form-label .text-danger {
+            margin-left: 3px;
+            font-size: 1.1rem;
         }
         
-        h2 {
-            animation: slideIn 0.4s ease-out;
+        /* 输入框组样式 */
+        .input-group {
+            position: relative;
+        }
+        
+        .input-group-text {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 12px 0 0 12px;
+            color: #ffffff;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        .input-group-text i {
+            font-size: 1.1rem;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+        }
+        
+        .input-group:focus-within .input-group-text {
+            background: linear-gradient(135deg, #00d4ff, #667eea);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+        }
+        
+        .form-control, .form-select {
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-left: none;
+            border-radius: 0 12px 12px 0;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #1e293b;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.98);
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.2), 0 0 25px rgba(0, 212, 255, 0.15);
+            background: #ffffff;
+            color: #0f172a;
+        }
+        
+        .form-control::placeholder {
+            color: #64748b;
+            font-weight: 400;
+        }
+        
+        /* 表格样式 */
+        .item-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+        
+        .item-table thead {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .item-table thead::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shineEffect 3s infinite;
+        }
+        
+        @keyframes shineEffect {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        .item-table th {
+            padding: 1rem 1.25rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .item-table td {
+            padding: 0.875rem 1.25rem;
+            border-bottom: 1px solid rgba(102, 126, 234, 0.15);
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .item-table tbody tr {
+            transition: all 0.3s ease;
+        }
+        
+        .item-table tbody tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.15);
+        }
+        
+        /* 按钮样式 */
+        .btn-save {
+            background: linear-gradient(135deg, #00d4ff, #667eea, #b24bf3);
+            border: none;
+            border-radius: 12px;
+            color: #ffffff;
+            padding: 0.85rem 2.2rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 25px rgba(0, 212, 255, 0.4), 0 0 30px rgba(178, 75, 243, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-save i {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+        }
+        
+        .btn-save::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn-save:hover::before {
+            left: 100%;
+        }
+        
+        .btn-save:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 35px rgba(0, 212, 255, 0.6), 0 0 50px rgba(178, 75, 243, 0.4);
+            color: #ffffff;
+        }
+        
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.98);
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            color: #667eea;
+            padding: 0.7rem 2.2rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-cancel i {
+            text-shadow: none;
+        }
+        
+        .btn-cancel:hover {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: transparent;
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-cancel:hover i {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+        }
+        
+        .btn-add-item {
+            background: linear-gradient(135deg, #00d4ff, #667eea);
+            border: none;
+            border-radius: 8px;
+            color: #ffffff;
+            padding: 0.45rem 0.9rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 212, 255, 0.3);
+        }
+        
+        .btn-add-item:hover {
+            background: linear-gradient(135deg, #667eea, #00d4ff);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.5);
+            color: #ffffff;
+        }
+        
+        .btn-delete-item {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+            border: none;
+            border-radius: 8px;
+            color: #ffffff;
+            padding: 0.45rem 0.9rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(255, 107, 107, 0.3);
+        }
+        
+        .btn-delete-item:hover {
+            background: linear-gradient(135deg, #ee5a6f, #ff6b6b);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.5);
+            color: #ffffff;
         }
         
         /* 响应式调整 */
         @media (max-width: 768px) {
-            .input-group {
+            .form-card {
+                padding: 1.25rem;
+            }
+            
+            .page-title {
+                font-size: 1.35rem;
+            }
+            
+            .page-title-icon {
+                width: 40px;
+                height: 40px;
+                margin-right: 10px;
+            }
+            
+            .page-title-icon i {
+                font-size: 1.2rem;
+            }
+            
+            .breadcrumb {
+                display: none;
+            }
+            
+            .btn-save, .btn-cancel {
+                padding: 0.6rem 1.25rem;
                 font-size: 0.875rem;
             }
             
-            .btn {
+            .btn-add-item, .btn-delete-item {
+                padding: 0.35rem 0.75rem;
                 font-size: 0.75rem;
-                padding: 0.25rem 0.5rem;
             }
             
-            .table-responsive {
-                font-size: 0.875rem;
-            }
-            
-            .table th,
-            .table td {
+            .item-table th,
+            .item-table td {
                 padding: 0.75rem;
+                font-size: 0.875rem;
             }
         }
     </style>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            <div class="page-title-icon">
+                <i class="fa fa-arrow-down"></i>
+            </div>
+            <h2 class="page-title mb-0">添加入库单</h2>
+        </div>
+        <nav aria-label="breadcrumb">       <!--无障碍访问标签，为屏幕阅读器描述这是面包屑导航-->
+            <ol class="breadcrumb mb-0">         <!--Bootstrap 面包屑导航样式-->
+                <li class="breadcrumb-item"><a href="{{ url_for('inbound.list') }}">入库管理</a></li>
+                <li class="breadcrumb-item active" aria-current="page">添加入库单</li>
+                <!--breadcrumb-item active:面包屑项高亮显示-->
+            </ol>
+        </nav>
+    </div>
+
+    <div class="form-card">
+        <form method="POST" action="{{ url_for('inbound.add') }}">
+            <!--入库单基本信息-->
+            <div class="row mb-4">      <!--Bootstrap栅格行 下边距1.5em-->
+                <div class="col-md-6 mb-3">
+                    <label for="supplier_id" class="form-label">供应商<span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fa fa-building"></i>
+                        </span>
+                        <select class="form-select" id="supplier_id" name="supplier_id">
+                            <option value="">请选择供应商</option>
+                            {% for supplier in suppliers %}
+                                <option value="{{ supplier.id }}">
+                                    {{ supplier.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!--Bootstrap 栅格系统的自动换行功能-->
+                <div class="col-md-6 mb-3">
+                    <label for="inbound_date" class="form-label">入库日期<span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fa fa-calendar"></i>
+                        </span>
+                        <input type="date" class="form-control" id="inbound_date" name="inbound_date" value="{{ now.strftime('%Y-%m-%d') if now else '' }}" required>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="remark" class="form-label">备注</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fa fa-comment"></i>
+                        </span>
+                        <input type="text" class="form-control" id="remark" name="remark" placeholder="输入备注信息(选填)">
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-4 border-gray-200">   <!--水平分隔线-->
+
+            <!--入库明细-->
+            <div class="mb-6">  <!--下边距为1.5rem 容器包裹整个入库明细区域-->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <!--子元素水平排列 两端对齐 垂直居中-->
+                    <h5 class="text-lg font-semibold text-gray-700">入库明细</h5>
+                    <button type="button" id="addItemBtn" class="btn btn-add-item">
+                        <i class="fa fa-plus mr-1"></i>添加明细      <!--已为#addItemBtn按钮绑定click事件-->
+                    </button>           <!--绑定事件:为表格添加明细行-->
+                </div>
+                <div class="table-responsive">
+                    <table class="table item-table">
+                        <thead>
+                            <tr>
+                                <th width="20%" class="text-center">商品</th>
+                                <th width="15%" class="text-center">库位</th>
+                                <th width="14%" class="text-center">批次号</th>
+                                <th width="15%" class="text-center">数量</th>
+                                <th width="12%" class="text-center">生产日期</th>
+                                <th width="12%" class="text-center">过期日期</th>
+                                <th width="12%" class="text-center">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemTableBody" class="bg-white">      <!--用于click事件动态添加表格明细行-->
+                            <!--初始空行-->
+                            <tr id="itemRow0">
+                                <td>
+                                    <div class="input-group" style="width: 100%;">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-shopping-bag"></i>
+                                        </span>
+                                        <select class="form-select product-select" name="product_id[]" required style="flex: 1;">
+                                            <option value="">请选择商品</option>
+                                            {% for product in products %}
+                                                <option value="{{ product.id }}">
+                                                    {{ product.name }} ({{ product.code }})
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-group" style="width: 100%;">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-map-marker"></i>
+                                        </span>
+                                        <select class="form-select" name="location_id[]" required style="flex: 1;">
+                                            <option value="">请选择库位</option>
+                                            {% for location in locations %}
+                                                <option value="{{ location.id }}">
+                                                    {{ location.code }} - {{ location.name }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-group" style="width: 100%;">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-hashtag"></i>
+                                        </span>
+                                        <input type="text" class="form-control" name="batch_no[]" placeholder="批次号(选填)" style="flex: 1;">
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-group" style="width: 100%;">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-cubes"></i>
+                                        </span>
+                                        <input type="number" class="form-control quantity-input" name="quantity[]" min="1" required placeholder="数量" style="flex: 1; min-width: 80px;">
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-group" style="width: 100%;">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-calendar"></i>
+                                        </span>
+                                        <input type="date" class="form-control" name="production_date[]" style="flex: 1;">
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-group" style="width: 100%;">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-calendar-times-o"></i>
+                                        </span>
+                                        <input type="date" class="form-control" name="expire_date[]" style="flex: 1;">
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-delete-item remove-item" data-row="0">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!--提交按钮-->
+            <div class="d-flex gap-3">      <!--Bootstrap弹性布局 子元素之间间距 0.5rem -->
+                <button type="submit" class="btn btn-save">
+                    <i class="fa fa-check mr-2"></i>提交入库单
+                </button>
+                <a href="{{ url_for('inbound.list') }}" class="btn btn-cancel">
+                    <i class="fa fa-times mr-2"></i>取消
+                </a>
+            </div>
+        </form>
+    </div>
+    
+    <script>
+        // 更新JavaScript代码中的按钮类名
+        $(document).ready(function() {
+            let rowIndex = 0;
+            $("#addItemBtn").click(function() {
+                rowIndex++;
+                const newRow = `
+                    <tr id="itemRow${rowIndex}">
+                        <td>
+                            <div class="input-group" style="width: 100%;">
+                                <span class="input-group-text">
+                                    <i class="fa fa-shopping-bag"></i>
+                                </span>
+                                <select class="form-select product-select" name="product_id[]" required style="flex: 1;">
+                                    <option value="">请选择商品</option>
+                                    {% for product in products %}
+                                        <option value="{{ product.id }}">
+                                            {{ product.name }} ({{ product.code }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="input-group" style="width: 100%;">
+                                <span class="input-group-text">
+                                    <i class="fa fa-map-marker"></i>
+                                </span>
+                                <select class="form-select" name="location_id[]" required style="flex: 1;">
+                                    <option value="">请选择库位</option>
+                                    {% for location in locations %}
+                                        <option value="{{ location.id }}">
+                                            {{ location.code }} - {{ location.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="input-group" style="width: 100%;">
+                                <span class="input-group-text">
+                                    <i class="fa fa-hashtag"></i>
+                                </span>
+                                <input type="text" class="form-control" name="batch_no[]" placeholder="批次号(选填)" style="flex: 1;">
+                            </div>
+                        </td>
+                        <td>
+                            <div class="input-group" style="width: 100%;">
+                                <span class="input-group-text">
+                                    <i class="fa fa-cubes"></i>
+                                </span>
+                                <input type="number" class="form-control quantity-input" name="quantity[]" min="1" required placeholder="数量" style="flex: 1; min-width: 80px;">
+                            </div>
+                        </td>
+                        <td>
+                            <div class="input-group" style="width: 100%;">
+                                <span class="input-group-text">
+                                    <i class="fa fa-calendar"></i>
+                                </span>
+                                <input type="date" class="form-control" name="production_date[]" style="flex: 1;">
+                            </div>
+                        </td>
+                        <td>
+                            <div class="input-group" style="width: 100%;">
+                                <span class="input-group-text">
+                                    <i class="fa fa-calendar-times-o"></i>
+                                </span>
+                                <input type="date" class="form-control" name="expire_date[]" style="flex: 1;">
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-delete-item remove-item" data-row="${rowIndex}">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                $("#itemTableBody").append(newRow);
+            });
+            
+            $(document).on("click", ".remove-item", function() {
+                const rowId = $(this).data("row");
+                $(`#itemRow${rowId}`).remove();
+            });
+            
+            $("form").submit(function() {
+                const hasItems = $("#itemTableBody tr").length > 0;
+                if (!hasItems) {
+                    alert("请至少添加一条入库明细!");
+                    return false;
+                }
+                
+                let isValid = true;
+                $("input[name='quantity[]']").each(function() {
+                    if ($(this).val() <= 0 || !$(this).val()) {
+                        alert("数量必须大于0!");
+                        isValid = false;
+                        return false;
+                    }
+                });
+                return isValid;
+            });
+        });
+    </script>
 {% endblock %}

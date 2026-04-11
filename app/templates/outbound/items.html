@@ -2,227 +2,331 @@
 {% block title %}出库明细查询 - 仓库管理系统{% endblock %}
 
 {% block content %}
-    <div class="d-flex justify-content-between align-items-center mb-6">
-        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
-            <i class="fa fa-search mr-3 text-primary"></i>出库明细查询
-        </h2>
-    </div>
-
-    <div class="card mb-6 shadow-sm rounded-xl overflow-hidden">
-        <div class="card-body p-6">
-            <form method="GET" action="{{ url_for('outbound.items') }}" class="row g-4">
-                <div class="col-md-3">
-                    <label for="keyword" class="form-label">关键词</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                            <i class="fa fa-search text-gray-400"></i>
-                        </span>
-                        <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="keyword" name="keyword" value="{{ keyword }}" placeholder="商品名称/编码/出库单号/客户">
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <label for="outbound_type" class="form-label">出库类型</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                            <i class="fa fa-tags text-gray-400"></i>
-                        </span>
-                        <select class="form-select rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="outbound_type" name="outbound_type">
-                            <option value="">全部类型</option>
-                            <option value="delivery" {% if request.args.get('outbound_type') == 'delivery' %}selected{% endif %}>发货出库</option>
-                            <option value="return" {% if request.args.get('outbound_type') == 'return' %}selected{% endif %}>退购出库</option>
-                            <option value="scrap" {% if request.args.get('outbound_type') == 'scrap' %}selected{% endif %}>报废出库</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <label for="product_id" class="form-label">商品</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                            <i class="fa fa-shopping-bag text-gray-400"></i>
-                        </span>
-                        <select class="form-select rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="product_id" name="product_id">
-                            <option value="">全部商品</option>
-                            {% for product in products %}
-                                <option value="{{ product.id }}" {% if product_id == product.id|string %}selected{% endif %}>
-                                    {{ product.name }} ({{ product.code }})
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <label for="location_id" class="form-label">库位</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                            <i class="fa fa-map-marker text-gray-400"></i>
-                        </span>
-                        <select class="form-select rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="location_id" name="location_id">
-                            <option value="">全部库位</option>
-                            {% for location in locations %}
-                                <option value="{{ location.id }}" {% if location_id == location.id|string %}selected{% endif %}>
-                                    {{ location.code }} - {{ location.name }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <label for="customer_id" class="form-label">客户</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                            <i class="fa fa-users text-gray-400"></i>
-                        </span>
-                        <select class="form-select rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="customer_id" name="customer_id">
-                            <option value="">全部客户</option>
-                            {% for customer in customers %}
-                                <option value="{{ customer.id }}" {% if customer_id == customer.id|string %}selected{% endif %}>
-                                    {{ customer.name }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <label for="date_range" class="form-label">日期范围</label>
-                    <div class="d-flex gap-2">
-                        <input type="date" class="form-control rounded-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" name="start_date" value="{{ start_date }}">
-                        <input type="date" class="form-control rounded-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" name="end_date" value="{{ end_date }}">
-                    </div>
-                </div>
-                <div class="col-md-12">
-                    <button type="submit" class="btn btn-primary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
-                        <i class="fa fa-search mr-2"></i>查询
-                    </button>
-                    <a href="{{ url_for('outbound.items') }}" class="btn btn-outline-secondary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg ml-2">
-                        <i class="fa fa-refresh mr-2"></i>重置
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div class="card shadow-sm rounded-xl overflow-hidden">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover table-bordered">
-                    <thead class="bg-gray-50">
-                        <tr class="text-gray-700 border-b-2 border-gray-300">
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">出库单号</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">出库类型</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">商品名称</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">商品编码</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">库位</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">批次号</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">数量</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">客户</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">联系电话</th>
-                            <th class="py-3 px-4 font-semibold text-center">出库日期</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white">
-                        {% if items %}
-                            {% for item in items %}
-                                <tr class="transition-all duration-300 hover:bg-gray-50">
-                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 font-medium">{{ item.order.order_no }}</td>
-                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">
-                                        {% if item.order.outbound_type == 'delivery' %}
-                                            <span class="badge bg-primary rounded-full px-3 py-1">发货出库</span>
-                                        {% elif item.order.outbound_type == 'return' %}
-                                            <span class="badge bg-warning rounded-full px-3 py-1">退购出库</span>
-                                        {% elif item.order.outbound_type == 'scrap' %}
-                                            <span class="badge bg-danger rounded-full px-3 py-1">报废出库</span>
-                                        {% else %}
-                                            <span class="badge bg-secondary rounded-full px-3 py-1">未知</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">{{ item.product.name }}</td>
-                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ item.product.code }}</td>
-                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">{{ item.location.code }} - {{ item.location.name }}</td>
-                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ item.batch_no }}</td>
-                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ item.quantity }}</td>
-                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">{{ item.order.customer.name if item.order.customer else '-' }}</td>
-                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ item.order.receive_phone or '-' }}</td>
-                                    <td class="py-3 px-4 border-b border-gray-200 text-center">{{ item.order.outbound_date.strftime('%Y-%m-%d') }}</td>
-                                </tr>
-                            {% endfor %}
-                        {% else %}
-                            <tr>
-                                <td colspan="10" class="py-12 text-center text-gray-500 border border-gray-200">
-                                    <div class="flex flex-col items-center">
-                                        <i class="fa fa-search text-4xl mb-4 text-gray-300"></i>
-                                        <p>暂无数据</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- 分页 -->
-            {% if pagination %}
-                <div class="p-4 border-t border-gray-200 bg-gray-50">
-                    <div class="flex flex-wrap justify-between items-center gap-4">
-                        <p class="text-sm text-gray-600">
-                            显示 {{ pagination.page * pagination.per_page - pagination.per_page + 1 }} 到 {{ pagination.page * pagination.per_page if pagination.page * pagination.per_page < pagination.total else pagination.total }} 条，共 {{ pagination.total }} 条
-                        </p>
-                        <nav aria-label="Page navigation">
-                            <ul class="pagination space-x-1">
-                                {% if pagination.has_prev %}
-                                    <li class="page-item">
-                                        <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300" href="{{ url_for('outbound.items', page=pagination.prev_num, keyword=keyword, product_id=product_id, location_id=location_id, customer_id=customer_id, outbound_type=outbound_type, start_date=start_date, end_date=end_date) }}" aria-label="Previous">
-                                            <i class="fa fa-chevron-left"></i>
-                                        </a>
-                                    </li>
-                                {% else %}
-                                    <li class="page-item disabled">
-                                        <span class="page-link rounded-lg border-gray-300 bg-gray-100 text-gray-400">
-                                            <i class="fa fa-chevron-left"></i>
-                                        </span>
-                                    </li>
-                                {% endif %}
-                                
-                                {% for page_num in pagination.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
-                                    {% if page_num %}
-                                        {% if page_num == pagination.page %}
-                                            <li class="page-item active">
-                                                <span class="page-link rounded-lg bg-primary border-primary text-white px-3 py-1">{{ page_num }}</span>
-                                            </li>
-                                        {% else %}
-                                            <li class="page-item">
-                                                <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300 px-3 py-1" href="{{ url_for('outbound.items', page=page_num, keyword=keyword, product_id=product_id, location_id=location_id, customer_id=customer_id, outbound_type=outbound_type, start_date=start_date, end_date=end_date) }}">{{ page_num }}</a>
-                                            </li>
-                                        {% endif %}
-                                    {% else %}
-                                        <li class="page-item disabled">
-                                            <span class="page-link rounded-lg border-gray-300 bg-gray-100 text-gray-400 px-3 py-1">...</span>
-                                        </li>
-                                    {% endif %}
-                                {% endfor %}
-                                
-                                {% if pagination.has_next %}
-                                    <li class="page-item">
-                                        <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300" href="{{ url_for('outbound.items', page=pagination.next_num, keyword=keyword, product_id=product_id, location_id=location_id, customer_id=customer_id, outbound_type=outbound_type, start_date=start_date, end_date=end_date) }}" aria-label="Next">
-                                            <i class="fa fa-chevron-right"></i>
-                                        </a>
-                                    </li>
-                                {% else %}
-                                    <li class="page-item disabled">
-                                        <span class="page-link rounded-lg border-gray-300 bg-gray-100 text-gray-400">
-                                            <i class="fa fa-chevron-right"></i>
-                                        </span>
-                                    </li>
-                                {% endif %}
-                            </ul>
-                        </nav>
-                    </div>
-                </div>
-            {% endif %}
-        </div>
-    </div>
-    
     <style>
-        /* 自定义动画效果 */
+        /* 页面标题霓虹效果 */
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #b24bf3, #ff6b9d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            position: relative;
+        }
+        
+        .page-title-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #00d4ff, #667eea);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            box-shadow: 
+                0 0 25px rgba(0, 212, 255, 0.5),
+                0 0 50px rgba(102, 126, 234, 0.3),
+                inset 0 0 15px rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+        
+        .page-title-icon i {
+            font-size: 1.5rem;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+        
+        /* 搜索卡片 - 玻璃态效果 */
+        .search-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 20px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            box-shadow: 
+                0 10px 35px rgba(0, 0, 0, 0.1),
+                0 0 40px rgba(102, 126, 234, 0.2);
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .search-card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00d4ff, #b24bf3, #ff6b9d, #00d4ff, #b24bf3);
+            background-size: 400% 400%;
+            border-radius: 22px;
+            z-index: -1;
+            animation: neonBorderGlow 6s ease infinite, breatheGlow 3s ease-in-out infinite;
+            opacity: 0.7;
+        }
+        
+        @keyframes neonBorderGlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        @keyframes breatheGlow {
+            0%, 100% {
+                opacity: 0.5;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.01);
+            }
+        }
+        
+        /* 搜索输入组 */
+        .search-input-group {
+            position: relative;
+            display: flex;
+            align-items: stretch;
+        }
+        
+        .search-input-group .input-group-text {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 12px 0 0 12px;
+            color: #ffffff;
+            padding: 0.75rem 1rem;
+            box-shadow: 0 0 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .search-input-group .input-group-text i {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+        
+        .search-input-group .form-control,
+        .search-input-group .form-select {
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-left: none;
+            border-radius: 0 12px 12px 0;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #1e293b;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.95);
+        }
+        
+        .search-input-group .form-control:focus,
+        .search-input-group .form-select:focus {
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.2), 0 0 25px rgba(0, 212, 255, 0.15);
+            background: #ffffff;
+            color: #0f172a;
+        }
+        
+        /* 数据卡片 - 呼吸光效边框 */
+        .data-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 20px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            box-shadow: 
+                0 10px 35px rgba(0, 0, 0, 0.1),
+                0 0 40px rgba(102, 126, 234, 0.2);
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .data-card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00d4ff, #b24bf3, #ff6b9d, #00d4ff, #b24bf3);
+            background-size: 400% 400%;
+            border-radius: 22px;
+            z-index: -1;
+            animation: neonBorderGlow 6s ease infinite, breatheGlow 3s ease-in-out infinite;
+            opacity: 0.7;
+        }
+        
+        /* 表格样式 */
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+        
+        .data-table thead {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .data-table thead::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shineEffect 3s infinite;
+        }
+        
+        @keyframes shineEffect {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        .data-table th {
+            padding: 1rem 1.25rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .data-table td {
+            padding: 0.875rem 1.25rem;
+            border-bottom: 1px solid rgba(102, 126, 234, 0.15);
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .data-table tbody tr {
+            transition: all 0.3s ease;
+        }
+        
+        .data-table tbody tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.15);
+        }
+        
+        /* 按钮样式 */
+        .btn-search {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 12px;
+            color: #ffffff;
+            padding: 0.75rem 1.75rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-search:hover {
+            background: linear-gradient(135deg, #764ba2, #667eea);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+            color: #ffffff;
+        }
+        
+        .btn-reset {
+            background: rgba(255, 255, 255, 0.98);
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            color: #667eea;
+            padding: 0.7rem 1.75rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-reset:hover {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: transparent;
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        /* 分页样式 */
+        .pagination-container {
+            padding: 1.5rem;
+            background: rgba(102, 126, 234, 0.03);
+            border-top: 1px solid rgba(102, 126, 234, 0.1);
+        }
+        
+        .pagination-info {
+            font-size: 0.9rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+        
+        .pagination {
+            display: flex;
+            gap: 0.35rem;
+        }
+        
+        .page-link {
+            padding: 0.5rem 0.9rem;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-radius: 10px;
+            color: #667eea;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.98);
+            transition: all 0.3s ease;
+        }
+        
+        .page-link:hover {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: transparent;
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .page-item.active .page-link {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: transparent;
+            color: #ffffff;
+            box-shadow: 0 0 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .page-item.disabled .page-link {
+            background: rgba(241, 245, 249, 0.98);
+            border-color: rgba(203, 213, 225, 0.5);
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+        
+        /* 空数据提示 */
+        .empty-data {
+            padding: 3rem;
+            text-align: center;
+            color: #94a3b8;
+            background: rgba(241, 245, 249, 0.3);
+        }
+        
+        .empty-data i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #cbd5e1;
+        }
+        
+        .empty-data p {
+            font-size: 1rem;
+            font-weight: 500;
+            margin: 0;
+        }
+        
+        /* 动画效果 */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -234,44 +338,40 @@
             }
         }
         
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-        
-        .card {
-            animation: fadeInUp 0.5s ease-out;
-        }
-        
-        h2 {
-            animation: slideIn 0.4s ease-out;
-        }
-        
         /* 响应式调整 */
         @media (max-width: 768px) {
-            .table-responsive {
+            .page-title {
+                font-size: 1.35rem;
+            }
+            
+            .page-title-icon {
+                width: 40px;
+                height: 40px;
+                margin-right: 10px;
+            }
+            
+            .page-title-icon i {
+                font-size: 1.2rem;
+            }
+            
+            .search-card .row {
+                gap: 1rem;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 0.75rem;
                 font-size: 0.875rem;
             }
             
-            .table th,
-            .table td {
-                padding: 0.75rem;
+            .btn-search,
+            .btn-reset {
+                padding: 0.6rem 1.25rem;
+                font-size: 0.875rem;
             }
             
-            .btn {
-                font-size: 0.75rem;
-                padding: 0.25rem 0.5rem;
-            }
-            
-            .flex.justify-between {
-                flex-direction: column;
-                gap: 1rem;
+            .pagination-container {
+                padding: 1rem;
             }
             
             .pagination {
@@ -279,4 +379,209 @@
             }
         }
     </style>
+
+    <div class="d-flex justify-content-between align-items-center mb-4 page-header">
+        <div class="d-flex align-items-center">
+            <div class="page-title-icon"><i class="fa fa-search"></i></div>
+            <h2 class="page-title mb-0">出库明细查询</h2>
+        </div>
+    </div>
+
+    <div class="search-card mb-6 p-4">
+        <form method="GET" action="{{ url_for('outbound.items') }}" class="row g-4">
+            <div class="col-md-3">
+                <div class="input-group search-input-group">
+                    <span class="input-group-text"><i class="fa fa-search"></i></span>
+                    <input type="text" class="form-control" name="keyword" value="{{ keyword }}" placeholder="商品名称/编码/出库单号/客户">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="input-group search-input-group">
+                    <span class="input-group-text"><i class="fa fa-tags"></i></span>
+                    <select class="form-select" name="outbound_type">
+                        <option value="">全部类型</option>
+                        <option value="delivery" {% if request.args.get('outbound_type') == 'delivery' %}selected{% endif %}>发货出库</option>
+                        <option value="return" {% if request.args.get('outbound_type') == 'return' %}selected{% endif %}>退购出库</option>
+                        <option value="scrap" {% if request.args.get('outbound_type') == 'scrap' %}selected{% endif %}>报废出库</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="input-group search-input-group">
+                    <span class="input-group-text"><i class="fa fa-shopping-bag"></i></span>
+                    <select class="form-select" name="product_id">
+                        <option value="">全部商品</option>
+                        {% for product in products %}
+                            <option value="{{ product.id }}" {% if product_id == product.id|string %}selected{% endif %}>
+                                {{ product.name }} ({{ product.code }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="input-group search-input-group">
+                    <span class="input-group-text"><i class="fa fa-map-marker"></i></span>
+                    <select class="form-select" name="location_id">
+                        <option value="">全部库位</option>
+                        {% for location in locations %}
+                            <option value="{{ location.id }}" {% if location_id == location.id|string %}selected{% endif %}>
+                                {{ location.code }} - {{ location.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="input-group search-input-group">
+                    <span class="input-group-text"><i class="fa fa-users"></i></span>
+                    <select class="form-select" name="customer_id">
+                        <option value="">全部客户</option>
+                        {% for customer in customers %}
+                            <option value="{{ customer.id }}" {% if customer_id == customer.id|string %}selected{% endif %}>
+                                {{ customer.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="input-group search-input-group">
+                    <span class="input-group-text"><i class="fa fa-calendar"></i></span>
+                    <input type="date" class="form-control" name="start_date" value="{{ start_date }}">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="input-group search-input-group">
+                    <span class="input-group-text"><i class="fa fa-calendar"></i></span>
+                    <input type="date" class="form-control" name="end_date" value="{{ end_date }}">
+                </div>
+            </div>
+            <div class="col-md-12">
+                <button type="submit" class="btn btn-search">
+                    <i class="fa fa-search mr-2"></i>查询
+                </button>
+                <a href="{{ url_for('outbound.items') }}" class="btn btn-reset ml-2">
+                    <i class="fa fa-refresh mr-2"></i>重置
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <div class="data-card p-0">
+        <div class="table-responsive">
+            <table class="table data-table">
+                <thead>
+                    <tr>
+                        <th class="text-center">出库单号</th>
+                        <th class="text-center">出库类型</th>
+                        <th class="text-center">商品名称</th>
+                        <th class="text-center">商品编码</th>
+                        <th class="text-center">库位</th>
+                        <th class="text-center">批次号</th>
+                        <th class="text-center">数量</th>
+                        <th class="text-center">客户</th>
+                        <th class="text-center">联系电话</th>
+                        <th class="text-center">出库日期</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if items %}
+                        {% for item in items %}
+                            <tr>
+                                <td class="font-medium">{{ item.order.order_no }}</td>
+                                <td class="text-center">
+                                    {% if item.order.outbound_type == 'delivery' %}
+                                        <span class="badge bg-primary">发货出库</span>
+                                    {% elif item.order.outbound_type == 'return' %}
+                                        <span class="badge bg-warning">退购出库</span>
+                                    {% elif item.order.outbound_type == 'scrap' %}
+                                        <span class="badge bg-danger">报废出库</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">未知</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.product.name }}</td>
+                                <td class="text-center">{{ item.product.code }}</td>
+                                <td>{{ item.location.code }} - {{ item.location.name }}</td>
+                                <td class="text-center">{{ item.batch_no }}</td>
+                                <td class="text-center">{{ item.quantity }}</td>
+                                <td>{{ item.order.customer.name if item.order.customer else '-' }}</td>
+                                <td class="text-center">{{ item.order.receive_phone or '-' }}</td>
+                                <td class="text-center">{{ item.order.outbound_date.strftime('%Y-%m-%d') }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="10" class="empty-data">
+                                <div class="flex flex-col items-center">
+                                    <i class="fa fa-search"></i>
+                                    <p>暂无数据</p>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if pagination %}
+            <div class="pagination-container">
+                <div class="flex flex-wrap justify-between items-center gap-4">
+                    <p class="pagination-info">
+                        显示 {{ pagination.page * pagination.per_page - pagination.per_page + 1 }} 到 {{ pagination.page * pagination.per_page if pagination.page * pagination.per_page < pagination.total else pagination.total }} 条，共 {{ pagination.total }} 条
+                    </p>
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination">
+                            {% if pagination.has_prev %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('outbound.items', page=pagination.prev_num, keyword=keyword, product_id=product_id, location_id=location_id, customer_id=customer_id, outbound_type=outbound_type, start_date=start_date, end_date=end_date) }}">
+                                        <i class="fa fa-chevron-left"></i>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">
+                                        <i class="fa fa-chevron-left"></i>
+                                    </span>
+                                </li>
+                            {% endif %}
+                            
+                            {% for page_num in pagination.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+                                {% if page_num %}
+                                    {% if page_num == pagination.page %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ page_num }}</span>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('outbound.items', page=page_num, keyword=keyword, product_id=product_id, location_id=location_id, customer_id=customer_id, outbound_type=outbound_type, start_date=start_date, end_date=end_date) }}">{{ page_num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if pagination.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('outbound.items', page=pagination.next_num, keyword=keyword, product_id=product_id, location_id=location_id, customer_id=customer_id, outbound_type=outbound_type, start_date=start_date, end_date=end_date) }}">
+                                        <i class="fa fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">
+                                        <i class="fa fa-chevron-right"></i>
+                                    </span>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        {% endif %}
+    </div>
 {% endblock %}
