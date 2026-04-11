@@ -96,7 +96,7 @@
                             <span class="text-muted">手动录入</span>
                             {% endif %}
                         </td>
-                        <td>{{ order.items | length }}</td>
+                        <td>{{ order.items.count() }}</td>
                         <td><span class="text-success fw-bold">{{ profit_count }}</span></td>
                         <td><span class="text-danger fw-bold">{{ loss_count }}</span></td>
                         <td>{{ order.create_time.strftime('%Y-%m-%d %H:%M') }}</td>

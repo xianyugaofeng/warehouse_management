@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}盘点结果详情 - 仓库管理系统{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-6">
+    <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+        <i class="fa fa-clipboard-check mr-3 text-primary"></i>盘点结果详情
+    </h2>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('check.list') }}">盘点管理</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('check.history') }}">盘点历史</a></li>
+            <li class="breadcrumb-item active" aria-current="page">盘点结果详情</li>
+        </ol>
+    </nav>
+</div>
+
+<div class="card mb-6 shadow-sm rounded-xl overflow-hidden">
+    <div class="card-body p-6">
+        <div class="mb-6">
+            <h4 class="text-lg font-semibold mb-4">盘点单信息</h4>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <p><span class="font-medium">盘点单号：</span>{{ order.check_no }}</p>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <p><span class="font-medium">盘点人：</span>{{ order.checker.real_name or order.checker.username }}</p>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <p><span class="font-medium">创建时间：</span>{{ order.create_time.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <p><span class="font-medium">状态：</span>
+                        <span class="badge bg-success">已完成</span>
+                    </p>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <p><span class="font-medium">冻结状态：</span>
+                        {% if order.frozen_status %}
+                        <span class="badge bg-danger">已冻结</span>
+                        {% else %}
+                        <span class="badge bg-success">正常</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="col-md-12 mb-3">
+                    <p><span class="font-medium">备注：</span>{{ order.remark or '-' }}</p>
+                </div>
+            </div>
+        </div>
+
+        <h4 class="text-lg font-semibold mb-4">盘点结果</h4>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th>产品名称</th>
+                        <th>库位</th>
+                        <th>账面数量</th>
+                        <th>实际数量</th>
+                        <th>差异数量</th>
+                        <th>盘点结果</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for result in results %}
+                    <tr>
+                        <td>{{ result.item.product.name }}</td>
+                        <td>{{ result.item.location.code }}</td>
+                        <td>{{ result.book_quantity }}</td>
+                        <td>{{ result.actual_quantity }}</td>
+                        <td>
+                            {% if result.diff_quantity > 0 %}
+                            <span class="text-success">+{{ result.diff_quantity }}</span>
+                            {% elif result.diff_quantity < 0 %}
+                            <span class="text-danger">{{ result.diff_quantity }}</span>
+                            {% else %}
+                            <span>{{ result.diff_quantity }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if result.check_result == 'profit' %}
+                            <span class="badge bg-success">盘盈</span>
+                            {% elif result.check_result == 'loss' %}
+                            <span class="badge bg-danger">盘亏</span>
+                            {% else %}
+                            <span class="badge bg-secondary">持平</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center text-gray-500 py-4">暂无数据</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-6">
+            <a href="{{ url_for('check.history') }}" class="btn btn-secondary rounded-lg">
+                <i class="fa fa-arrow-left mr-1"></i>返回历史列表
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script>
+    // 页面加载完成后执行
+    $(document).ready(function() {
+        // 高亮当前菜单项
+        $('.list-group-item').removeClass('active');
+        $('a[href="{{ url_for('check.history') }}"]').addClass('active');
+    });
+</script>
+{% endblock %}

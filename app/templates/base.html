@@ -549,6 +549,22 @@
                             </div>
                         {% endif %}
                         
+                        <!-- 盘点管理 -->
+                        {% if current_user.has_permission('inventory_manage') %}
+                            <div class="menu-header" data-target="check-manage">盘点管理</div>
+                            <div class="menu-content" id="check-manage">
+                                <a href="{{ url_for('check.list') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-file-text-o text-primary me-2"></i>盘点单管理
+                                </a>
+                                <a href="{{ url_for('check.input_select') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-pencil text-success me-2"></i>盘点结果录入
+                                </a>
+                                <a href="{{ url_for('check.history') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-history text-info me-2"></i>盘点历史查询
+                                </a>
+                            </div>
+                        {% endif %}
+                        
                         <!-- 报表统计 -->
                         {% if current_user.has_permission('report_view') %}
                             <div class="menu-header" data-target="report-stats">报表统计</div>

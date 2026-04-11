@@ -52,11 +52,11 @@ class CheckInventoryResult(db.Model):
     check_item_id = db.Column(db.Integer, db.ForeignKey('check_inventory_items.id'), nullable=False)
     check_time = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     book_quantity = db.Column(db.Integer, nullable=False)
-    actual_quantity = db.Column(db.Integer, nullable=False)
+    actual_quantity = db.Column(db.Integer, nullable=True)  # 修改为可空，null表示未盘点
     diff_quantity = db.Column(db.Integer, nullable=False)
     check_result = db.Column(db.String(16), nullable=False)
 
-    check_item = db.relationship('CheckInventoryItem', backref='result_records')
+    check_item = db.relationship('CheckInventoryItem', backref='item')  # 统一关联关系命名，与视图中使用一致
 
     def __repr__(self):
         return f'<CheckInventoryResult 差异: {self.diff_quantity} - {self.check_result}>'
