@@ -2,84 +2,96 @@
 {% block title %}{{ '编辑供应商' if supplier.id else '添加供应商' }} - 仓库管理系统{% endblock %}
 
 {% block content %}
-    <div class="d-flex justify-content-between align-items-center mb-6">    
-        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
-            <i class="fa fa-building mr-3 text-primary"></i>{{ '编辑供应商' if supplier.id else '添加供应商' }}
-        </h2>
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ url_for('supplier.list') }}">供应商管理</a></li>
-                <li class="breadcrumb-item active" aria-current="page">{{ '编辑供应商' if supplier.id else '添加供应商' }}</li>
-            </ol>
-        </nav>
-    </div>
-
-    <div class="card mb-6 shadow-sm rounded-xl overflow-hidden">
-        <div class="card-body p-6">
-            <form action="{{ url_for('supplier.edit', id=supplier.id or 0) }}" method="POST">
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="name" class="form-label">供应商名称 <span class="text-danger">*</span></label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                <i class="fa fa-building text-gray-400"></i>
-                            </span>
-                            <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="name" name="name" value="{{ supplier.name or '' }}" required placeholder="请输入供应商名称">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="contact_person" class="form-label">联系人</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                <i class="fa fa-user text-gray-400"></i>
-                            </span>
-                            <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="contact_person" name="contact_person" value="{{ supplier.contact_person or '' }}" placeholder="请输入联系人姓名">
-                        </div>
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="phone" class="form-label">联系电话</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                <i class="fa fa-phone text-gray-400"></i>
-                            </span>
-                            <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="phone" name="phone" value="{{ supplier.phone or '' }}" placeholder="请输入联系电话">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="email" class="form-label">邮箱</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                <i class="fa fa-envelope text-gray-400"></i>
-                            </span>
-                            <input type="email" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="email" name="email" value="{{ supplier.email or '' }}" placeholder="请输入邮箱地址">
-                        </div>
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <label for="address" class="form-label">地址</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                            <i class="fa fa-map-marker text-gray-400"></i>
-                        </span>
-                        <textarea class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="address" name="address" rows="3" placeholder="请输入地址">{{ supplier.address or '' }}</textarea>
-                    </div>
-                </div>
-                <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300">
-                        <i class="fa fa-save mr-2"></i>保存
-                    </button>
-                    <a href="{{ url_for('supplier.list') }}" class="btn btn-outline-secondary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300">
-                        <i class="fa fa-times mr-2"></i>取消
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
-    
     <style>
-        /* 自定义动画效果 */
+        /* 页面标题霓虹效果 */
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #b24bf3, #ff6b9d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            position: relative;
+        }
+        
+        .page-title-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #00d4ff, #667eea);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            box-shadow: 
+                0 0 25px rgba(0, 212, 255, 0.5),
+                0 0 50px rgba(102, 126, 234, 0.3),
+                inset 0 0 15px rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+        
+        .page-title-icon i {
+            font-size: 1.5rem;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+        
+        /* 面包屑导航样式 */
+        .breadcrumb {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 25px;
+            padding: 0.5rem 1.25rem;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .breadcrumb-item a {
+            color: #667eea;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .breadcrumb-item a:hover {
+            color: #b24bf3;
+            text-shadow: 0 0 8px rgba(178, 75, 243, 0.5);
+        }
+        
+        .breadcrumb-item.active {
+            color: #b24bf3;
+            font-weight: 600;
+        }
+        
+        /* 表单卡片 - 渐变蓝紫边框 */
+        .form-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 3px solid transparent;
+            background-clip: padding-box;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.1),
+                0 0 40px rgba(102, 126, 234, 0.2);
+            position: relative;
+            padding: 2rem;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .form-card::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            background: linear-gradient(135deg, #00d4ff, #667eea, #b24bf3);
+            border-radius: 22px;
+            z-index: -1;
+        }
+        
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -91,40 +103,239 @@
             }
         }
         
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+        /* 表单标签样式 */
+        .form-label {
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.6rem;
+            font-size: 1rem;
+            letter-spacing: 0.3px;
         }
         
-        .card {
-            animation: fadeInUp 0.5s ease-out;
+        .form-label .text-danger {
+            margin-left: 3px;
+            font-size: 1.1rem;
         }
         
-        h2 {
-            animation: slideIn 0.4s ease-out;
+        /* 输入框组样式 */
+        .input-group {
+            position: relative;
+        }
+        
+        .input-group-text {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 12px 0 0 12px;
+            color: #ffffff;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        .input-group-text i {
+            font-size: 1.1rem;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+        }
+        
+        .input-group:focus-within .input-group-text {
+            background: linear-gradient(135deg, #00d4ff, #667eea);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+        }
+        
+        .form-control, .form-select {
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-left: none;
+            border-radius: 0 12px 12px 0;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #1e293b;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.98);
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.2), 0 0 25px rgba(0, 212, 255, 0.15);
+            background: #ffffff;
+            color: #0f172a;
+        }
+        
+        .form-control::placeholder {
+            color: #64748b;
+            font-weight: 400;
+        }
+        
+        /* 文本域样式 */
+        textarea.form-control {
+            border-radius: 0 12px 12px 0;
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        /* 按钮样式 */
+        .btn-save {
+            background: linear-gradient(135deg, #00d4ff, #667eea, #b24bf3);
+            border: none;
+            border-radius: 12px;
+            color: #ffffff;
+            padding: 0.85rem 2.2rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 25px rgba(0, 212, 255, 0.4), 0 0 30px rgba(178, 75, 243, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-save i {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+        }
+        
+        .btn-save::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn-save:hover::before {
+            left: 100%;
+        }
+        
+        .btn-save:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 35px rgba(0, 212, 255, 0.6), 0 0 50px rgba(178, 75, 243, 0.4);
+            color: #ffffff;
+        }
+        
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.98);
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            color: #667eea;
+            padding: 0.7rem 2.2rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-cancel i {
+            text-shadow: none;
+        }
+        
+        .btn-cancel:hover {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: transparent;
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-cancel:hover i {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
         }
         
         /* 响应式调整 */
         @media (max-width: 768px) {
-            .input-group {
+            .form-card {
+                padding: 1.25rem;
+            }
+            
+            .page-title {
+                font-size: 1.35rem;
+            }
+            
+            .breadcrumb {
+                display: none;
+            }
+            
+            .btn-save, .btn-cancel {
+                padding: 0.6rem 1.25rem;
                 font-size: 0.875rem;
-            }
-            
-            .btn {
-                font-size: 0.75rem;
-                padding: 0.25rem 0.5rem;
-            }
-            
-            .flex.justify-between {
-                flex-direction: column;
-                gap: 1rem;
             }
         }
     </style>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            <div class="page-title-icon">
+                <i class="fa fa-building"></i>
+            </div>
+            <h2 class="page-title mb-0">{{ '编辑供应商' if supplier.id else '添加供应商' }}</h2>
+        </div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('supplier.list') }}">供应商管理</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ '编辑供应商' if supplier.id else '添加供应商' }}</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="form-card">
+        <form action="{{ url_for('supplier.edit', id=supplier.id or 0) }}" method="POST">
+            <div class="row mb-4">
+                <div class="col-md-6 mb-3">
+                    <label for="name" class="form-label">供应商名称<span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fa fa-building"></i>
+                        </span>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ supplier.name or '' }}" required placeholder="请输入供应商名称">
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="contact_person" class="form-label">联系人</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fa fa-user"></i>
+                        </span>
+                        <input type="text" class="form-control" id="contact_person" name="contact_person" value="{{ supplier.contact_person or '' }}" placeholder="请输入联系人姓名">
+                    </div>
+                </div>
+            </div>
+            <div class="row mb-4">
+                <div class="col-md-6 mb-3">
+                    <label for="phone" class="form-label">联系电话</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fa fa-phone"></i>
+                        </span>
+                        <input type="text" class="form-control" id="phone" name="phone" value="{{ supplier.phone or '' }}" placeholder="请输入联系电话">
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="email" class="form-label">邮箱</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fa fa-envelope"></i>
+                        </span>
+                        <input type="email" class="form-control" id="email" name="email" value="{{ supplier.email or '' }}" placeholder="请输入邮箱地址">
+                    </div>
+                </div>
+            </div>
+            <div class="mb-4">
+                <label for="address" class="form-label">地址</label>
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fa fa-map-marker"></i>
+                    </span>
+                    <textarea class="form-control" id="address" name="address" rows="3" placeholder="请输入地址">{{ supplier.address or '' }}</textarea>
+                </div>
+            </div>
+            <div class="d-flex gap-3">
+                <button type="submit" class="btn btn-save">
+                    <i class="fa fa-save mr-2"></i>保存
+                </button>
+                <a href="{{ url_for('supplier.list') }}" class="btn btn-cancel">
+                    <i class="fa fa-times mr-2"></i>取消
+                </a>
+            </div>
+        </form>
+    </div>
 {% endblock %}
