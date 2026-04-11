@@ -2,226 +2,619 @@
 {% block title %}调拨明细查询 - 仓库管理系统{% endblock %}
 
 {% block content %}
-    <div class="d-flex justify-content-between align-items-center mb-6">
-        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
-            <i class="fa fa-search mr-3 text-primary"></i>调拨明细查询
-        </h2>
-    </div>
+    <style>
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #b24bf3, #ff6b9d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            position: relative;
+        }
+        
+        .page-title-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #00d4ff, #667eea);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            box-shadow: 
+                0 0 25px rgba(0, 212, 255, 0.5),
+                0 0 50px rgba(102, 126, 234, 0.3),
+                inset 0 0 15px rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+        
+        .page-title-icon i {
+            font-size: 1.5rem;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+        
+        .search-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 18px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.1),
+                0 0 20px rgba(102, 126, 234, 0.15);
+            position: relative;
+            overflow: hidden;
+            padding: 1.5rem;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .search-card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00d4ff, #b24bf3, #ff6b9d, #00d4ff, #b24bf3);
+            background-size: 400% 400%;
+            border-radius: 20px;
+            z-index: -1;
+            opacity: 0.3;
+            animation: neonBorderGlow 6s ease infinite;
+        }
+        
+        @keyframes neonBorderGlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .search-input-group {
+            position: relative;
+        }
+        
+        .search-input-group .input-group-text {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 12px 0 0 12px;
+            color: #ffffff;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        .search-input-group .input-group-text i {
+            font-size: 1.1rem;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+        }
+        
+        .search-input-group:focus-within .input-group-text {
+            background: linear-gradient(135deg, #00d4ff, #667eea);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+        }
+        
+        .search-input-group .form-control,
+        .search-input-group .form-select {
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-left: none;
+            border-radius: 0 12px 12px 0;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #1e293b;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.95);
+        }
+        
+        .search-input-group .form-control:focus,
+        .search-input-group .form-select:focus {
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.2), 0 0 25px rgba(0, 212, 255, 0.15);
+            background: #ffffff;
+            color: #0f172a;
+        }
+        
+        .form-label {
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+            letter-spacing: 0.3px;
+        }
+        
+        .data-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 20px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            box-shadow: 
+                0 10px 35px rgba(0, 0, 0, 0.1),
+                0 0 40px rgba(102, 126, 234, 0.2);
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .data-card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00d4ff, #b24bf3, #ff6b9d, #00d4ff, #b24bf3);
+            background-size: 400% 400%;
+            border-radius: 22px;
+            z-index: -1;
+            animation: neonBorderGlow 6s ease infinite, breatheGlow 3s ease-in-out infinite;
+            opacity: 0.7;
+        }
+        
+        @keyframes breatheGlow {
+            0%, 100% {
+                opacity: 0.5;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.01);
+            }
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+        
+        .data-table thead {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .data-table thead::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shineEffect 3s infinite;
+        }
+        
+        @keyframes shineEffect {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        .data-table th {
+            padding: 1rem 1.25rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .data-table td {
+            padding: 0.875rem 1.25rem;
+            border-bottom: 1px solid rgba(102, 126, 234, 0.15);
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .data-table tbody tr {
+            transition: all 0.3s ease;
+        }
+        
+        .data-table tbody tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.15);
+        }
+        
+        .btn-search {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 12px;
+            color: #ffffff;
+            padding: 0.75rem 1.75rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-search:hover {
+            background: linear-gradient(135deg, #764ba2, #667eea);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+            color: #ffffff;
+        }
+        
+        .btn-reset {
+            background: rgba(255, 255, 255, 0.98);
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            color: #667eea;
+            padding: 0.65rem 1.5rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-reset:hover {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: transparent;
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .badge {
+            font-weight: 600;
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .order-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .order-link:hover {
+            color: #00d4ff;
+            text-shadow: 0 0 8px rgba(0, 212, 255, 0.5);
+        }
+        
+        .empty-data {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #64748b;
+        }
+        
+        .empty-data i {
+            font-size: 3.5rem;
+            color: rgba(102, 126, 234, 0.3);
+            margin-bottom: 1.5rem;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 0.7;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+        }
+        
+        .empty-data p {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+        }
+        
+        .pagination-container {
+            background: rgba(255, 255, 255, 0.9);
+            border-top: 1px solid rgba(102, 126, 234, 0.15);
+            padding: 1.25rem;
+            border-radius: 0 0 20px 20px;
+        }
+        
+        .pagination-info {
+            font-size: 0.95rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+        
+        .pagination {
+            margin: 0;
+        }
+        
+        .pagination .page-item .page-link {
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 8px;
+            color: #667eea;
+            background: rgba(255, 255, 255, 0.9);
+            font-weight: 600;
+            transition: all 0.3s ease;
+            padding: 0.5rem 0.875rem;
+            margin: 0 0.25rem;
+        }
+        
+        .pagination .page-item .page-link:hover {
+            border-color: #00d4ff;
+            color: #00d4ff;
+            background: #ffffff;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .pagination .page-item.active .page-link {
+            background: linear-gradient(135deg, #00d4ff, #667eea);
+            border-color: transparent;
+            color: #ffffff;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+        }
+        
+        .pagination .page-item.disabled .page-link {
+            border-color: rgba(102, 126, 234, 0.1);
+            color: #94a3b8;
+            background: rgba(255, 255, 255, 0.7);
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 1.35rem;
+            }
+            
+            .page-title-icon {
+                width: 40px;
+                height: 40px;
+                margin-right: 10px;
+            }
+            
+            .page-title-icon i {
+                font-size: 1.2rem;
+            }
+            
+            .search-card {
+                padding: 1rem;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 0.75rem;
+                font-size: 0.875rem;
+            }
+            
+            .pagination-container {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+            
+            .pagination {
+                justify-content: center;
+            }
+        }
+    </style>
 
-    <div class="card mb-6 shadow-sm rounded-xl overflow-hidden">
-        <div class="card-body p-6">
-            <form method="GET" action="{{ url_for('transfer.items') }}" class="row g-4">
-                <div class="col-md-3">
-                    <label for="keyword" class="form-label">关键词</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                            <i class="fa fa-search text-gray-400"></i>
-                        </span>
-                        <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="keyword" name="keyword" value="{{ keyword }}" placeholder="商品名称/编码/调拨单号">
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <label for="product_id" class="form-label">商品</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                            <i class="fa fa-shopping-bag text-gray-400"></i>
-                        </span>
-                        <select class="form-select rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="product_id" name="product_id">
-                            <option value="">全部商品</option>
-                            {% for product in products %}
-                                <option value="{{ product.id }}" {% if product_id == product.id|string %}selected{% endif %}>
-                                    {{ product.name }} ({{ product.code }})
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <label for="source_location_id" class="form-label">原库位</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                            <i class="fa fa-map-marker text-gray-400"></i>
-                        </span>
-                        <select class="form-select rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="source_location_id" name="source_location_id">
-                            <option value="">全部库位</option>
-                            {% for location in locations %}
-                                <option value="{{ location.id }}" {% if source_location_id == location.id|string %}selected{% endif %}>
-                                    {{ location.code }} - {{ location.name }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <label for="target_location_id" class="form-label">目标库位</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                            <i class="fa fa-map-marker text-gray-400"></i>
-                        </span>
-                        <select class="form-select rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="target_location_id" name="target_location_id">
-                            <option value="">全部库位</option>
-                            {% for location in locations %}
-                                <option value="{{ location.id }}" {% if target_location_id == location.id|string %}selected{% endif %}>
-                                    {{ location.code }} - {{ location.name }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <label for="audit_status" class="form-label">审核状态</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                            <i class="fa fa-check-circle text-gray-400"></i>
-                        </span>
-                        <select class="form-select rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="audit_status" name="audit_status">
-                            <option value="">全部状态</option>
-                            <option value="pending" {% if audit_status == 'pending' %}selected{% endif %}>未审核</option>
-                            <option value="approved" {% if audit_status == 'approved' %}selected{% endif %}>已审核</option>
-                            <option value="rejected" {% if audit_status == 'rejected' %}selected{% endif %}>已驳回</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <label for="date_range" class="form-label">日期范围</label>
-                    <div class="d-flex gap-2">
-                        <input type="date" class="form-control rounded-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" name="start_date" value="{{ start_date }}">
-                        <input type="date" class="form-control rounded-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" name="end_date" value="{{ end_date }}">
-                    </div>
-                </div>
-                <div class="col-md-12">
-                    <button type="submit" class="btn btn-primary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
-                        <i class="fa fa-search mr-2"></i>查询
-                    </button>
-                    <a href="{{ url_for('transfer.items') }}" class="btn btn-outline-secondary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg ml-2">
-                        <i class="fa fa-refresh mr-2"></i>重置
-                    </a>
-                </div>
-            </form>
+    <div class="d-flex justify-content-between align-items-center mb-4 page-header">
+        <div class="d-flex align-items-center">
+            <div class="page-title-icon"><i class="fa fa-search"></i></div>
+            <h2 class="page-title mb-0">调拨明细查询</h2>
         </div>
     </div>
 
-    <div class="card shadow-sm rounded-xl overflow-hidden">
-        <div class="card-body p-0">
+    <div class="search-card mb-4">
+        <form method="GET" action="{{ url_for('transfer.items') }}" class="row g-3">
+            <div class="col-md-3">
+                <label for="keyword" class="form-label">关键词</label>
+                <div class="input-group search-input-group">
+                    <span class="input-group-text">
+                        <i class="fa fa-search"></i>
+                    </span>
+                    <input type="text" class="form-control" id="keyword" name="keyword" value="{{ keyword }}" placeholder="商品名称/编码/调拨单号">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="product_id" class="form-label">商品</label>
+                <div class="input-group search-input-group">
+                    <span class="input-group-text">
+                        <i class="fa fa-shopping-bag"></i>
+                    </span>
+                    <select class="form-select" id="product_id" name="product_id">
+                        <option value="">全部商品</option>
+                        {% for product in products %}
+                            <option value="{{ product.id }}" {% if product_id == product.id|string %}selected{% endif %}>
+                                {{ product.name }} ({{ product.code }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="source_location_id" class="form-label">原库位</label>
+                <div class="input-group search-input-group">
+                    <span class="input-group-text">
+                        <i class="fa fa-map-marker"></i>
+                    </span>
+                    <select class="form-select" id="source_location_id" name="source_location_id">
+                        <option value="">全部库位</option>
+                        {% for location in locations %}
+                            <option value="{{ location.id }}" {% if source_location_id == location.id|string %}selected{% endif %}>
+                                {{ location.code }} - {{ location.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="target_location_id" class="form-label">目标库位</label>
+                <div class="input-group search-input-group">
+                    <span class="input-group-text">
+                        <i class="fa fa-map-marker"></i>
+                    </span>
+                    <select class="form-select" id="target_location_id" name="target_location_id">
+                        <option value="">全部库位</option>
+                        {% for location in locations %}
+                            <option value="{{ location.id }}" {% if target_location_id == location.id|string %}selected{% endif %}>
+                                {{ location.code }} - {{ location.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="audit_status" class="form-label">审核状态</label>
+                <div class="input-group search-input-group">
+                    <span class="input-group-text">
+                        <i class="fa fa-check-circle"></i>
+                    </span>
+                    <select class="form-select" id="audit_status" name="audit_status">
+                        <option value="">全部状态</option>
+                        <option value="pending" {% if audit_status == 'pending' %}selected{% endif %}>未审核</option>
+                        <option value="approved" {% if audit_status == 'approved' %}selected{% endif %}>已审核</option>
+                        <option value="rejected" {% if audit_status == 'rejected' %}selected{% endif %}>已驳回</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">日期范围</label>
+                <div class="d-flex gap-2">
+                    <input type="date" class="form-control" name="start_date" value="{{ start_date }}">
+                    <input type="date" class="form-control" name="end_date" value="{{ end_date }}">
+                </div>
+            </div>
+            <div class="col-md-12">
+                <button type="submit" class="btn btn-search">
+                    <i class="fa fa-search mr-2"></i>查询
+                </button>
+                <a href="{{ url_for('transfer.items') }}" class="btn btn-reset ml-2">
+                    <i class="fa fa-refresh mr-2"></i>重置
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <div class="data-card">
+        <div class="p-0">
             <div class="table-responsive">
-                <table class="table table-hover table-bordered">
-                    <thead class="bg-gray-50">
-                        <tr class="text-gray-700 border-b-2 border-gray-300">
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">调拨单号</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">商品名称</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">商品编码</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">原库位</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">目标库位</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">调拨数量</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">审核状态</th>
-                            <th class="py-3 px-4 font-semibold text-center">制单时间</th>
+                <table class="table data-table">
+                    <thead>
+                        <tr>
+                            <th class="text-center">调拨单号</th>
+                            <th class="text-center">商品名称</th>
+                            <th class="text-center">商品编码</th>
+                            <th class="text-center">原库位</th>
+                            <th class="text-center">目标库位</th>
+                            <th class="text-center">调拨数量</th>
+                            <th class="text-center">审核状态</th>
+                            <th class="text-center">制单时间</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white">
+                    <tbody>
                         {% if items %}
                             {% for item in items %}
-                                <tr class="transition-all duration-300 hover:bg-gray-50">
-                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 font-medium">
-                                        <a href="{{ url_for('transfer.detail', id=item.order.id) }}" class="text-primary hover:underline">
-                                            {{ item.order.order_no }}
-                                        </a>
-                                    </td>
-                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">{{ item.product.name if item.product else '-' }}</td>
-                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ item.product.code if item.product else '-' }}</td>
-                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">
-                                        {{ item.source_location.code if item.source_location else '-' }} - 
-                                        {{ item.source_location.name if item.source_location else '-' }}
-                                    </td>
-                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">
-                                        {{ item.target_location.code if item.target_location else '-' }} - 
-                                        {{ item.target_location.name if item.target_location else '-' }}
-                                    </td>
-                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center font-semibold text-primary">{{ item.quantity }}</td>
-                                    <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">
-                                        {% if item.order.audit_status == 'pending' %}
-                                            <span class="badge bg-warning text-white rounded-full px-3 py-1">未审核</span>
-                                        {% elif item.order.audit_status == 'approved' %}
-                                            <span class="badge bg-success text-white rounded-full px-3 py-1">已审核</span>
-                                        {% elif item.order.audit_status == 'rejected' %}
-                                            <span class="badge bg-danger text-white rounded-full px-3 py-1">已驳回</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="py-3 px-4 border-b border-gray-200 text-center">
-                                        {{ item.order.create_time.strftime('%Y-%m-%d %H:%M') if item.order.create_time else '-' }}
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        {% else %}
                             <tr>
-                                <td colspan="8" class="py-12 text-center text-gray-500 border border-gray-200">
-                                    <div class="flex flex-col items-center">
-                                        <i class="fa fa-search text-4xl mb-4 text-gray-300"></i>
-                                        <p>暂无数据</p>
-                                    </div>
+                                <td class="font-medium">
+                                    <a href="{{ url_for('transfer.detail', id=item.order.id) }}" class="order-link">
+                                        {{ item.order.order_no }}
+                                    </a>
+                                </td>
+                                <td>{{ item.product.name if item.product else '-' }}</td>
+                                <td class="text-center">{{ item.product.code if item.product else '-' }}</td>
+                                <td>
+                                    {{ item.source_location.code if item.source_location else '-' }} - 
+                                    {{ item.source_location.name if item.source_location else '-' }}
+                                </td>
+                                <td>
+                                    {{ item.target_location.code if item.target_location else '-' }} - 
+                                    {{ item.target_location.name if item.target_location else '-' }}
+                                </td>
+                                <td class="text-center font-semibold" style="color: #667eea;">{{ item.quantity }}</td>
+                                <td class="text-center">
+                                    {% if item.order.audit_status == 'pending' %}
+                                        <span class="badge bg-warning text-white">未审核</span>
+                                    {% elif item.order.audit_status == 'approved' %}
+                                        <span class="badge bg-success text-white">已审核</span>
+                                    {% elif item.order.audit_status == 'rejected' %}
+                                        <span class="badge bg-danger text-white">已驳回</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {{ item.order.create_time.strftime('%Y-%m-%d %H:%M') if item.order.create_time else '-' }}
                                 </td>
                             </tr>
+                            {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="empty-data">
+                                <i class="fa fa-search d-block mb-3"></i>
+                                <p>暂无数据</p>
+                            </td>
+                        </tr>
                         {% endif %}
                     </tbody>
                 </table>
             </div>
 
             {% if pagination %}
-                <div class="p-4 border-t border-gray-200 bg-gray-50">
-                    <div class="flex flex-wrap justify-between items-center gap-4">
-                        <p class="text-sm text-gray-600">
-                            显示 {{ pagination.page * pagination.per_page - pagination.per_page + 1 }} 到 {{ pagination.page * pagination.per_page if pagination.page * pagination.per_page < pagination.total else pagination.total }} 条，共 {{ pagination.total }} 条
-                        </p>
-                        <nav aria-label="Page navigation">
-                            <ul class="pagination space-x-1">
-                                {% if pagination.has_prev %}
-                                    <li class="page-item">
-                                        <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300" href="{{ url_for('transfer.items', page=pagination.prev_num, keyword=keyword, product_id=product_id, source_location_id=source_location_id, target_location_id=target_location_id, audit_status=audit_status, start_date=start_date, end_date=end_date) }}">
-                                            <i class="fa fa-chevron-left"></i>
-                                        </a>
+            <div class="pagination-container">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                    <p class="pagination-info">
+                        显示 {{ pagination.page * pagination.per_page - pagination.per_page + 1 }} 到 {{ pagination.page * pagination.per_page if pagination.page * pagination.per_page < pagination.total else pagination.total }} 条，共 {{ pagination.total }} 条
+                    </p>
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination">
+                            {% if pagination.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('transfer.items', page=pagination.prev_num, keyword=keyword, product_id=product_id, source_location_id=source_location_id, target_location_id=target_location_id, audit_status=audit_status, start_date=start_date, end_date=end_date) }}">
+                                    <i class="fa fa-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for page_num in pagination.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+                                {% if page_num %}
+                                    {% if page_num == pagination.page %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
                                     </li>
-                                {% else %}
-                                    <li class="page-item disabled">
-                                        <span class="page-link rounded-lg border-gray-300 bg-gray-100 text-gray-400">
-                                            <i class="fa fa-chevron-left"></i>
-                                        </span>
-                                    </li>
-                                {% endif %}
-                                
-                                {% for page_num in pagination.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
-                                    {% if page_num %}
-                                        {% if page_num == pagination.page %}
-                                            <li class="page-item active">
-                                                <span class="page-link rounded-lg bg-primary border-primary text-white px-3 py-1">{{ page_num }}</span>
-                                            </li>
-                                        {% else %}
-                                            <li class="page-item">
-                                                <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300 px-3 py-1" href="{{ url_for('transfer.items', page=page_num, keyword=keyword, product_id=product_id, source_location_id=source_location_id, target_location_id=target_location_id, audit_status=audit_status, start_date=start_date, end_date=end_date) }}">{{ page_num }}</a>
-                                            </li>
-                                        {% endif %}
                                     {% else %}
-                                        <li class="page-item disabled">
-                                            <span class="page-link rounded-lg border-gray-300 bg-gray-100 text-gray-400 px-3 py-1">...</span>
-                                        </li>
-                                    {% endif %}
-                                {% endfor %}
-                                
-                                {% if pagination.has_next %}
                                     <li class="page-item">
-                                        <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300" href="{{ url_for('transfer.items', page=pagination.next_num, keyword=keyword, product_id=product_id, source_location_id=source_location_id, target_location_id=target_location_id, audit_status=audit_status, start_date=start_date, end_date=end_date) }}">
-                                            <i class="fa fa-chevron-right"></i>
-                                        </a>
+                                        <a class="page-link" href="{{ url_for('transfer.items', page=page_num, keyword=keyword, product_id=product_id, source_location_id=source_location_id, target_location_id=target_location_id, audit_status=audit_status, start_date=start_date, end_date=end_date) }}">{{ page_num }}</a>
                                     </li>
+                                    {% endif %}
                                 {% else %}
-                                    <li class="page-item disabled">
-                                        <span class="page-link rounded-lg border-gray-300 bg-gray-100 text-gray-400">
-                                            <i class="fa fa-chevron-right"></i>
-                                        </span>
-                                    </li>
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
                                 {% endif %}
-                            </ul>
-                        </nav>
-                    </div>
+                            {% endfor %}
+                            
+                            {% if pagination.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('transfer.items', page=pagination.next_num, keyword=keyword, product_id=product_id, source_location_id=source_location_id, target_location_id=target_location_id, audit_status=audit_status, start_date=start_date, end_date=end_date) }}">
+                                    <i class="fa fa-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
                 </div>
+            </div>
             {% endif %}
         </div>
     </div>

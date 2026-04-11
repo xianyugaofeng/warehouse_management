@@ -2,103 +2,419 @@
 {% block title %}调拨单详情 - 仓库管理系统{% endblock %}
 
 {% block content %}
-    <div class="d-flex justify-content-between align-items-center mb-6">
-        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
-            <i class="fa fa-exchange mr-3 text-primary"></i>调拨单详情
-        </h2>
+    <style>
+        /* 页面标题霓虹效果 */
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #b24bf3, #ff6b9d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            position: relative;
+        }
+        
+        .page-title-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #00d4ff, #667eea);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            box-shadow: 
+                0 0 25px rgba(0, 212, 255, 0.5),
+                0 0 50px rgba(102, 126, 234, 0.3),
+                inset 0 0 15px rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+        
+        .page-title-icon i {
+            font-size: 1.5rem;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+        
+        /* 面包屑导航样式 */
+        .breadcrumb {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 25px;
+            padding: 0.5rem 1.25rem;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .breadcrumb-item a {
+            color: #667eea;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .breadcrumb-item a:hover {
+            color: #b24bf3;
+            text-shadow: 0 0 8px rgba(178, 75, 243, 0.5);
+        }
+        
+        .breadcrumb-item.active {
+            color: #b24bf3;
+            font-weight: 600;
+        }
+        
+        /* 数据卡片 - 呼吸光效边框 */
+        .data-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 20px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            box-shadow: 
+                0 10px 35px rgba(0, 0, 0, 0.1),
+                0 0 40px rgba(102, 126, 234, 0.2);
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .data-card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00d4ff, #b24bf3, #ff6b9d, #00d4ff, #b24bf3);
+            background-size: 400% 400%;
+            border-radius: 22px;
+            z-index: -1;
+            animation: neonBorderGlow 6s ease infinite, breatheGlow 3s ease-in-out infinite;
+            opacity: 0.7;
+        }
+        
+        @keyframes neonBorderGlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        @keyframes breatheGlow {
+            0%, 100% {
+                opacity: 0.5;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.01);
+            }
+        }
+        
+        /* 卡片标题 */
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1e293b;
+            padding: 1rem 1.5rem;
+            background: rgba(102, 126, 234, 0.05);
+            border-bottom: 1px solid rgba(102, 126, 234, 0.15);
+        }
+        
+        /* 信息项样式 */
+        .info-item {
+            margin-bottom: 1rem;
+        }
+        
+        .info-label {
+            color: #64748b;
+            font-weight: 500;
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .info-value {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 1rem;
+        }
+        
+        /* 表格样式 */
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+        
+        .data-table thead {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .data-table thead::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shineEffect 3s infinite;
+        }
+        
+        @keyframes shineEffect {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        .data-table th {
+            padding: 1rem 1.25rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .data-table td {
+            padding: 0.875rem 1.25rem;
+            border-bottom: 1px solid rgba(102, 126, 234, 0.15);
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .data-table tbody tr {
+            transition: all 0.3s ease;
+        }
+        
+        .data-table tbody tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+        
+        /* 徽章样式 */
+        .badge {
+            font-weight: 600;
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        /* 按钮样式 */
+        .btn-approve {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border: none;
+            border-radius: 12px;
+            color: #ffffff;
+            padding: 0.75rem 1.75rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        }
+        
+        .btn-approve:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+            color: #ffffff;
+        }
+        
+        .btn-reject {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+            border: none;
+            border-radius: 12px;
+            color: #ffffff;
+            padding: 0.75rem 1.75rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+        }
+        
+        .btn-reject:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.6);
+            color: #ffffff;
+        }
+        
+        .btn-back {
+            background: rgba(255, 255, 255, 0.98);
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            color: #667eea;
+            padding: 0.7rem 1.75rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-back:hover {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: transparent;
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        /* 动画效果 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 1.35rem;
+            }
+            
+            .page-title-icon {
+                width: 40px;
+                height: 40px;
+                margin-right: 10px;
+            }
+            
+            .page-title-icon i {
+                font-size: 1.2rem;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 0.75rem;
+                font-size: 0.875rem;
+            }
+            
+            .btn-approve, .btn-reject, .btn-back {
+                padding: 0.6rem 1.25rem;
+                font-size: 0.875rem;
+            }
+        }
+    </style>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            <div class="page-title-icon">
+                <i class="fa fa-exchange"></i>
+            </div>
+            <h2 class="page-title mb-0">调拨单详情</h2>
+        </div>
         <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
+            <ol class="breadcrumb mb-0">
                 <li class="breadcrumb-item"><a href="{{ url_for('transfer.list') }}">调拨管理</a></li>
-                <li class="breadcrumb-item active" aria-current="page">调拨单详情</li>
+                <li class="breadcrumb-item active">调拨单详情</li>
             </ol>
         </nav>
     </div>
 
-    <div class="card shadow-sm rounded-xl overflow-hidden mb-6">
-        <div class="card-header bg-gradient-to-r from-blue-50 to-blue-100 py-3 px-4 border-b border-gray-200">
-            <h5 class="mb-0 font-semibold text-gray-700">
-                <i class="fa fa-file-text-o mr-2 text-primary"></i>基本信息
-            </h5>
+    <div class="data-card mb-6">
+        <div class="card-title">
+            <i class="fa fa-file-text-o mr-2"></i>基本信息
         </div>
-        <div class="card-body p-6">
+        <div class="p-4">
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="text-muted small mb-1">调拨单号</label>
-                    <p class="font-semibold text-gray-800">{{ order.order_no }}</p>
+                    <div class="info-item">
+                        <div class="info-label">调拨单号</div>
+                        <div class="info-value">{{ order.order_no }}</div>
+                    </div>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label class="text-muted small mb-1">审核状态</label>
-                    <p>
-                        {% if order.audit_status == 'pending' %}
-                            <span class="badge bg-warning text-white">未审核</span>
-                        {% elif order.audit_status == 'approved' %}
-                            <span class="badge bg-success text-white">已审核</span>
-                        {% elif order.audit_status == 'rejected' %}
-                            <span class="badge bg-danger text-white">已驳回</span>
-                        {% endif %}
-                    </p>
+                    <div class="info-item">
+                        <div class="info-label">审核状态</div>
+                        <div>
+                            {% if order.audit_status == 'pending' %}
+                                <span class="badge bg-warning text-white">未审核</span>
+                            {% elif order.audit_status == 'approved' %}
+                                <span class="badge bg-success text-white">已审核</span>
+                            {% elif order.audit_status == 'rejected' %}
+                                <span class="badge bg-danger text-white">已驳回</span>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label class="text-muted small mb-1">制单人</label>
-                    <p class="font-semibold text-gray-800">{{ order.creator.username if order.creator else '-' }}</p>
+                    <div class="info-item">
+                        <div class="info-label">制单人</div>
+                        <div class="info-value">{{ order.creator.username if order.creator else '-' }}</div>
+                    </div>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label class="text-muted small mb-1">制单时间</label>
-                    <p class="font-semibold text-gray-800">{{ order.create_time.strftime('%Y-%m-%d %H:%M:%S') if order.create_time else '-' }}</p>
+                    <div class="info-item">
+                        <div class="info-label">制单时间</div>
+                        <div class="info-value">{{ order.create_time.strftime('%Y-%m-%d %H:%M:%S') if order.create_time else '-' }}</div>
+                    </div>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label class="text-muted small mb-1">审核人</label>
-                    <p class="font-semibold text-gray-800">{{ order.auditor.username if order.auditor else '-' }}</p>
+                    <div class="info-item">
+                        <div class="info-label">审核人</div>
+                        <div class="info-value">{{ order.auditor.username if order.auditor else '-' }}</div>
+                    </div>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label class="text-muted small mb-1">审核时间</label>
-                    <p class="font-semibold text-gray-800">{{ order.audit_time.strftime('%Y-%m-%d %H:%M:%S') if order.audit_time else '-' }}</p>
+                    <div class="info-item">
+                        <div class="info-label">审核时间</div>
+                        <div class="info-value">{{ order.audit_time.strftime('%Y-%m-%d %H:%M:%S') if order.audit_time else '-' }}</div>
+                    </div>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label class="text-muted small mb-1">备注</label>
-                    <p class="font-semibold text-gray-800">{{ order.remark or '-' }}</p>
+                    <div class="info-item">
+                        <div class="info-label">备注</div>
+                        <div class="info-value">{{ order.remark or '-' }}</div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="card shadow-sm rounded-xl overflow-hidden">
-        <div class="card-header bg-gradient-to-r from-blue-50 to-blue-100 py-3 px-4 border-b border-gray-200">
-            <h5 class="mb-0 font-semibold text-gray-700">
-                <i class="fa fa-list-alt mr-2 text-primary"></i>调拨明细
-            </h5>
+    <div class="data-card">
+        <div class="card-title">
+            <i class="fa fa-list-alt mr-2"></i>调拨明细
         </div>
-        <div class="card-body p-0">
+        <div class="p-0">
             <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="bg-gray-50">
-                        <tr class="text-gray-700 border-b-2 border-gray-300">
-                            <th class="py-3 px-4 font-semibold">商品名称</th>
-                            <th class="py-3 px-4 font-semibold">商品编码</th>
-                            <th class="py-3 px-4 font-semibold">原库位</th>
-                            <th class="py-3 px-4 font-semibold">目标库位</th>
-                            <th class="py-3 px-4 font-semibold text-center">调拨数量</th>
+                <table class="table data-table">
+                    <thead>
+                        <tr>
+                            <th class="text-center">商品名称</th>
+                            <th class="text-center">商品编码</th>
+                            <th class="text-center">原库位</th>
+                            <th class="text-center">目标库位</th>
+                            <th class="text-center">调拨数量</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for item in order.items %}
-                        <tr class="border-b border-gray-200 hover:bg-gray-50 transition-all duration-200">
-                            <td class="py-3 px-4">{{ item.product.name if item.product else '-' }}</td>
-                            <td class="py-3 px-4">{{ item.product.code if item.product else '-' }}</td>
-                            <td class="py-3 px-4">
+                        <tr>
+                            <td>{{ item.product.name if item.product else '-' }}</td>
+                            <td>{{ item.product.code if item.product else '-' }}</td>
+                            <td>
                                 {{ item.source_location.code if item.source_location else '-' }} - 
                                 {{ item.source_location.name if item.source_location else '-' }}
                             </td>
-                            <td class="py-3 px-4">
+                            <td>
                                 {{ item.target_location.code if item.target_location else '-' }} - 
                                 {{ item.target_location.name if item.target_location else '-' }}
                             </td>
-                            <td class="py-3 px-4 text-center font-semibold text-primary">{{ item.quantity }}</td>
+                            <td class="text-center font-semibold" style="color: #667eea;">{{ item.quantity }}</td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="5" class="text-center py-8 text-gray-500">
-                                <i class="fa fa-inbox fa-3x mb-3 d-block text-gray-300"></i>
+                            <td colspan="5" class="text-center py-8" style="color: #64748b;">
+                                <i class="fa fa-inbox fa-3x mb-3 d-block" style="color: rgba(102, 126, 234, 0.3);"></i>
                                 暂无调拨明细
                             </td>
                         </tr>
@@ -109,22 +425,22 @@
         </div>
     </div>
 
-    <div class="d-flex justify-content-end gap-3 mt-4">
+    <div class="d-flex gap-3 mt-4">
         {% if order.audit_status == 'pending' %}
         <form method="POST" action="{{ url_for('transfer.audit', id=order.id) }}" class="d-inline">
             <input type="hidden" name="audit_result" value="approved">
-            <button type="submit" class="btn btn-success rounded-lg px-4" onclick="return confirm('确认审核通过吗？审核通过后将执行库存转移操作。')">
+            <button type="submit" class="btn btn-approve" onclick="return confirm('确认审核通过吗？审核通过后将执行库存转移操作。')">
                 <i class="fa fa-check mr-2"></i>审核通过
             </button>
         </form>
         <form method="POST" action="{{ url_for('transfer.audit', id=order.id) }}" class="d-inline">
             <input type="hidden" name="audit_result" value="rejected">
-            <button type="submit" class="btn btn-danger rounded-lg px-4" onclick="return confirm('确认驳回该调拨单吗？')">
+            <button type="submit" class="btn btn-reject" onclick="return confirm('确认驳回该调拨单吗？')">
                 <i class="fa fa-times mr-2"></i>驳回
             </button>
         </form>
         {% endif %}
-        <a href="{{ url_for('transfer.list') }}" class="btn btn-secondary rounded-lg px-4">
+        <a href="{{ url_for('transfer.list') }}" class="btn btn-back">
             <i class="fa fa-arrow-left mr-2"></i>返回列表
         </a>
     </div>
