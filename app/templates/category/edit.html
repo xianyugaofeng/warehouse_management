@@ -2,112 +2,462 @@
 {% block title %}{{ '编辑分类' if category.id else '添加分类' }} - 仓库管理系统{% endblock %}
 
 {% block content %}
-<div class="row mb-6">
-    <div class="col">
-        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
-            <i class="fa fa-tags mr-3 text-primary"></i>{{ '编辑分类' if category.id else '添加分类' }}
-        </h2>
+    <style>
+        /* 页面标题霓虹效果 */
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #b24bf3, #ff6b9d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            position: relative;
+        }
+        
+        .page-title-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #00d4ff, #667eea);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            box-shadow: 
+                0 0 25px rgba(0, 212, 255, 0.5),
+                0 0 50px rgba(102, 126, 234, 0.3),
+                inset 0 0 15px rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+        
+        .page-title-icon i {
+            font-size: 1.5rem;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+        
+        /* 面包屑导航样式 */
+        .breadcrumb {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 25px;
+            padding: 0.5rem 1.25rem;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .breadcrumb-item a {
+            color: #667eea;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .breadcrumb-item a:hover {
+            color: #b24bf3;
+            text-shadow: 0 0 8px rgba(178, 75, 243, 0.5);
+        }
+        
+        .breadcrumb-item.active {
+            color: #b24bf3;
+            font-weight: 600;
+        }
+        
+        /* 表单卡片 - 渐变蓝紫边框 */
+        .form-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 3px solid transparent;
+            background-clip: padding-box;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.1),
+                0 0 40px rgba(102, 126, 234, 0.2);
+            position: relative;
+            padding: 2rem;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .form-card::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            background: linear-gradient(135deg, #00d4ff, #667eea, #b24bf3);
+            border-radius: 22px;
+            z-index: -1;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* 表单标签样式 */
+        .form-label {
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.6rem;
+            font-size: 1rem;
+            letter-spacing: 0.3px;
+        }
+        
+        .form-label .text-danger {
+            margin-left: 3px;
+            font-size: 1.1rem;
+        }
+        
+        /* 输入框组样式 */
+        .input-group {
+            position: relative;
+        }
+        
+        .input-group-text {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 12px 0 0 12px;
+            color: #ffffff;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        .input-group-text i {
+            font-size: 1.1rem;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+        }
+        
+        .input-group:focus-within .input-group-text {
+            background: linear-gradient(135deg, #00d4ff, #667eea);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+        }
+        
+        .form-control, .form-select {
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-left: none;
+            border-radius: 0 12px 12px 0;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #1e293b;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.98);
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.2), 0 0 25px rgba(0, 212, 255, 0.15);
+            background: #ffffff;
+            color: #0f172a;
+        }
+        
+        .form-control::placeholder {
+            color: #64748b;
+            font-weight: 400;
+        }
+        
+        /* 下拉选择框特殊处理 */
+        .form-select {
+            border-left: none;
+            cursor: pointer;
+        }
+        
+        /* 文本域样式 */
+        textarea.form-control {
+            border-radius: 0 12px 12px 0;
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        /* 参数区域标题 */
+        .param-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 1rem;
+            padding-bottom: 0.6rem;
+            border-bottom: 2px solid rgba(102, 126, 234, 0.4);
+            position: relative;
+            letter-spacing: 0.5px;
+        }
+        
+        .param-title::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100px;
+            height: 3px;
+            background: linear-gradient(90deg, #00d4ff, #667eea, #b24bf3);
+            border-radius: 3px;
+            box-shadow: 0 0 12px rgba(0, 212, 255, 0.6);
+        }
+        
+        /* 参数容器样式 */
+        #params-container {
+            background: linear-gradient(135deg, rgba(240, 244, 255, 0.5), rgba(248, 245, 255, 0.5));
+            border-radius: 12px;
+            padding: 1rem;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+        
+        /* 参数项样式 */
+        .param-item {
+            transition: all 0.3s ease;
+            padding: 0.5rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .param-item:hover {
+            background: rgba(255, 255, 255, 0.6);
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.15);
+        }
+        
+        .param-input:disabled {
+            background-color: #e9ecef;
+            opacity: 1;
+        }
+        
+        /* 按钮样式 */
+        .btn-save {
+            background: linear-gradient(135deg, #00d4ff, #667eea, #b24bf3);
+            border: none;
+            border-radius: 12px;
+            color: #ffffff;
+            padding: 0.85rem 2.2rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 25px rgba(0, 212, 255, 0.4), 0 0 30px rgba(178, 75, 243, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-save i {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+        }
+        
+        .btn-save::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn-save:hover::before {
+            left: 100%;
+        }
+        
+        .btn-save:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 35px rgba(0, 212, 255, 0.6), 0 0 50px rgba(178, 75, 243, 0.4);
+            color: #ffffff;
+        }
+        
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.98);
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            color: #667eea;
+            padding: 0.7rem 2.2rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-cancel i {
+            text-shadow: none;
+        }
+        
+        .btn-cancel:hover {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: transparent;
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-cancel:hover i {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+        }
+        
+        /* 添加参数按钮 */
+        .btn-add-param {
+            background: linear-gradient(135deg, #10b981, #34d399);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);
+        }
+        
+        .btn-add-param:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+            color: white;
+        }
+        
+        /* 删除参数按钮 */
+        .btn-remove-param {
+            background: linear-gradient(135deg, #ff6b9d, #e84393);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(255, 107, 157, 0.3);
+        }
+        
+        .btn-remove-param:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255, 107, 157, 0.4);
+            color: white;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .form-card {
+                padding: 1.25rem;
+            }
+            
+            .page-title {
+                font-size: 1.35rem;
+            }
+            
+            .breadcrumb {
+                display: none;
+            }
+            
+            .btn-save, .btn-cancel {
+                padding: 0.6rem 1.25rem;
+                font-size: 0.875rem;
+            }
+        }
+    </style>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            <div class="page-title-icon">
+                <i class="fa fa-tags"></i>
+            </div>
+            <h2 class="page-title mb-0">{{ '编辑分类' if category.id else '添加分类' }}</h2>
+        </div>
         <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
+            <ol class="breadcrumb mb-0">
                 <li class="breadcrumb-item"><a href="{{ url_for('category.category_list') }}">分类管理</a></li>
                 <li class="breadcrumb-item active" aria-current="page">{{ '编辑分类' if category.id else '添加分类' }}</li>
             </ol>
         </nav>
     </div>
-</div>
 
-<div class="row">
-    <div class="col-12">
-        <div class="card shadow-sm rounded-xl overflow-hidden">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0 font-semibold">分类信息</h5>
-            </div>
-            <div class="card-body p-6">
-                <form method="POST" action="{{ url_for('category.edit', id=category.id or 0) }}">
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <label for="name" class="form-label font-weight-bold">分类名称 <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="name" name="name" 
-                                   value="{{ category.name or '' }}" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="desc" class="form-label font-weight-bold">分类描述</label>
-                            <input type="text" class="form-control" id="desc" name="desc" 
-                                   value="{{ category.desc or '' }}">
-                        </div>
+    <div class="form-card">
+        <form method="POST" action="{{ url_for('category.edit', id=category.id or 0) }}">
+            <div class="row mb-4">
+                <div class="col-md-6 mb-3">
+                    <label for="name" class="form-label">分类名称<span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fa fa-tags"></i>
+                        </span>
+                        <input type="text" class="form-control" id="name" name="name" 
+                               value="{{ category.name or '' }}" required placeholder="请输入分类名称">
                     </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="desc" class="form-label">分类描述</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fa fa-file-text"></i>
+                        </span>
+                        <input type="text" class="form-control" id="desc" name="desc" 
+                               value="{{ category.desc or '' }}" placeholder="请输入分类描述">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h4 class="param-title">分类参数</h4>
+                    <p class="text-muted small mb-3">选择该分类下的商品需要填写的参数信息，支持从已有参数中选择或手动输入新参数</p>
                     
-                    <div class="row mb-4">
-                        <div class="col-12">
-                            <label class="form-label font-weight-bold">分类参数</label>
-                            <p class="text-muted small mb-3">选择该分类下的商品需要填写的参数信息，支持从已有参数中选择或手动输入新参数</p>
-                            
-                            <div id="params-container">
-                                {% if category_params %}
-                                    {% for cp in category_params %}
-                                    <div class="param-item mb-2">
-                                        <div class="row">
-                                            <div class="col-md-5">
-                                                <select name="param_ids[]" class="form-control param-select">
-                                                    <option value="">手动输入</option>
-                                                    {% for pk in param_keys %}
-                                                    <option value="{{ pk.id }}" {% if pk.id == cp.param_key_id %}selected{% endif %}>
-                                                        {{ pk.name }}
-                                                    </option>
-                                                    {% endfor %}
-                                                </select>
-                                            </div>
-                                            <div class="col-md-5">
-                                                <input type="text" name="param_names[]" class="form-control param-input" 
-                                                       placeholder="手动输入参数名称" 
-                                                       {% if cp.param_key_id %}disabled placeholder=""{% endif %}>
-                                            </div>
-                                            <div class="col-md-2">
-                                                <button type="button" class="btn btn-outline-danger w-100" onclick="removeParam(this)">
-                                                    <i class="fa fa-trash"></i>
-                                                </button>
-                                            </div>
+                    <div id="params-container">
+                        {% if category_params %}
+                            {% for cp in category_params %}
+                            <div class="param-item mb-2">
+                                <div class="row">
+                                    <div class="col-md-5">
+                                        <div class="input-group">
+                                            <span class="input-group-text">
+                                                <i class="fa fa-cog"></i>
+                                            </span>
+                                            <select name="param_ids[]" class="form-select param-select">
+                                                <option value="">手动输入</option>
+                                                {% for pk in param_keys %}
+                                                <option value="{{ pk.id }}" {% if pk.id == cp.param_key_id %}selected{% endif %}>
+                                                    {{ pk.name }}
+                                                </option>
+                                                {% endfor %}
+                                            </select>
                                         </div>
                                     </div>
-                                    {% endfor %}
-                                {% endif %}
+                                    <div class="col-md-5">
+                                        <div class="input-group">
+                                            <span class="input-group-text">
+                                                <i class="fa fa-pencil"></i>
+                                            </span>
+                                            <input type="text" name="param_names[]" class="form-control param-input" 
+                                                   placeholder="手动输入参数名称" 
+                                                   {% if cp.param_key_id %}disabled placeholder=""{% endif %}>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="button" class="btn btn-remove-param w-100" onclick="removeParam(this)">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                            
-                            <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="addParam()">
-                                <i class="fa fa-plus mr-1"></i>添加参数
-                            </button>
-                        </div>
+                            {% endfor %}
+                        {% endif %}
                     </div>
                     
-                    <style>
-                        .param-input:disabled {
-                            background-color: #e9ecef;
-                            opacity: 1;
-                        }
-                        .param-item {
-                            transition: all 0.3s ease;
-                        }
-                        .param-item:hover {
-                            background-color: #f8f9fa;
-                            border-radius: 4px;
-                        }
-                    </style>
-                    
-                    <div class="row">
-                        <div class="col-12">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fa fa-save mr-1"></i>保存
-                            </button>
-                            <a href="{{ url_for('category.category_list') }}" class="btn btn-secondary ml-2">
-                                <i class="fa fa-times mr-1"></i>取消
-                            </a>
-                        </div>
-                    </div>
-                </form>
+                    <button type="button" class="btn btn-add-param mt-2" onclick="addParam()">
+                        <i class="fa fa-plus mr-1"></i>添加参数
+                    </button>
+                </div>
             </div>
-        </div>
+            
+            <div class="d-flex gap-3">
+                <button type="submit" class="btn btn-save">
+                    <i class="fa fa-save mr-2"></i>保存
+                </button>
+                <a href="{{ url_for('category.category_list') }}" class="btn btn-cancel">
+                    <i class="fa fa-times mr-2"></i>取消
+                </a>
+            </div>
+        </form>
     </div>
-</div>
 {% endblock %}
 
 {% block js %}

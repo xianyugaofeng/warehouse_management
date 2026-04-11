@@ -2,131 +2,355 @@
 {% block title %}分类详情 - 仓库管理系统{% endblock %}
 
 {% block content %}
-    <div class="d-flex justify-content-between align-items-center mb-6">
-        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
-            <i class="fa fa-tags mr-3 text-primary"></i>分类详情
-        </h2>
-        <div class="d-flex gap-2">
-            <a href="{{ url_for('category.edit', id=category.id) }}" class="btn btn-warning shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
-                <i class="fa fa-edit mr-2"></i>编辑分类
-            </a>
-            <a href="{{ url_for('category.category_list') }}" class="btn btn-outline-secondary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
-                <i class="fa fa-arrow-left mr-2"></i>返回列表
-            </a>
-        </div>
-    </div>
-
-    <div class="card mb-6 shadow-sm rounded-xl overflow-hidden">
-        <div class="card-header bg-gray-50 border-b border-gray-200 py-4">
-            <h5 class="text-lg font-semibold text-gray-700">基本信息</h5>
-        </div>
-        <div class="card-body p-6">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <span class="text-gray-600">分类名称:</span>
-                        <span class="font-medium ml-2">{{ category.name }}</span>
-                    </div>
-                    <div class="mb-3">
-                        <span class="text-gray-600">分类描述:</span>
-                        <span class="font-medium ml-2">{{ category.desc or '-' }}</span>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <span class="text-gray-600">创建时间:</span>
-                        <span class="font-medium ml-2">{{ category.create_time.strftime('%Y-%m-%d %H:%M:%S') }}</span>
-                    </div>
-                    <div class="mb-3">
-                        <span class="text-gray-600">商品数量:</span>
-                        <span class="ml-2">
-                            <span class="badge bg-success rounded-full px-3 py-1">{{ category.products.count() }}</span>
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card mb-6 shadow-sm rounded-xl overflow-hidden">
-        <div class="card-header bg-gray-50 border-b border-gray-200 py-4">
-            <h5 class="text-lg font-semibold text-gray-700">分类参数</h5>
-        </div>
-        <div class="card-body p-6">
-            {% if category_params %}
-            <div class="table-responsive">
-                <table class="table table-hover table-bordered">
-                    <thead class="bg-gray-50">
-                        <tr class="text-gray-700 border-b-2 border-gray-300">
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">序号</th>
-                            <th class="py-3 px-4 font-semibold text-center">参数名称</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white">
-                        {% for cp in category_params %}
-                            <tr class="transition-all duration-300 hover:bg-gray-50">
-                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ loop.index }}</td>
-                                <td class="py-3 px-4 border-b border-gray-200 font-medium">{{ cp.param_key.name }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="text-center py-8 text-gray-500">
-                <i class="fa fa-tags text-4xl mb-4 text-gray-300"></i>
-                <p>暂无参数</p>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <div class="card shadow-sm rounded-xl overflow-hidden">
-        <div class="card-header bg-gray-50 border-b border-gray-200 py-4 d-flex justify-content-between align-items-center">
-            <h5 class="text-lg font-semibold text-gray-700">该分类下的商品（前10个）</h5>
-            <span class="badge bg-primary rounded-full px-3 py-1">
-                共 {{ category.products.count() }} 个商品
-            </span>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover table-bordered">
-                    <thead class="bg-gray-50">
-                        <tr class="text-gray-700 border-b-2 border-gray-300">
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">商品编码</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">商品名称</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">单位</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">预警库存</th>
-                            <th class="py-3 px-4 font-semibold text-center">创建时间</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white">
-                        {% for product in products %}
-                            <tr class="transition-all duration-300 hover:bg-gray-50">
-                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ product.code }}</td>
-                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 font-medium">{{ product.name }}</td>
-                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ product.unit or '-' }}</td>
-                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ product.warning_stock }}</td>
-                                <td class="py-3 px-4 border-b border-gray-200 text-center">{{ product.create_time.strftime('%Y-%m-%d') }}</td>
-                            </tr>
-                        {% else %}
-                            <tr>
-                                <td colspan="5" class="py-12 text-center text-gray-500 border border-gray-200">
-                                    <div class="flex flex-col items-center">
-                                        <i class="fa fa-shopping-bag text-4xl mb-4 text-gray-300"></i>
-                                        <p>暂无商品</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    
     <style>
-        /* 自定义动画效果 */
+        /* 页面标题霓虹效果 */
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #b24bf3, #ff6b9d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            position: relative;
+        }
+        
+        .page-title-icon {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(178, 75, 243, 0.2));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+        
+        .page-title-icon i {
+            font-size: 1.3rem;
+            background: linear-gradient(135deg, #00d4ff, #b24bf3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        /* 数据卡片 - 霓虹发光边框 */
+        .data-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 16px;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.1),
+                0 0 0 1px rgba(102, 126, 234, 0.2),
+                0 0 60px rgba(102, 126, 234, 0.15),
+                inset 0 0 30px rgba(102, 126, 234, 0.05);
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        
+        /* 呼吸光效边框动画 */
+        .data-card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00d4ff, #b24bf3, #ff6b9d, #00d4ff, #b24bf3);
+            background-size: 400% 400%;
+            border-radius: 18px;
+            z-index: -1;
+            animation: neonBorderGlow 6s ease infinite, breatheGlow 3s ease-in-out infinite;
+            opacity: 0.7;
+        }
+        
+        @keyframes neonBorderGlow {
+            0% { background-position: 0% 50%; }
+            25% { background-position: 100% 50%; }
+            50% { background-position: 100% 100%; }
+            75% { background-position: 0% 100%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        @keyframes breatheGlow {
+            0%, 100% { opacity: 0.5; box-shadow: 0 0 20px rgba(0, 212, 255, 0.3); }
+            50% { opacity: 1; box-shadow: 0 0 40px rgba(178, 75, 243, 0.5); }
+        }
+        
+        /* 顶部流光线 */
+        .data-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00d4ff, #b24bf3, transparent);
+            animation: lightSweep 3s ease-in-out infinite;
+        }
+        
+        @keyframes lightSweep {
+            0% { left: -100%; }
+            50%, 100% { left: 200%; }
+        }
+        
+        .data-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 
+                0 12px 40px rgba(0, 0, 0, 0.12),
+                0 0 0 1px rgba(0, 212, 255, 0.5),
+                0 0 80px rgba(178, 75, 243, 0.25),
+                inset 0 0 40px rgba(0, 212, 255, 0.08);
+        }
+        
+        /* 卡片标题样式 */
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 1rem;
+            padding-bottom: 0.6rem;
+            border-bottom: 2px solid rgba(102, 126, 234, 0.4);
+            position: relative;
+            letter-spacing: 0.5px;
+        }
+        
+        .card-title::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100px;
+            height: 3px;
+            background: linear-gradient(90deg, #00d4ff, #667eea, #b24bf3);
+            border-radius: 3px;
+            box-shadow: 0 0 12px rgba(0, 212, 255, 0.6);
+        }
+        
+        /* 基本信息样式 */
+        .info-item {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .info-item:hover {
+            background: rgba(255, 255, 255, 0.7);
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.15);
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #64748b;
+            margin-right: 0.5rem;
+        }
+        
+        .info-value {
+            font-weight: 500;
+            color: #1e293b;
+        }
+        
+        /* 渐变表头 + 流光效果 */
+        .data-card .table thead {
+            position: relative;
+        }
+        
+        .data-card .table thead th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #b24bf3 100%);
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 0.95rem;
+            padding: 1rem 1rem;
+            position: relative;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            white-space: nowrap;
+            border-bottom: none;
+        }
+        
+        /* 表头流光扫过效果 */
+        .data-card .table thead tr {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .data-card .table thead tr::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -150%;
+            width: 80%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: headerSweep 4s ease-in-out infinite;
+        }
+        
+        @keyframes headerSweep {
+            0% { left: -150%; }
+            50% { left: 120%; }
+            100% { left: 120%; }
+        }
+        
+        /* 表格内容区 - 毛玻璃半透明底色 */
+        .data-card .table tbody {
+            background: linear-gradient(180deg, 
+                rgba(255, 255, 255, 0.75) 0%, 
+                rgba(248, 245, 255, 0.7) 50%, 
+                rgba(255, 250, 252, 0.75) 100%);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+        }
+        
+        /* 单元格默认样式 - 安静效果 */
+        .data-card .table tbody td {
+            border-bottom: 2px solid rgba(148, 163, 184, 0.4);
+            border-top: 1px solid rgba(148, 163, 184, 0.2);
+            padding: 0.95rem 1rem;
+            vertical-align: middle;
+            color: rgba(51, 65, 85, 0.85);
+            font-size: 0.92rem;
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* 悬浮效果 - 背景变亮 + 轻微内发光 */
+        .data-card .table tbody tr:hover td {
+            background: rgba(255, 255, 255, 0.5);
+            color: rgba(30, 41, 59, 0.9);
+            font-weight: 500;
+            border-bottom-color: rgba(148, 163, 184, 0.6);
+            border-top-color: rgba(148, 163, 184, 0.3);
+            box-shadow: 
+                inset 0 0 15px rgba(255, 255, 255, 0.5),
+                inset 0 0 30px rgba(102, 126, 234, 0.1);
+        }
+        
+        /* 悬浮时左侧高亮条 */
+        .data-card .table tbody tr:hover td:first-child {
+            border-left: 3px solid #667eea;
+            box-shadow: 
+                -3px 0 10px rgba(102, 126, 234, 0.3),
+                inset 0 0 15px rgba(102, 126, 234, 0.1);
+        }
+        
+        /* 增强表头分隔线 */
+        .data-card .table thead th {
+            border-bottom: 3px solid #667eea !important;
+        }
+        
+        /* 操作按钮 - 霓虹发光 */
+        .btn-edit {
+            background: linear-gradient(135deg, #00d4ff, #667eea);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            padding: 0.38rem 0.85rem;
+            font-size: 0.82rem;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 3px 15px rgba(0, 212, 255, 0.35);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-edit::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn-edit:hover::before {
+            left: 100%;
+        }
+        
+        .btn-edit:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 6px 25px rgba(0, 212, 255, 0.55), 0 0 40px rgba(0, 212, 255, 0.25);
+            color: white;
+        }
+        
+        .btn-back {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            padding: 0.38rem 0.85rem;
+            font-size: 0.82rem;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 3px 15px rgba(102, 126, 234, 0.35);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-back::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn-back:hover::before {
+            left: 100%;
+        }
+        
+        .btn-back:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.55), 0 0 40px rgba(102, 126, 234, 0.25);
+            color: white;
+        }
+        
+        /* 徽章样式 */
+        .badge {
+            font-weight: 600;
+            font-size: 0.75rem;
+            padding: 0.4rem 0.75rem;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .badge.bg-success {
+            background: linear-gradient(135deg, #10b981, #34d399);
+            color: white;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+        
+        .badge.bg-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        
+        /* 空数据提示 */
+        .empty-data {
+            padding: 3rem;
+            text-align: center;
+            color: #94a3b8;
+        }
+        
+        .empty-data i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #00d4ff, #b24bf3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        /* 动画效果 */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -149,23 +373,22 @@
             }
         }
         
-        .card {
+        .data-card {
             animation: fadeInUp 0.5s ease-out;
         }
         
-        h2 {
+        .page-header {
             animation: slideIn 0.4s ease-out;
         }
         
         /* 响应式调整 */
         @media (max-width: 768px) {
-            .table-responsive {
-                font-size: 0.875rem;
+            .page-title {
+                font-size: 1.35rem;
             }
             
-            .table th,
-            .table td {
-                padding: 0.75rem;
+            .table-responsive {
+                font-size: 0.875rem;
             }
             
             .btn {
@@ -174,4 +397,127 @@
             }
         }
     </style>
+
+    <div class="d-flex justify-content-between align-items-center mb-4 page-header">
+        <div class="d-flex align-items-center">
+            <div class="page-title-icon">
+                <i class="fa fa-tags"></i>
+            </div>
+            <h2 class="page-title mb-0">分类详情</h2>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('category.edit', id=category.id) }}" class="btn btn-edit">
+                <i class="fa fa-edit mr-1"></i>编辑分类
+            </a>
+            <a href="{{ url_for('category.category_list') }}" class="btn btn-back">
+                <i class="fa fa-arrow-left mr-1"></i>返回列表
+            </a>
+        </div>
+    </div>
+
+    <!-- 基本信息卡片 -->
+    <div class="data-card">
+        <div class="card-body p-6">
+            <h4 class="card-title">基本信息</h4>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="info-item">
+                        <span class="info-label">分类名称:</span>
+                        <span class="info-value">{{ category.name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">分类描述:</span>
+                        <span class="info-value">{{ category.desc or '-' }}</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="info-item">
+                        <span class="info-label">创建时间:</span>
+                        <span class="info-value">{{ category.create_time.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">商品数量:</span>
+                        <span class="info-value">
+                            <span class="badge bg-success">{{ category.products.count() }}</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 分类参数卡片 -->
+    <div class="data-card">
+        <div class="card-body p-6">
+            <h4 class="card-title">分类参数</h4>
+            {% if category_params %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th class="text-center">序号</th>
+                            <th class="text-center">参数名称</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cp in category_params %}
+                            <tr>
+                                <td class="text-center">{{ loop.index }}</td>
+                                <td class="font-semibold text-slate-800">{{ cp.param_key.name }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-data">
+                <i class="fa fa-tags d-block"></i>
+                <p class="mb-3 text-slate-500 font-medium">暂无参数</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 商品列表卡片 -->
+    <div class="data-card">
+        <div class="card-body p-6">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="card-title mb-0">该分类下的商品（前10个）</h4>
+                <span class="badge bg-primary">
+                    共 {{ category.products.count() }} 个商品
+                </span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th class="text-center">商品编码</th>
+                            <th class="text-center">商品名称</th>
+                            <th class="text-center">单位</th>
+                            <th class="text-center">预警库存</th>
+                            <th class="text-center">创建时间</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                            <tr>
+                                <td class="text-center">{{ product.code }}</td>
+                                <td class="font-semibold text-slate-800">{{ product.name }}</td>
+                                <td class="text-center text-slate-600 font-medium">{{ product.unit or '-' }}</td>
+                                <td class="text-center text-slate-700 font-medium">{{ product.warning_stock }}</td>
+                                <td class="text-center text-slate-700 font-medium">{{ product.create_time.strftime('%Y-%m-%d') }}</td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="empty-data">
+                                    <i class="fa fa-shopping-bag d-block"></i>
+                                    <p class="mb-3 text-slate-500 font-medium">暂无商品</p>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 {% endblock %}
