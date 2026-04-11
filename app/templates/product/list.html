@@ -2,170 +2,485 @@
 {% block title %}商品管理 - 仓库管理系统{% endblock %}
 
 {% block content %}
-    <div class="d-flex justify-content-between align-items-center mb-6">    
-        <!--justify-content-between：两端水平对齐 align-items-center：垂直居中对齐-->
-        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
-            <i class="fa fa-shopping-bag mr-3 text-primary"></i>商品列表
-        </h2>
-        <a href="{{ url_for('product.edit', id=0) }}" class="btn btn-primary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300">
-            <i class="fa fa-plus mr-2"></i>添加商品
-        </a>
-    </div>
-
-    <!--搜索表单-->
-    <div class="card mb-6 shadow-sm rounded-xl overflow-hidden">
-        <div class="card-body p-6">
-            <form action="{{ url_for('product.list') }}" method="GET" class="row g-4">  <!--row g-4：Bootstrap 栅格行 水平和垂直间隙为4-->
-                <div class="col-md-4">      <!--中等屏幕占4列-->
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                            <i class="fa fa-search text-gray-400"></i>
-                        </span>
-                        <input type="text" name="keyword" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" placeholder="商品名称/编码" value="{{ keyword }}">
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                            <i class="fa fa-list text-gray-400"></i>
-                        </span>
-                        <select name="category_id" class="form-select rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300">
-                            <option value="">所有分类</option>      <!--默认选项所有分类-->
-                                {% for category in categories %}    <!--遍历 categories 变量生成选项-->
-                                    <option value="{{ category.id }}" {% if category_id == category.id|string %}selected{% endif %}>    <!--根据category_id变量设置选中状态-->
-                                        {{ category.name }}     <!--使用 category.id|string 将 ID 转换为字符串比较-->
-                                    </option>
-                                {% endfor %}
-                        </select>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <button type="submit" class="btn btn-secondary w-100 rounded-lg hover:bg-gray-700 transform hover:-translate-y-1 transition-all duration-300">      <!--w-100：宽度 100%-->
-                        <i class="fa fa-search mr-2"></i>搜索
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- 商品表格 -->
-    <div class="card shadow-sm rounded-xl overflow-hidden">
-        <div class="card-body p-0">
-            <div class="table-responsive">      <!--使表格在小屏幕上可以水平滚动-->
-                <!--当屏幕宽度小于特定阈值时，表格会变得可滚动，以便用户可以查看所有内容，而不会影响页面布局-->
-                <table class="table table-hover table-bordered">    <!--table-hover：鼠标悬停时行高亮效果 table-bordered：添加边框-->
-                    <thead class="bg-gray-50">     <!--浅灰色表头背景-->
-                        <tr class="text-gray-700 border-b-2 border-gray-300">
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">商品编码</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">商品名称</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">单位</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">分类</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">预警阈值</th>
-                            <th class="py-3 px-4 text-center font-semibold">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white">
-                        {% for product in products %}       <!--从后端传递的商品数据列表-->
-                            <tr class="transition-all duration-300 hover:bg-gray-50">
-                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ product.code }}</td>
-                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 font-medium">{{ product.name }}</td>
-                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ product.unit or '-' }}</td>
-                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ product.category.name if product.category else '-' }}</td>
-                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ product.warning_stock }}</td>
-                                <td class="py-3 px-4 border-b border-gray-200 text-center">
-                                    <div class="flex justify-center space-x-2">
-                                        <a href="{{ url_for('product.edit', id=product.id) }}" class="btn btn-sm btn-primary rounded-lg hover:bg-blue-600 transform hover:-translate-y-1 transition-all duration-300">
-                                            <!-- 链接到 product.edit 路由，传递商品ID -->
-                                            <i class="fa fa-edit mr-1"></i>编辑
-                                        </a>
-                                        <a href="{{ url_for('product.delete', id=product.id) }}" class="btn btn-sm btn-danger rounded-lg hover:bg-red-600 transform hover:-translate-y-1 transition-all duration-300" onclick="return confirm('确认删除?')">
-                                            <i class="fa fa-trash mr-1"></i>删除
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        {% else %}      <!--当 products 列表为空时执行-->
-                            <tr>
-                                <td colspan="6" class="py-12 text-center text-gray-500 border border-gray-200">
-                                    <div class="flex flex-col items-center">
-                                        <i class="fa fa-box-open text-4xl mb-4 text-gray-300"></i>
-                                        <p>暂无商品数据</p>
-                                        <a href="{{ url_for('product.edit', id=0) }}" class="mt-4 btn btn-primary">
-                                            <i class="fa fa-plus mr-2"></i>添加商品
-                                        </a>
-                                    </div>
-                                </td>   <!--合并六列-->
-                            </tr>
-                        {% endfor %}    <!--结束商品列表的循环-->
-                    </tbody>
-                </table>
-            </div>      <!--Bootstrap 响应式表格类-->
-
-            <!--分页-->
-            <div class="p-4 border-t border-gray-200 bg-gray-50">
-                <div class="flex flex-wrap justify-between items-center gap-4">
-                    <p class="text-sm text-gray-600">
-                        显示 {{ pagination.page * pagination.per_page - pagination.per_page + 1 }} 到 {{ pagination.page * pagination.per_page if pagination.page * pagination.per_page < pagination.total else pagination.total }} 条，共 {{ pagination.total }} 条
-                    </p>
-                    <nav aria-label="Page navigation">
-                        <ul class="pagination space-x-1">      <!--justify-content-center：使分页居中显示-->
-                            {% if pagination.has_prev %}      <!--检查分页对象 pagination 是否有上一页-->
-                                <li class="page-item">      <!--分页项容器-->
-                                    <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300" href="{{ url_for('product.list', page=pagination.prev_num, keyword=keyword, category_id=category_id) }}">
-                                        <i class="fa fa-chevron-left"></i>
-                                    </a>    <!--生成分页链接，保留上一页的页码，搜索关键词，分类筛选-->
-                                </li>
-                            {% else %}
-                                <li class="page-item disabled">
-                                    <span class="page-link rounded-lg border-gray-300 bg-gray-100 text-gray-400">
-                                        <i class="fa fa-chevron-left"></i>
-                                    </span>   <!--禁用的分页项通常使用<span>-->
-                                </li>
-                            {% endif %}
-                            <!--遍历分页对象生成的页码序列-->
-                            {% for page in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
-                                {% if page %}      <!--当前遍历的page是否有效 当page为None时，表示有页码被省略-->
-                                    {% if pagination.page == page %}    <!--检查当前遍历的页码是否是当前所在页-->    
-                                        <li class="page-item active">
-                                            <span class="page-link rounded-lg bg-primary border-primary text-white px-3 py-1">{{ page }}</span>
-                                        </li>  
-                                    {% else %}
-                                        <li class="page-item">
-                                            <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300 px-3 py-1" href="{{ url_for('product.list', page=page, keyword=keyword, category_id=category_id) }}">
-                                                {{ page }}
-                                            </a>
-                                        </li>
-                                    {% endif %}
-                                {% else %}
-                                    <li class="page-item disabled">
-                                        <span class="page-link rounded-lg border-gray-300 bg-gray-100 text-gray-400 px-3 py-1">...</span>
-                                    </li>     <!--省略号，表示中间有页码被省略-->
-                                {% endif %}
-                            {% endfor %}
-                            
-                            {% if pagination.has_next %}    <!--检查分页对象是否有下一页-->
-                                <li class="page-item">
-                                    <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300" href="{{ url_for('product.list', page=pagination.next_num, keyword=keyword, category_id=category_id)}}">
-                                        <i class="fa fa-chevron-right"></i>
-                                    </a>
-                                </li>
-                            {% else %}      <!--当没有下一页时(如在最后一页)-->
-                                <li class="page-item disabled">
-                                    <span class="page-link rounded-lg border-gray-300 bg-gray-100 text-gray-400">
-                                        <i class="fa fa-chevron-right"></i>
-                                    </span>
-                                </li>       <!--下一页按钮禁用状态-->
-                            {% endif %}     
-                        </ul>
-                    </nav>
-                </div>
-            </div>
-        </div>
-    </div>
-    
     <style>
-        /* 自定义动画效果 */
+        /* 页面标题霓虹效果 */
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #b24bf3, #ff6b9d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            position: relative;
+        }
+        
+        .page-title-icon {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(178, 75, 243, 0.2));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+        
+        .page-title-icon i {
+            font-size: 1.3rem;
+            background: linear-gradient(135deg, #00d4ff, #b24bf3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        /* 搜索卡片毛玻璃效果 */
+        .search-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .search-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #00d4ff, #b24bf3, #ff6b9d, #00d4ff);
+            background-size: 300% 100%;
+            animation: gradientFlow 4s ease infinite;
+        }
+        
+        @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* 输入框组样式 */
+        .search-input-group {
+            position: relative;
+        }
+        
+        .search-input-group .input-group-text {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(178, 75, 243, 0.1));
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            border-right: none;
+            border-radius: 10px 0 0 10px;
+            color: #667eea;
+        }
+        
+        .search-input-group .form-control,
+        .search-input-group .form-select {
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            border-left: none;
+            border-radius: 0 10px 10px 0;
+            transition: all 0.3s ease;
+        }
+        
+        .search-input-group .form-control:focus,
+        .search-input-group .form-select:focus {
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15);
+        }
+        
+        /* 搜索按钮 */
+        .btn-search {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            padding: 0.6rem 1.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-search:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        /* 数据表格卡片 - 霓虹发光边框 */
+        .data-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 16px;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.1),
+                0 0 0 1px rgba(102, 126, 234, 0.2),
+                0 0 60px rgba(102, 126, 234, 0.15),
+                inset 0 0 30px rgba(102, 126, 234, 0.05);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* 呼吸光效边框动画 */
+        .data-card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00d4ff, #b24bf3, #ff6b9d, #00d4ff, #b24bf3);
+            background-size: 400% 400%;
+            border-radius: 18px;
+            z-index: -1;
+            animation: neonBorderGlow 6s ease infinite, breatheGlow 3s ease-in-out infinite;
+            opacity: 0.7;
+        }
+        
+        @keyframes neonBorderGlow {
+            0% { background-position: 0% 50%; }
+            25% { background-position: 100% 50%; }
+            50% { background-position: 100% 100%; }
+            75% { background-position: 0% 100%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        @keyframes breatheGlow {
+            0%, 100% { opacity: 0.5; box-shadow: 0 0 20px rgba(0, 212, 255, 0.3); }
+            50% { opacity: 1; box-shadow: 0 0 40px rgba(178, 75, 243, 0.5); }
+        }
+        
+        /* 顶部流光线 */
+        .data-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00d4ff, #b24bf3, transparent);
+            animation: lightSweep 3s ease-in-out infinite;
+        }
+        
+        @keyframes lightSweep {
+            0% { left: -100%; }
+            50%, 100% { left: 200%; }
+        }
+        
+        .data-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 
+                0 12px 40px rgba(0, 0, 0, 0.12),
+                0 0 0 1px rgba(0, 212, 255, 0.5),
+                0 0 80px rgba(178, 75, 243, 0.25),
+                inset 0 0 40px rgba(0, 212, 255, 0.08);
+        }
+        
+        .data-card .table {
+            margin-bottom: 0;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+            background: transparent;
+        }
+        
+        /* 渐变表头 + 流光效果 */
+        .data-card .table thead {
+            position: relative;
+        }
+        
+        .data-card .table thead th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #b24bf3 100%);
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 0.95rem;
+            padding: 1rem 1rem;
+            position: relative;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            white-space: nowrap;
+            border-bottom: none;
+        }
+        
+        /* 表头流光扫过效果 */
+        .data-card .table thead tr {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .data-card .table thead tr::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -150%;
+            width: 80%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: headerSweep 4s ease-in-out infinite;
+        }
+        
+        @keyframes headerSweep {
+            0% { left: -150%; }
+            50% { left: 120%; }
+            100% { left: 120%; }
+        }
+        
+        /* 表格内容区 - 毛玻璃半透明底色 */
+        .data-card .table tbody {
+            background: linear-gradient(180deg, 
+                rgba(255, 255, 255, 0.75) 0%, 
+                rgba(248, 245, 255, 0.7) 50%, 
+                rgba(255, 250, 252, 0.75) 100%);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+        }
+        
+        .data-card .table tbody tr {
+            /* 移除过渡动画 */
+        }
+        
+        /* 单元格默认样式 - 安静效果 */
+        .data-card .table tbody td {
+            border-bottom: 2px solid rgba(148, 163, 184, 0.4);
+            border-top: 1px solid rgba(148, 163, 184, 0.2);
+            padding: 0.95rem 1rem;
+            vertical-align: middle;
+            color: rgba(51, 65, 85, 0.85);
+            font-size: 0.92rem;
+            /* 移除过渡动画 */
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* 悬浮效果 - 背景变亮 + 轻微内发光 */
+        .data-card .table tbody tr:hover td {
+            background: rgba(255, 255, 255, 0.5);
+            color: rgba(30, 41, 59, 0.9);
+            font-weight: 500;
+            border-bottom-color: rgba(148, 163, 184, 0.6);
+            border-top-color: rgba(148, 163, 184, 0.3);
+            box-shadow: 
+                inset 0 0 15px rgba(255, 255, 255, 0.5),
+                inset 0 0 30px rgba(102, 126, 234, 0.1);
+        }
+        
+        /* 悬浮时左侧高亮条 */
+        .data-card .table tbody tr:hover td:first-child {
+            border-left: 3px solid #667eea;
+            box-shadow: 
+                -3px 0 10px rgba(102, 126, 234, 0.3),
+                inset 0 0 15px rgba(102, 126, 234, 0.1);
+        }
+        
+        /* 增强表头分隔线 */
+        .data-card .table thead th {
+            border-bottom: 3px solid #667eea !important;
+        }
+        
+        /* 商品编码样式 - 霓虹发光 */
+        .product-code {
+            display: inline-block;
+            background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+            color: #3730a3;
+            padding: 0.35rem 0.85rem;
+            border-radius: 6px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-weight: 700;
+            font-size: 0.88rem;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            box-shadow: 
+                0 2px 10px rgba(99, 102, 241, 0.2),
+                0 0 15px rgba(99, 102, 241, 0.15);
+            transition: all 0.3s ease;
+        }
+        
+        .product-code:hover {
+            box-shadow: 
+                0 4px 20px rgba(99, 102, 241, 0.4),
+                0 0 30px rgba(0, 212, 255, 0.3);
+            transform: scale(1.02);
+        }
+        
+        /* 分类标签样式 - 发光效果 */
+        .category-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #e0f2fe, #ddd6fe);
+            color: #5b21b6;
+            padding: 0.32rem 0.85rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.86rem;
+            border: 1px solid rgba(139, 92, 246, 0.25);
+            box-shadow: 0 2px 10px rgba(139, 92, 246, 0.15);
+            transition: all 0.3s ease;
+        }
+        
+        .category-badge:hover {
+            box-shadow: 0 4px 18px rgba(139, 92, 246, 0.35);
+        }
+        
+        /* 操作按钮 - 霓虹发光 */
+        .btn-edit {
+            background: linear-gradient(135deg, #00d4ff, #667eea);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            padding: 0.38rem 0.85rem;
+            font-size: 0.82rem;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 3px 15px rgba(0, 212, 255, 0.35);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-edit::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn-edit:hover::before {
+            left: 100%;
+        }
+        
+        .btn-edit:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 6px 25px rgba(0, 212, 255, 0.55), 0 0 40px rgba(0, 212, 255, 0.25);
+            color: white;
+        }
+        
+        .btn-delete {
+            background: linear-gradient(135deg, #ff6b9d, #e84393);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            padding: 0.38rem 0.85rem;
+            font-size: 0.82rem;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 3px 15px rgba(255, 107, 157, 0.35);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-delete::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn-delete:hover::before {
+            left: 100%;
+        }
+        
+        .btn-delete:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 6px 25px rgba(255, 107, 157, 0.55), 0 0 40px rgba(255, 107, 157, 0.25);
+            color: white;
+        }
+        
+        /* 添加按钮 */
+        .btn-add {
+            background: linear-gradient(135deg, #00d4ff, #b24bf3);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            padding: 0.6rem 1.25rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-add::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn-add:hover::before {
+            left: 100%;
+        }
+        
+        .btn-add:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(0, 212, 255, 0.4);
+            color: white;
+        }
+        
+        /* 分页区域 */
+        .pagination-wrapper {
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.03), rgba(178, 75, 243, 0.02));
+            border-top: 1px solid rgba(102, 126, 234, 0.1);
+            padding: 1rem 1.25rem;
+        }
+        
+        .pagination-info {
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+        
+        .pagination .page-link {
+            border-radius: 8px !important;
+            margin: 0 2px;
+            border: 1px solid #e2e8f0;
+            color: #475569;
+            transition: all 0.3s ease;
+        }
+        
+        .pagination .page-link:hover {
+            background: linear-gradient(135deg, #00d4ff, #b24bf3);
+            border-color: transparent;
+            color: white;
+            box-shadow: 0 2px 15px rgba(0, 212, 255, 0.3);
+        }
+        
+        .pagination .page-item.active .page-link {
+            background: linear-gradient(135deg, #00d4ff, #b24bf3);
+            border-color: transparent;
+            box-shadow: 0 2px 15px rgba(0, 212, 255, 0.4);
+            color: white;
+        }
+        
+        .pagination .page-item.disabled .page-link {
+            background: #f8fafc;
+            color: #94a3b8;
+        }
+        
+        /* 空数据提示 */
+        .empty-data {
+            padding: 3rem;
+            text-align: center;
+            color: #94a3b8;
+        }
+        
+        .empty-data i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #00d4ff, #b24bf3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        /* 动画效果 */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -188,38 +503,190 @@
             }
         }
         
-        .card {
+        .search-card {
             animation: fadeInUp 0.5s ease-out;
         }
         
-        h2 {
+        .data-card {
+            animation: fadeInUp 0.5s ease-out 0.1s both;
+        }
+        
+        .page-header {
             animation: slideIn 0.4s ease-out;
         }
         
         /* 响应式调整 */
         @media (max-width: 768px) {
+            .page-title {
+                font-size: 1.35rem;
+            }
+            
             .table-responsive {
                 font-size: 0.875rem;
             }
             
-            .table th,
-            .table td {
-                padding: 0.75rem;
-            }
-            
-            .btn {
-                font-size: 0.75rem;
-                padding: 0.25rem 0.5rem;
-            }
-            
-            .flex.justify-between {
-                flex-direction: column;
-                gap: 1rem;
-            }
-            
-            .pagination {
-                justify-content: center;
+            .btn-add {
+                padding: 0.5rem 1rem;
+                font-size: 0.875rem;
             }
         }
     </style>
+
+    <div class="d-flex justify-content-between align-items-center mb-4 page-header">    
+        <div class="d-flex align-items-center">
+            <div class="page-title-icon">
+                <i class="fa fa-shopping-bag"></i>
+            </div>
+            <h2 class="page-title mb-0">商品列表</h2>
+        </div>
+        <a href="{{ url_for('product.edit', id=0) }}" class="btn btn-add">
+            <i class="fa fa-plus mr-2"></i>添加商品
+        </a>
+    </div>
+
+    <!--搜索表单-->
+    <div class="search-card mb-4">
+        <div class="card-body p-4">
+            <form action="{{ url_for('product.list') }}" method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group search-input-group">
+                        <span class="input-group-text">
+                            <i class="fa fa-search"></i>
+                        </span>
+                        <input type="text" name="keyword" class="form-control" placeholder="商品名称/编码" value="{{ keyword }}">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="input-group search-input-group">
+                        <span class="input-group-text">
+                            <i class="fa fa-list"></i>
+                        </span>
+                        <select name="category_id" class="form-select">
+                            <option value="">所有分类</option>
+                                {% for category in categories %}
+                                    <option value="{{ category.id }}" {% if category_id == category.id|string %}selected{% endif %}>
+                                        {{ category.name }}
+                                    </option>
+                                {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-search w-100">
+                        <i class="fa fa-search mr-2"></i>搜索
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 商品表格 -->
+    <div class="data-card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th class="text-center">商品编码</th>
+                            <th class="text-center">商品名称</th>
+                            <th class="text-center">单位</th>
+                            <th class="text-center">分类</th>
+                            <th class="text-center">预警阈值</th>
+                            <th class="text-center">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                            <tr>
+                                <td class="text-center"><span class="product-code">{{ product.code }}</span></td>
+                                <td class="font-semibold text-slate-800">{{ product.name }}</td>
+                                <td class="text-center text-slate-600 font-medium">{{ product.unit or '-' }}</td>
+                                <td class="text-center"><span class="category-badge">{{ product.category.name if product.category else '-' }}</span></td>
+                                <td class="text-center text-slate-700 font-medium">{{ product.warning_stock }}</td>
+                                <td class="text-center">
+                                    <div class="d-flex justify-content-center gap-2">
+                                        <a href="{{ url_for('product.edit', id=product.id) }}" class="btn btn-edit">
+                                            <i class="fa fa-edit mr-1"></i>编辑
+                                        </a>
+                                        <a href="{{ url_for('product.delete', id=product.id) }}" class="btn btn-delete" onclick="return confirm('确认删除?')">
+                                            <i class="fa fa-trash mr-1"></i>删除
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="empty-data">
+                                    <i class="fa fa-box-open d-block"></i>
+                                    <p class="mb-3 text-slate-500 font-medium">暂无商品数据</p>
+                                    <a href="{{ url_for('product.edit', id=0) }}" class="btn btn-add">
+                                        <i class="fa fa-plus mr-2"></i>添加商品
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!--分页-->
+            <div class="pagination-wrapper">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                    <p class="pagination-info mb-0">
+                        显示 {{ pagination.page * pagination.per_page - pagination.per_page + 1 }} 到 {{ pagination.page * pagination.per_page if pagination.page * pagination.per_page < pagination.total else pagination.total }} 条，共 {{ pagination.total }} 条
+                    </p>
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination mb-0">
+                            {% if pagination.has_prev %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('product.list', page=pagination.prev_num, keyword=keyword, category_id=category_id) }}">
+                                        <i class="fa fa-chevron-left"></i>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">
+                                        <i class="fa fa-chevron-left"></i>
+                                    </span>
+                                </li>
+                            {% endif %}
+                            {% for page in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
+                                {% if page %}
+                                    {% if pagination.page == page %}    
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ page }}</span>
+                                        </li>  
+                                    {% else %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('product.list', page=page, keyword=keyword, category_id=category_id) }}">
+                                                {{ page }}
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if pagination.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('product.list', page=pagination.next_num, keyword=keyword, category_id=category_id)}}">
+                                        <i class="fa fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">
+                                        <i class="fa fa-chevron-right"></i>
+                                    </span>
+                                </li>
+                            {% endif %}     
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

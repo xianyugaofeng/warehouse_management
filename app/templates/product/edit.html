@@ -1,6 +1,97 @@
 {% extends "base.html" %}
-{% block title %}{% if product.id %}编辑商品{% else %}添加商品{% endif %} - 仓库管理系统    <style>
-        /* 自定义动画效果 */
+{% block title %}{% if product.id %}编辑商品{% else %}添加商品{% endif %} - 仓库管理系统{% endblock %}
+
+{% block content %}
+    <style>
+        /* 页面标题霓虹效果 */
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #b24bf3, #ff6b9d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            position: relative;
+        }
+        
+        .page-title-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #00d4ff, #667eea);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            box-shadow: 
+                0 0 25px rgba(0, 212, 255, 0.5),
+                0 0 50px rgba(102, 126, 234, 0.3),
+                inset 0 0 15px rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+        
+        .page-title-icon i {
+            font-size: 1.5rem;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+        
+        /* 面包屑导航样式 */
+        .breadcrumb {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 25px;
+            padding: 0.5rem 1.25rem;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .breadcrumb-item a {
+            color: #667eea;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .breadcrumb-item a:hover {
+            color: #b24bf3;
+            text-shadow: 0 0 8px rgba(178, 75, 243, 0.5);
+        }
+        
+        .breadcrumb-item.active {
+            color: #b24bf3;
+            font-weight: 600;
+        }
+        
+        /* 表单卡片 - 渐变蓝紫边框 */
+        .form-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 3px solid transparent;
+            background-clip: padding-box;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.1),
+                0 0 40px rgba(102, 126, 234, 0.2);
+            position: relative;
+            padding: 2rem;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .form-card::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            background: linear-gradient(135deg, #00d4ff, #667eea, #b24bf3);
+            border-radius: 22px;
+            z-index: -1;
+        }
+        
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -12,117 +103,282 @@
             }
         }
         
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+        /* 表单标签样式 */
+        .form-label {
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.6rem;
+            font-size: 1rem;
+            letter-spacing: 0.3px;
         }
         
-        .card {
-            animation: fadeInUp 0.5s ease-out;
+        .form-label .text-danger {
+            margin-left: 3px;
+            font-size: 1.1rem;
         }
         
-        h2 {
-            animation: slideIn 0.4s ease-out;
+        /* 输入框组样式 */
+        .input-group {
+            position: relative;
+        }
+        
+        .input-group-text {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 12px 0 0 12px;
+            color: #ffffff;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        .input-group-text i {
+            font-size: 1.1rem;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+        }
+        
+        .input-group:focus-within .input-group-text {
+            background: linear-gradient(135deg, #00d4ff, #667eea);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+        }
+        
+        .form-control, .form-select {
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-left: none;
+            border-radius: 0 12px 12px 0;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #1e293b;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.98);
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.2), 0 0 25px rgba(0, 212, 255, 0.15);
+            background: #ffffff;
+            color: #0f172a;
+        }
+        
+        .form-control::placeholder {
+            color: #64748b;
+            font-weight: 400;
+        }
+        
+        /* 下拉选择框特殊处理 */
+        .form-select {
+            border-left: none;
+            cursor: pointer;
+        }
+        
+        /* 文本域样式 */
+        textarea.form-control {
+            border-radius: 0 12px 12px 0;
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        /* 参数区域标题 */
+        .param-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 1rem;
+            padding-bottom: 0.6rem;
+            border-bottom: 2px solid rgba(102, 126, 234, 0.4);
+            position: relative;
+            letter-spacing: 0.5px;
+        }
+        
+        .param-title::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100px;
+            height: 3px;
+            background: linear-gradient(90deg, #00d4ff, #667eea, #b24bf3);
+            border-radius: 3px;
+            box-shadow: 0 0 12px rgba(0, 212, 255, 0.6);
+        }
+        
+        /* 参数容器样式 */
+        #param-container {
+            background: linear-gradient(135deg, rgba(240, 244, 255, 0.5), rgba(248, 245, 255, 0.5));
+            border-radius: 12px;
+            padding: 1rem;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+        
+        #param-container p {
+            color: #64748b;
+            font-style: italic;
+            margin: 0;
+            padding: 0.5rem;
+        }
+        
+        /* 按钮样式 */
+        .btn-save {
+            background: linear-gradient(135deg, #00d4ff, #667eea, #b24bf3);
+            border: none;
+            border-radius: 12px;
+            color: #ffffff;
+            padding: 0.85rem 2.2rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 25px rgba(0, 212, 255, 0.4), 0 0 30px rgba(178, 75, 243, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-save i {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+        }
+        
+        .btn-save::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn-save:hover::before {
+            left: 100%;
+        }
+        
+        .btn-save:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 35px rgba(0, 212, 255, 0.6), 0 0 50px rgba(178, 75, 243, 0.4);
+            color: #ffffff;
+        }
+        
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.98);
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            color: #667eea;
+            padding: 0.7rem 2.2rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-cancel i {
+            text-shadow: none;
+        }
+        
+        .btn-cancel:hover {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: transparent;
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-cancel:hover i {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
         }
         
         /* 响应式调整 */
         @media (max-width: 768px) {
-            .input-group {
+            .form-card {
+                padding: 1.25rem;
+            }
+            
+            .page-title {
+                font-size: 1.35rem;
+            }
+            
+            .breadcrumb {
+                display: none;
+            }
+            
+            .btn-save, .btn-cancel {
+                padding: 0.6rem 1.25rem;
                 font-size: 0.875rem;
-            }
-            
-            .btn {
-                font-size: 0.75rem;
-                padding: 0.25rem 0.5rem;
-            }
-            
-            .flex.justify-between {
-                flex-direction: column;
-                gap: 1rem;
             }
         }
     </style>
-{% endblock %}
-
-{% block content %}
-    <div class="d-flex justify-content-between align-items-center mb-6">    
-        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
-            <i class="fa fa-shopping-bag mr-3 text-primary"></i>{% if product.id %}编辑商品{% else %}添加商品{% endif %}
-        </h2>
-        <nav aria-label="breadcrumb">       <!--无障碍访问标签，为屏幕阅读器描述这是面包屑导航-->
-            <ol class="breadcrumb">     <!--Bootstrap 面包屑导航样式-->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            <div class="page-title-icon">
+                <i class="fa fa-shopping-bag"></i>
+            </div>
+            <h2 class="page-title mb-0">{% if product.id %}编辑商品{% else %}添加商品{% endif %}</h2>
+        </div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
                 <li class="breadcrumb-item"><a href="{{ url_for('product.list') }}">商品管理</a></li>
                 <li class="breadcrumb-item active" aria-current="page">{% if product.id %}编辑商品{% else %}添加商品{% endif %}</li>
-                <!--breadcrumb-item active:面包屑项高亮显示-->
             </ol>
         </nav>
     </div>
 
-    <div class="card mb-6 shadow-sm rounded-xl overflow-hidden">
-        <div class="card-body p-6">
-            {% if product.id %}
+    <div class="form-card">
+        {% if product.id %}
                 <!--编辑模式-->
                 <form method="POST" action="{{ url_for('product.edit', id=product.id) }}">
-                    <!--提交到 product.edit 路由 product.id 在添加模式下可能为 0 或空，由后端处理-->
-                    <div class="row mb-3">      <!--Bootstrap栅格行-->
-                        <div class="col-md-6">
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
                             <label for="code" class="form-label">商品编码<span class="text-danger">*</span></label>
                             <div class="input-group">
-                                <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                    <i class="fa fa-barcode text-gray-400"></i>
+                                <span class="input-group-text">
+                                    <i class="fa fa-barcode"></i>
                                 </span>
-                                <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="code" name="code" value="{{ product.code or '' }}" required placeholder="请输入唯一商品编码">
+                                <input type="text" class="form-control" id="code" name="code" value="{{ product.code or '' }}" required placeholder="请输入唯一商品编码">
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 mb-3">
                             <label for="name" class="form-label">商品名称<span class="text-danger">*</span></label>
                             <div class="input-group">
-                                <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                    <i class="fa fa-shopping-bag text-gray-400"></i>
+                                <span class="input-group-text">
+                                    <i class="fa fa-shopping-bag"></i>
                                 </span>
-                                <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="name" name="name" value="{{ product.name or '' }}" required placeholder="请输入商品名称">
+                                <input type="text" class="form-control" id="name" name="name" value="{{ product.name or '' }}" required placeholder="请输入商品名称">
                             </div>
                         </div>
                     </div>
-                    <div class="row mb-3">      <!--创建新的一行-->
-                        <div class="col-md-6">
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
                             <label for="unit" class="form-label">单位</label>
                             <div class="input-group">
-                                <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                    <i class="fa fa-balance-scale text-gray-400"></i>
+                                <span class="input-group-text">
+                                    <i class="fa fa-balance-scale"></i>
                                 </span>
-                                <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="unit" name="unit" value="{{ product.unit or '' }}" placeholder="个/箱/kg">
+                                <input type="text" class="form-control" id="unit" name="unit" value="{{ product.unit or '' }}" placeholder="个/箱/kg">
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 mb-3">
                             <label for="warning_stock" class="form-label">库存预警阈值</label>
                             <div class="input-group">
-                                <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                    <i class="fa fa-exclamation-triangle text-gray-400"></i>
+                                <span class="input-group-text">
+                                    <i class="fa fa-exclamation-triangle"></i>
                                 </span>
-                                <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="warning_stock" name="warning_stock" value="{{ product.warning_stock or '' }}" placeholder="默认10">
+                                <input type="text" class="form-control" id="warning_stock" name="warning_stock" value="{{ product.warning_stock or '' }}" placeholder="默认10">
                             </div>
                         </div>
                     </div>
                     
-                    <div class="row mb-3">
-                        <div class="col-md-6">
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
                             <label for="category_id" class="form-label">商品分类</label>
                             <div class="input-group">
-                                <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                    <i class="fa fa-list text-gray-400"></i>
+                                <span class="input-group-text">
+                                    <i class="fa fa-list"></i>
                                 </span>
-                                <select class="form-select rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="category_id" name="category_id" onchange="loadCategoryParams(this.value)">     <!--form-select：Bootstrap下拉选择框样式-->
-                                    <option value="">请选择分类</option>         <!--默认选项值为空-->
-                                    {% for category in categories %}         <!--遍历分类列表-->
+                                <select class="form-select" id="category_id" name="category_id" onchange="loadCategoryParams(this.value)">
+                                    <option value="">请选择分类</option>
+                                    {% for category in categories %}
                                         <option value="{{ category.id }}" {% if product.category_id == category.id %}selected{% endif %}>
-                                            {{ category.name }}     <!--编辑模式：如果商品当前属于此分类，则选中-->     <!--添加模式：没有选中项-->
+                                            {{ category.name }}
                                         </option>
                                     {% endfor %}
                                 </select>
@@ -130,41 +386,38 @@
                         </div>
                     </div>
                     
-                    <!-- 商品参数 -->
-                    <div class="mb-3">
-                        <h4>商品参数</h4>
+                    <div class="mb-4">
+                        <h4 class="param-title">商品参数</h4>
                         <div id="param-container">
                             {% if category_params %}
                                 {% for category_param in category_params %}
-                                    <div class="row mb-2">
+                                    <div class="row mb-3">
                                         <div class="col-md-4">
                                             <label class="form-label">{{ category_param.param_key.name }}</label>
                                         </div>
                                         <div class="col-md-8">
                                             <div class="input-group">
-                                <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                    <i class="fa fa-cog text-gray-400"></i>
-                                </span>
-                                <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" name="param_{{ category_param.param_key.id }}" value="{{ product_params.get(category_param.param_key.id, '') }}" placeholder="请输入{{ category_param.param_key.name }}">
-                            </div>
+                                                <span class="input-group-text">
+                                                    <i class="fa fa-cog"></i>
+                                                </span>
+                                                <input type="text" class="form-control" name="param_{{ category_param.param_key.id }}" value="{{ product_params.get(category_param.param_key.id, '') }}" placeholder="请输入{{ category_param.param_key.name }}">
+                                            </div>
                                         </div>
                                     </div>
                                 {% endfor %}
                             {% else %}
-                                <p class="text-muted">请先选择商品分类</p>
+                                <p class="text-muted"><i class="fa fa-info-circle mr-2"></i></p>
                             {% endif %}
                         </div>
                     </div>
                     
-                    <!-- JavaScript 代码 -->
                     <script>
                         function loadCategoryParams(categoryId) {
                             if (!categoryId) {
-                                document.getElementById('param-container').innerHTML = '<p class="text-muted">请先选择商品分类</p>';
+                                document.getElementById('param-container').innerHTML = '<p class="text-muted"><i class="fa fa-info-circle mr-2"></i>请先选择商品分类</p>';
                                 return;
                             }
                             
-                            // 发送 AJAX 请求获取分类参数
                             fetch('/product/get_category_params?category_id=' + categoryId)
                                 .then(response => response.json())
                                 .then(data => {
@@ -172,98 +425,135 @@
                                         let html = '';
                                         data.params.forEach(param => {
                                             html += `
-                                                <div class="row mb-2">
+                                                <div class="row mb-3">
                                                     <div class="col-md-4">
                                                         <label class="form-label">${param.name}</label>
                                                     </div>
                                                     <div class="col-md-8">
                                                         <div class="input-group">
-                                <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                    <i class="fa fa-cog text-gray-400"></i>
-                                </span>
-                                <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" name="param_${param.id}" placeholder="请输入${param.name}">
-                            </div>
+                                                            <span class="input-group-text">
+                                                                <i class="fa fa-cog"></i>
+                                                            </span>
+                                                            <input type="text" class="form-control" name="param_${param.id}" placeholder="请输入${param.name}">
+                                                        </div>
                                                     </div>
                                                 </div>
                                             `;
                                         });
                                         document.getElementById('param-container').innerHTML = html;
                                     } else {
-                                        document.getElementById('param-container').innerHTML = '<p class="text-muted">该分类暂无参数</p>';
+                                        document.getElementById('param-container').innerHTML = '<p class="text-muted"><i class="fa fa-info-circle mr-2"></i>该分类暂无参数</p>';
                                     }
                                 })
                                 .catch(error => {
                                     console.error('Error loading category params:', error);
-                                    document.getElementById('param-container').innerHTML = '<p class="text-danger">加载参数失败</p>';
+                                    document.getElementById('param-container').innerHTML = '<p class="text-danger"><i class="fa fa-exclamation-circle mr-2"></i>加载参数失败</p>';
                                 });
                         }
                     </script>
 
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <label for="remark" class="form-label">备注</label>
                         <div class="input-group">
-                            <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                <i class="fa fa-comment text-gray-400"></i>
+                            <span class="input-group-text">
+                                <i class="fa fa-comment"></i>
                             </span>
-                            <textarea class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="remark" name="remark" rows="3" placeholder="请输入备注信息">{{ product.remark or '' }}</textarea>
+                            <textarea class="form-control" id="remark" name="remark" rows="3" placeholder="请输入备注信息">{{ product.remark or '' }}</textarea>
                         </div>
-                        <!--textarea：多行文本输入框 rows="3"：默认显示3行-->
                     </div>
-                    <div class="d-flex gap-2">      <!--Bootstrap弹性布局 子元素之间间距 0.5rem -->
-                        <button type="submit" class="btn btn-primary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300">
+                    <div class="d-flex gap-3">
+                        <button type="submit" class="btn btn-save">
                             <i class="fa fa-save mr-2"></i>保存
                         </button>
-                        <a href="{{ url_for('product.list') }}" class="btn btn-outline-secondary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300">
+                        <a href="{{ url_for('product.list') }}" class="btn btn-cancel">
                             <i class="fa fa-times mr-2"></i>取消
                         </a>
                     </div>
                 </form>
             {% else %}
-                <!--创建模式-->
                 <form method="POST" action="{{ url_for('product.edit', id=0) }}">
-                    <!--提交到 product.edit 路由 product.id 在添加模式下可能为 0 或空，由后端处理-->
-                    <div class="row mb-3">      <!--Bootstrap栅格行-->
-                        <div class="col-md-6">
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
                             <label for="code" class="form-label">商品编码<span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="code" name="code" value="{{ product.code or '' }}" required placeholder="请输入唯一商品编码">
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fa fa-barcode"></i>
+                                </span>
+                                <input type="text" class="form-control" id="code" name="code" value="{{ product.code or '' }}" required placeholder="请输入唯一商品编码">
+                            </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 mb-3">
                             <label for="name" class="form-label">商品名称<span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="name" name="name" value="{{ product.name or '' }}" required placeholder="请输入商品名称">
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fa fa-shopping-bag"></i>
+                                </span>
+                                <input type="text" class="form-control" id="name" name="name" value="{{ product.name or '' }}" required placeholder="请输入商品名称">
+                            </div>
                         </div>
                     </div>
-                    <div class="row mb-3">      <!--创建新的一行-->
-                        <div class="col-md-6">
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
                             <label for="unit" class="form-label">单位</label>
-                            <input type="text" class="form-control" id="unit" name="unit" value="{{ product.unit or '' }}" placeholder="个/箱/kg">
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fa fa-balance-scale"></i>
+                                </span>
+                                <input type="text" class="form-control" id="unit" name="unit" value="{{ product.unit or '' }}" placeholder="个/箱/kg">
+                            </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 mb-3">
                             <label for="warning_stock" class="form-label">库存预警阈值</label>
-                            <input type="text" class="form-control" id="warning_stock" name="warning_stock" value="{{ product.warning_stock or '' }}" placeholder="默认10">
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fa fa-exclamation-triangle"></i>
+                                </span>
+                                <input type="text" class="form-control" id="warning_stock" name="warning_stock" value="{{ product.warning_stock or '' }}" placeholder="默认10">
+                            </div>
                         </div>
                     </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
                             <label for="category_id" class="form-label">商品分类</label>
-                            <select class="form-select" id="category_id" name="category_id" onchange="loadCategoryParams(this.value)">     <!--form-select：Bootstrap下拉选择框样式-->
-                                <option value="">请选择分类</option>         <!--默认选项值为空-->
-                                {% for category in categories %}         <!--遍历分类列表-->
-                                    <option value="{{ category.id }}" {% if product.category_id == category.id %}selected{% endif %}>
-                                        {{ category.name }}     <!--编辑模式：如果商品当前属于此分类，则选中-->     <!--添加模式：没有选中项-->
-                                    </option>
-                                {% endfor %}
-                            </select>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fa fa-list"></i>
+                                </span>
+                                <select class="form-select" id="category_id" name="category_id" onchange="loadCategoryParams(this.value)">
+                                    <option value="">请选择分类</option>
+                                    {% for category in categories %}
+                                        <option value="{{ category.id }}" {% if product.category_id == category.id %}selected{% endif %}>
+                                            {{ category.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="remark" class="form-label">备注</label>
+                    <div class="mb-4">
+                        <h4 class="param-title">商品参数</h4>
+                        <div id="param-container">
+                            <p class="text-muted"><i class="fa fa-info-circle mr-2"></i></p>
+                        </div>
                     </div>
-                    <div class="d-flex gap-2">      <!--Bootstrap弹性布局 子元素之间间距 0.5rem -->
-                        <button type="submit" class="btn btn-primary">保存</button>
-                        <a href="{{ url_for('product.list') }}" class="btn btn-outline-secondary">取消</a>
+                    <div class="mb-4">
+                        <label for="remark" class="form-label">备注</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fa fa-comment"></i>
+                            </span>
+                            <textarea class="form-control" id="remark" name="remark" rows="3" placeholder="请输入备注信息">{{ product.remark or '' }}</textarea>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-3">
+                        <button type="submit" class="btn btn-save">
+                            <i class="fa fa-save mr-2"></i>保存
+                        </button>
+                        <a href="{{ url_for('product.list') }}" class="btn btn-cancel">
+                            <i class="fa fa-times mr-2"></i>取消
+                        </a>
                     </div>
                 </form>
             {% endif %}
-        </div>
     </div>
 {% endblock %}
