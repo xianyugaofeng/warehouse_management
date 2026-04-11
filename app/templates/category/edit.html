@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% block title %}{{ '编辑分类' if category.id else '添加分类' }} - 仓库管理系统{% endblock %}
+
+{% block content %}
+<div class="row mb-6">
+    <div class="col">
+        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+            <i class="fa fa-tags mr-3 text-primary"></i>{{ '编辑分类' if category.id else '添加分类' }}
+        </h2>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('category.category_list') }}">分类管理</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ '编辑分类' if category.id else '添加分类' }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm rounded-xl overflow-hidden">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0 font-semibold">分类信息</h5>
+            </div>
+            <div class="card-body p-6">
+                <form method="POST" action="{{ url_for('category.edit', id=category.id or 0) }}">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="name" class="form-label font-weight-bold">分类名称 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="name" name="name" 
+                                   value="{{ category.name or '' }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="desc" class="form-label font-weight-bold">分类描述</label>
+                            <input type="text" class="form-control" id="desc" name="desc" 
+                                   value="{{ category.desc or '' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <label class="form-label font-weight-bold">分类参数</label>
+                            <p class="text-muted small mb-3">选择该分类下的商品需要填写的参数信息，支持从已有参数中选择或手动输入新参数</p>
+                            
+                            <div id="params-container">
+                                {% if category_params %}
+                                    {% for cp in category_params %}
+                                    <div class="param-item mb-2">
+                                        <div class="row">
+                                            <div class="col-md-5">
+                                                <select name="param_ids[]" class="form-control param-select">
+                                                    <option value="">手动输入</option>
+                                                    {% for pk in param_keys %}
+                                                    <option value="{{ pk.id }}" {% if pk.id == cp.param_key_id %}selected{% endif %}>
+                                                        {{ pk.name }}
+                                                    </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <div class="col-md-5">
+                                                <input type="text" name="param_names[]" class="form-control param-input" 
+                                                       placeholder="手动输入参数名称" 
+                                                       {% if cp.param_key_id %}disabled placeholder=""{% endif %}>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <button type="button" class="btn btn-outline-danger w-100" onclick="removeParam(this)">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            
+                            <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="addParam()">
+                                <i class="fa fa-plus mr-1"></i>添加参数
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <style>
+                        .param-input:disabled {
+                            background-color: #e9ecef;
+                            opacity: 1;
+                        }
+                        .param-item {
+                            transition: all 0.3s ease;
+                        }
+                        .param-item:hover {
+                            background-color: #f8f9fa;
+                            border-radius: 4px;
+                        }
+                    </style>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-save mr-1"></i>保存
+                            </button>
+                            <a href="{{ url_for('category.category_list') }}" class="btn btn-secondary ml-2">
+                                <i class="fa fa-times mr-1"></i>取消
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script>
+    // 参数选项模板
+    const paramOptions = `
+        {% for pk in param_keys %}
+        <option value="{{ pk.id }}">{{ pk.name }}</option>
+        {% endfor %}
+    `;
+    
+    // 添加参数
+    function addParam() {
+        const container = document.getElementById('params-container');
+        const div = document.createElement('div');
+        div.className = 'param-item mb-2';
+        div.innerHTML = `
+            <div class="row">
+                <div class="col-md-5">
+                    <select name="param_ids[]" class="form-control param-select" onchange="toggleInput(this)">
+                        <option value="">手动输入</option>
+                        ${paramOptions}
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <input type="text" name="param_names[]" class="form-control param-input" 
+                           placeholder="手动输入参数名称">
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-outline-danger w-100" onclick="removeParam(this)">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        container.appendChild(div);
+        // 初始化新添加的参数项
+        const select = div.querySelector('.param-select');
+        toggleInput(select);
+    }
+    
+    // 删除参数
+    function removeParam(btn) {
+        btn.closest('.param-item').remove();
+    }
+    
+    // 切换输入框状态
+    function toggleInput(select) {
+        const input = select.closest('.row').querySelector('.param-input');
+        if (select.value) {
+            input.disabled = true;
+            input.value = '';
+            input.placeholder = '';
+        } else {
+            input.disabled = false;
+            input.placeholder = '手动输入参数名称';
+            input.focus();
+        }
+    }
+    
+    // 页面加载时初始化
+    document.addEventListener('DOMContentLoaded', function() {
+        // 为已有的选择框绑定事件并初始化状态
+        document.querySelectorAll('.param-select').forEach(function(select) {
+            select.addEventListener('change', function() {
+                toggleInput(this);
+            });
+            // 初始化状态
+            toggleInput(select);
+        });
+        
+        // 表单提交验证
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const paramItems = document.querySelectorAll('.param-item');
+            let hasValidParam = false;
+            
+            paramItems.forEach(function(item) {
+                const select = item.querySelector('.param-select');
+                const input = item.querySelector('.param-input');
+                
+                // 检查是否有有效的参数（选择了参数或手动输入了参数名称）
+                if (select.value || (input.value && input.value.trim())) {
+                    hasValidParam = true;
+                }
+            });
+            
+            // 如果没有有效参数，提示用户
+            if (!hasValidParam && paramItems.length > 0) {
+                alert('请至少添加一个有效的参数！');
+                e.preventDefault();
+                return false;
+            }
+            
+            // 重要：在提交前临时启用所有禁用的输入框，确保它们能被提交
+            document.querySelectorAll('.param-input:disabled').forEach(function(input) {
+                input.disabled = false;
+            });
+            
+            // 调试信息：打印表单数据
+            console.log('表单数据：');
+            console.log('param_ids:', document.querySelectorAll('select[name="param_ids[]"]'));
+            console.log('param_names:', document.querySelectorAll('input[name="param_names[]"]'));
+        });
+    });
+</script>
+{% endblock %}
