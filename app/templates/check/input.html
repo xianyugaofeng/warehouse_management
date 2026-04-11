@@ -2,83 +2,421 @@
 {% block title %}盘点结果录入 - 仓库管理系统{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-6">
-    <h2 class="text-2xl font-bold text-gray-800 flex items-center">
-        <i class="fa fa-edit mr-3 text-primary"></i>盘点结果录入
-    </h2>
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url_for('check.list') }}">盘点管理</a></li>
-            <li class="breadcrumb-item"><a href="{{ url_for('check.detail', id=order.id) }}">盘点单详情</a></li>
-            <li class="breadcrumb-item active" aria-current="page">结果录入</li>
-        </ol>
-    </nav>
-</div>
+    <style>
+        /* 页面标题霓虹效果 */
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #b24bf3, #ff6b9d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            position: relative;
+        }
+        
+        .page-title-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #00d4ff, #667eea);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            box-shadow: 
+                0 0 25px rgba(0, 212, 255, 0.5),
+                0 0 50px rgba(102, 126, 234, 0.3),
+                inset 0 0 15px rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+        
+        .page-title-icon i {
+            font-size: 1.5rem;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+        
+        /* 面包屑导航样式 */
+        .breadcrumb {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 25px;
+            padding: 0.5rem 1.25rem;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .breadcrumb-item a {
+            color: #667eea;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .breadcrumb-item a:hover {
+            color: #b24bf3;
+            text-shadow: 0 0 8px rgba(178, 75, 243, 0.5);
+        }
+        
+        .breadcrumb-item.active {
+            color: #b24bf3;
+            font-weight: 600;
+        }
+        
+        /* 数据卡片 - 呼吸光效边框 */
+        .data-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 20px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            box-shadow: 
+                0 10px 35px rgba(0, 0, 0, 0.1),
+                0 0 40px rgba(102, 126, 234, 0.2);
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .data-card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00d4ff, #b24bf3, #ff6b9d, #00d4ff, #b24bf3);
+            background-size: 400% 400%;
+            border-radius: 22px;
+            z-index: -1;
+            animation: neonBorderGlow 6s ease infinite, breatheGlow 3s ease-in-out infinite;
+            opacity: 0.7;
+        }
+        
+        @keyframes neonBorderGlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        @keyframes breatheGlow {
+            0%, 100% {
+                opacity: 0.5;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.01);
+            }
+        }
+        
+        /* 卡片标题 */
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1e293b;
+            padding: 1rem 1.5rem;
+            background: rgba(102, 126, 234, 0.05);
+            border-bottom: 1px solid rgba(102, 126, 234, 0.15);
+        }
+        
+        /* 表格样式 */
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+        
+        .data-table thead {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .data-table thead::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shineEffect 3s infinite;
+        }
+        
+        @keyframes shineEffect {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        .data-table th {
+            padding: 1rem 1.25rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .data-table td {
+            padding: 0.875rem 1.25rem;
+            border-bottom: 1px solid rgba(102, 126, 234, 0.15);
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .data-table tbody tr {
+            transition: all 0.3s ease;
+        }
+        
+        .data-table tbody tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.15);
+        }
+        
+        /* 输入框样式 */
+        .form-input {
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 10px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #1e293b;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.95);
+            text-align: center;
+            width: 120px;
+        }
+        
+        .form-input:focus {
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.2), 0 0 25px rgba(0, 212, 255, 0.15);
+            background: #ffffff;
+            color: #0f172a;
+            outline: none;
+        }
+        
+        /* 按钮样式 */
+        .btn-back {
+            background: rgba(255, 255, 255, 0.98);
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            color: #667eea;
+            padding: 0.7rem 2.2rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-back i {
+            text-shadow: none;
+        }
+        
+        .btn-back:hover {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: transparent;
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-back:hover i {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+        }
+        
+        .btn-submit {
+            background: linear-gradient(135deg, #00d4ff, #667eea, #b24bf3);
+            border: none;
+            border-radius: 12px;
+            color: #ffffff;
+            padding: 0.75rem 1.75rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 212, 255, 0.4), 0 0 30px rgba(178, 75, 243, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-submit i {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+        }
+        
+        .btn-submit::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn-submit:hover::before {
+            left: 100%;
+        }
+        
+        .btn-submit:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0, 212, 255, 0.6), 0 0 40px rgba(178, 75, 243, 0.4);
+            color: #ffffff;
+        }
+        
+        /* 徽章样式 */
+        .badge {
+            font-weight: 600;
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .badge:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* 动画效果 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 1.35rem;
+            }
+            
+            .page-title-icon {
+                width: 40px;
+                height: 40px;
+                margin-right: 10px;
+            }
+            
+            .page-title-icon i {
+                font-size: 1.2rem;
+            }
+            
+            .breadcrumb {
+                display: none;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 0.75rem;
+                font-size: 0.875rem;
+            }
+            
+            .form-input {
+                width: 100px;
+                font-size: 0.875rem;
+            }
+            
+            .btn-back,
+            .btn-submit {
+                padding: 0.6rem 1.25rem;
+                font-size: 0.875rem;
+            }
+        }
+    </style>
 
-<div class="card mb-4 shadow-sm rounded-xl overflow-hidden">
-    <div class="card-header bg-gray-50 py-3">
-        <h5 class="mb-0">盘点单信息</h5>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            <div class="page-title-icon">
+                <i class="fa fa-edit"></i>
+            </div>
+            <h2 class="page-title mb-0">盘点结果录入</h2>
+        </div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('check.list') }}">盘点管理</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('check.detail', id=order.id) }}">盘点单详情</a></li>
+                <li class="breadcrumb-item active" aria-current="page">结果录入</li>
+            </ol>
+        </nav>
     </div>
-    <div class="card-body p-4">
-        <div class="row">
-            <div class="col-md-3 mb-2">
-                <strong>盘点单号：</strong>{{ order.check_no }}
-            </div>
-            <div class="col-md-3 mb-2">
-                <strong>盘点人：</strong>{{ order.checker.username if order.checker else '-' }}
-            </div>
-            <div class="col-md-3 mb-2">
-                <strong>盘点状态：</strong>
-                <span class="badge bg-warning">待录入</span>
-            </div>
-            <div class="col-md-3 mb-2">
-                <strong>冻结状态：</strong>
-                <span class="badge bg-danger">已冻结</span>
+
+    <div class="data-card mb-4 p-0">
+        <div class="card-title">
+            <i class="fa fa-info-circle mr-2"></i>盘点单信息
+        </div>
+        <div class="p-4">
+            <div class="row">
+                <div class="col-md-3 mb-2">
+                    <strong class="text-gray-600">盘点单号：</strong>
+                    <span class="font-medium">{{ order.check_no }}</span>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <strong class="text-gray-600">盘点人：</strong>
+                    <span class="font-medium">{{ order.checker.username if order.checker else '-' }}</span>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <strong class="text-gray-600">盘点状态：</strong>
+                    <span class="badge bg-warning">待录入</span>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <strong class="text-gray-600">冻结状态：</strong>
+                    <span class="badge bg-danger">已冻结</span>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<div class="card shadow-sm rounded-xl overflow-hidden">
-    <div class="card-header bg-gray-50 py-3">
-        <h5 class="mb-0">盘点结果录入</h5>
-    </div>
-    <div class="card-body p-0">
-        <form method="POST" action="{{ url_for('check.input_page', id=order.id) }}">
+    <form method="POST" action="{{ url_for('check.input_page', id=order.id) }}">
+        <div class="data-card p-0">
+            <div class="card-title">
+                <i class="fa fa-list-alt mr-2"></i>盘点结果录入
+            </div>
             <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="bg-gray-50">
+                <table class="table data-table">
+                    <thead>
                         <tr>
-                            <th width="5%">序号</th>
-                            <th width="20%">商品</th>
-                            <th width="15%">库位</th>
-                            <th width="15%">账面数量</th>
-                            <th width="15%">实际数量</th>
-                            <th width="15%">差异数量</th>
-                            <th width="15%">盘点结果</th>
+                            <th class="text-center" style="width: 5%">序号</th>
+                            <th class="text-center" style="width: 20%">商品</th>
+                            <th class="text-center" style="width: 15%">库位</th>
+                            <th class="text-center" style="width: 15%">账面数量</th>
+                            <th class="text-center" style="width: 15%">实际数量</th>
+                            <th class="text-center" style="width: 15%">差异数量</th>
+                            <th class="text-center" style="width: 15%">盘点结果</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for result in results %}
                         <tr>
-                            <td class="align-middle">{{ loop.index }}</td>
+                            <td class="text-center align-middle">{{ loop.index }}</td>
                             <td class="align-middle">
-                                {{ result.check_item.product.name if result.check_item.product else '-' }}
+                                <strong>{{ result.check_item.product.name if result.check_item.product else '-' }}</strong>
                                 <br><small class="text-muted">{{ result.check_item.product.code if result.check_item.product else '' }}</small>
                             </td>
-                            <td class="align-middle">
+                            <td class="text-center align-middle">
                                 {{ result.check_item.location.code if result.check_item.location else '-' }}
                             </td>
-                            <td class="align-middle">
+                            <td class="text-center align-middle">
                                 <span class="badge bg-primary">{{ result.book_quantity }}</span>
                             </td>
-                            <td class="align-middle">
+                            <td class="text-center align-middle">
                                 <input type="hidden" name="result_id[]" value="{{ result.id }}">
-                                <input type="number" class="form-control" name="actual_quantity[]" 
+                                <input type="number" class="form-input" name="actual_quantity[]" 
                                        min="0" required placeholder="请输入实际数量"
                                        value="{{ result.actual_quantity if result.actual_quantity and result.actual_quantity > 0 else '' }}">
                             </td>
-                            <td class="align-middle">
+                            <td class="text-center align-middle">
                                 {% if result.diff_quantity and result.diff_quantity != 0 %}
                                     {% if result.diff_quantity > 0 %}
                                     <span class="text-success fw-bold">+{{ result.diff_quantity }}</span>
@@ -89,7 +427,7 @@
                                 <span class="text-muted">-</span>
                                 {% endif %}
                             </td>
-                            <td class="align-middle">
+                            <td class="text-center align-middle">
                                 {% if result.check_result == 'profit' %}
                                 <span class="badge bg-success">盘盈</span>
                                 {% elif result.check_result == 'loss' %}
@@ -113,18 +451,17 @@
                 </div>
                 
                 <div class="d-flex justify-content-end gap-3">
-                    <a href="{{ url_for('check.detail', id=order.id) }}" class="btn btn-secondary rounded-lg px-4">
+                    <a href="{{ url_for('check.detail', id=order.id) }}" class="btn btn-back">
                         <i class="fa fa-arrow-left mr-2"></i>返回详情
                     </a>
-                    <a href="{{ url_for('check.list') }}" class="btn btn-outline-secondary rounded-lg px-4">
+                    <a href="{{ url_for('check.list') }}" class="btn btn-back">
                         <i class="fa fa-list mr-2"></i>返回列表
                     </a>
-                    <button type="submit" class="btn btn-primary rounded-lg px-4">
+                    <button type="submit" class="btn btn-submit">
                         <i class="fa fa-save mr-2"></i>确认录入
                     </button>
                 </div>
             </div>
-        </form>
-    </div>
-</div>
+        </div>
+    </form>
 {% endblock %}

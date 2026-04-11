@@ -2,107 +2,472 @@
 {% block title %}盘点单详情 - 仓库管理系统{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-6">
-    <h2 class="text-2xl font-bold text-gray-800 flex items-center">
-        <i class="fa fa-clipboard-check mr-3 text-primary"></i>盘点单详情
-    </h2>
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url_for('check.list') }}">盘点管理</a></li>
-            <li class="breadcrumb-item active" aria-current="page">盘点单详情</li>
-        </ol>
-    </nav>
-</div>
-
-<div class="card mb-6 shadow-sm rounded-xl overflow-hidden">
-    <div class="card-header bg-gray-50 py-3">
-        <h5 class="mb-0">基本信息</h5>
-    </div>
-    <div class="card-body p-6">
-        <div class="row">
-            <div class="col-md-4 mb-3">
-                <strong>盘点单号：</strong>{{ order.check_no }}
-            </div>
-            <div class="col-md-4 mb-3">
-                <strong>盘点人：</strong>{{ order.checker.username if order.checker else '-' }}
-            </div>
-            <div class="col-md-4 mb-3">
-                <strong>盘点状态：</strong>
-                {% if order.check_status == 'pending' %}
-                <span class="badge bg-warning">待录入</span>
-                {% elif order.check_status == 'completed' %}
-                <span class="badge bg-success">已完成</span>
-                {% else %}
-                <span class="badge bg-secondary">已取消</span>
-                {% endif %}
-            </div>
-            <div class="col-md-4 mb-3">
-                <strong>冻结状态：</strong>
-                {% if order.frozen_status %}
-                <span class="badge bg-danger">已冻结</span>
-                {% else %}
-                <span class="badge bg-success">已解冻</span>
-                {% endif %}
-            </div>
-            <div class="col-md-4 mb-3">
-                <strong>创建时间：</strong>{{ order.create_time.strftime('%Y-%m-%d %H:%M:%S') }}
-            </div>
-            <div class="col-md-4 mb-3">
-                <strong>备注：</strong>{{ order.remark or '-' }}
-            </div>
-        </div>
+    <style>
+        /* 页面标题霓虹效果 */
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #b24bf3, #ff6b9d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            position: relative;
+        }
         
-        {% if order.filter_product_id or order.filter_category_id or order.filter_location_id %}
-        <hr>
-        <h6>筛选条件：</h6>
-        <div class="row">
-            {% if order.filter_product_id %}
-            <div class="col-md-4 mb-2">
-                <strong>商品：</strong>{{ order.filter_product.name if order.filter_product else '-' }}
+        .page-title-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #00d4ff, #667eea);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            box-shadow: 
+                0 0 25px rgba(0, 212, 255, 0.5),
+                0 0 50px rgba(102, 126, 234, 0.3),
+                inset 0 0 15px rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+        
+        .page-title-icon i {
+            font-size: 1.5rem;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+        
+        /* 面包屑导航样式 */
+        .breadcrumb {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 25px;
+            padding: 0.5rem 1.25rem;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .breadcrumb-item a {
+            color: #667eea;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .breadcrumb-item a:hover {
+            color: #b24bf3;
+            text-shadow: 0 0 8px rgba(178, 75, 243, 0.5);
+        }
+        
+        .breadcrumb-item.active {
+            color: #b24bf3;
+            font-weight: 600;
+        }
+        
+        /* 数据卡片 - 呼吸光效边框 */
+        .data-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 20px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            box-shadow: 
+                0 10px 35px rgba(0, 0, 0, 0.1),
+                0 0 40px rgba(102, 126, 234, 0.2);
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .data-card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00d4ff, #b24bf3, #ff6b9d, #00d4ff, #b24bf3);
+            background-size: 400% 400%;
+            border-radius: 22px;
+            z-index: -1;
+            animation: neonBorderGlow 6s ease infinite, breatheGlow 3s ease-in-out infinite;
+            opacity: 0.7;
+        }
+        
+        @keyframes neonBorderGlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        @keyframes breatheGlow {
+            0%, 100% {
+                opacity: 0.5;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.01);
+            }
+        }
+        
+        /* 卡片标题 */
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1e293b;
+            padding: 1rem 1.5rem;
+            background: rgba(102, 126, 234, 0.05);
+            border-bottom: 1px solid rgba(102, 126, 234, 0.15);
+        }
+        
+        /* 表格样式 */
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+        
+        .data-table thead {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .data-table thead::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shineEffect 3s infinite;
+        }
+        
+        @keyframes shineEffect {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        .data-table th {
+            padding: 1rem 1.25rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .data-table td {
+            padding: 0.875rem 1.25rem;
+            border-bottom: 1px solid rgba(102, 126, 234, 0.15);
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .data-table tbody tr {
+            transition: all 0.3s ease;
+        }
+        
+        .data-table tbody tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.15);
+        }
+        
+        /* 信息项样式 */
+        .info-item {
+            margin-bottom: 1rem;
+        }
+        
+        .info-label {
+            color: #64748b;
+            font-weight: 500;
+        }
+        
+        .info-value {
+            font-weight: 600;
+            color: #1e293b;
+            margin-left: 0.5rem;
+        }
+        
+        /* 按钮样式 */
+        .btn-back {
+            background: rgba(255, 255, 255, 0.98);
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            color: #667eea;
+            padding: 0.7rem 2.2rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-back i {
+            text-shadow: none;
+        }
+        
+        .btn-back:hover {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: transparent;
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-back:hover i {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+        }
+        
+        .btn-input {
+            background: linear-gradient(135deg, #00d4ff, #667eea, #b24bf3);
+            border: none;
+            border-radius: 12px;
+            color: #ffffff;
+            padding: 0.75rem 1.75rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 212, 255, 0.4), 0 0 30px rgba(178, 75, 243, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-input i {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+        }
+        
+        .btn-input::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn-input:hover::before {
+            left: 100%;
+        }
+        
+        .btn-input:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0, 212, 255, 0.6), 0 0 40px rgba(178, 75, 243, 0.4);
+            color: #ffffff;
+        }
+        
+        .btn-cancel {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+            border: none;
+            border-radius: 12px;
+            color: #ffffff;
+            padding: 0.75rem 1.75rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(255, 107, 107, 0.4);
+        }
+        
+        .btn-cancel:hover {
+            background: linear-gradient(135deg, #ee5a6f, #ff6b6b);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(255, 107, 107, 0.6);
+            color: #ffffff;
+        }
+        
+        /* 徽章样式 */
+        .badge {
+            font-weight: 600;
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .badge:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* 动画效果 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 1.35rem;
+            }
+            
+            .page-title-icon {
+                width: 40px;
+                height: 40px;
+                margin-right: 10px;
+            }
+            
+            .page-title-icon i {
+                font-size: 1.2rem;
+            }
+            
+            .breadcrumb {
+                display: none;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 0.75rem;
+                font-size: 0.875rem;
+            }
+            
+            .btn-back,
+            .btn-input,
+            .btn-cancel {
+                padding: 0.6rem 1.25rem;
+                font-size: 0.875rem;
+            }
+        }
+    </style>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            <div class="page-title-icon">
+                <i class="fa fa-clipboard-check"></i>
             </div>
-            {% endif %}
-            {% if order.filter_category_id %}
-            <div class="col-md-4 mb-2">
-                <strong>分类：</strong>{{ order.filter_category.name if order.filter_category else '-' }}
+            <h2 class="page-title mb-0">盘点单详情</h2>
+        </div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('check.list') }}">盘点管理</a></li>
+                <li class="breadcrumb-item active" aria-current="page">盘点单详情</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="data-card mb-6 p-4">
+        <div class="card-title">
+            <i class="fa fa-info-circle mr-2"></i>基本信息
+        </div>
+        <div class="p-4">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="info-item">
+                        <span class="info-label">盘点单号：</span>
+                        <span class="info-value">{{ order.check_no }}</span>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="info-item">
+                        <span class="info-label">盘点人：</span>
+                        <span class="info-value">{{ order.checker.username if order.checker else '-' }}</span>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="info-item">
+                        <span class="info-label">盘点状态：</span>
+                        {% if order.check_status == 'pending' %}
+                        <span class="badge bg-warning">待录入</span>
+                        {% elif order.check_status == 'completed' %}
+                        <span class="badge bg-success">已完成</span>
+                        {% else %}
+                        <span class="badge bg-secondary">已取消</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="info-item">
+                        <span class="info-label">冻结状态：</span>
+                        {% if order.frozen_status %}
+                        <span class="badge bg-danger">已冻结</span>
+                        {% else %}
+                        <span class="badge bg-success">已解冻</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="info-item">
+                        <span class="info-label">创建时间：</span>
+                        <span class="info-value">{{ order.create_time.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="info-item">
+                        <span class="info-label">备注：</span>
+                        <span class="info-value">{{ order.remark or '-' }}</span>
+                    </div>
+                </div>
             </div>
-            {% endif %}
-            {% if order.filter_location_id %}
-            <div class="col-md-4 mb-2">
-                <strong>库位：</strong>{{ order.filter_location.code if order.filter_location else '-' }}
+            
+            {% if order.filter_product_id or order.filter_category_id or order.filter_location_id %}
+            <div class="divider"></div>
+            <h6 class="card-title">筛选条件：</h6>
+            <div class="row">
+                {% if order.filter_product_id %}
+                <div class="col-md-4 mb-2">
+                    <span class="info-label">商品：</span>
+                    <span class="info-value">{{ order.filter_product.name if order.filter_product else '-' }}</span>
+                </div>
+                {% endif %}
+                {% if order.filter_category_id %}
+                <div class="col-md-4 mb-2">
+                    <span class="info-label">分类：</span>
+                    <span class="info-value">{{ order.filter_category.name if order.filter_category else '-' }}</span>
+                </div>
+                {% endif %}
+                {% if order.filter_location_id %}
+                <div class="col-md-4 mb-2">
+                    <span class="info-label">库位：</span>
+                    <span class="info-value">{{ order.filter_location.code if order.filter_location else '-' }}</span>
+                </div>
+                {% endif %}
             </div>
             {% endif %}
         </div>
-        {% endif %}
     </div>
-</div>
 
-<div class="card mb-6 shadow-sm rounded-xl overflow-hidden">
-    <div class="card-header bg-gray-50 py-3">
-        <h5 class="mb-0">盘点明细</h5>
-    </div>
-    <div class="card-body p-0">
+    <div class="data-card p-0">
+        <div class="card-title">
+            <i class="fa fa-list-alt mr-2"></i>盘点明细
+        </div>
         <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="bg-gray-50">
+            <table class="table data-table">
+                <thead>
                     <tr>
-                        <th>商品</th>
-                        <th>库位</th>
-                        <th>账面数量</th>
-                        <th>实际数量</th>
-                        <th>差异数量</th>
-                        <th>盘点结果</th>
-                        <th>盘点时间</th>
+                        <th class="text-center">商品</th>
+                        <th class="text-center">库位</th>
+                        <th class="text-center">账面数量</th>
+                        <th class="text-center">实际数量</th>
+                        <th class="text-center">差异数量</th>
+                        <th class="text-center">盘点结果</th>
+                        <th class="text-center">盘点时间</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in order.items %}
                     {% set result = item.results.first() %}
                     <tr>
-                        <td>{{ item.product.name if item.product else '-' }}</td>
-                        <td>{{ item.location.code if item.location else '-' }}</td>
-                        <td>{{ item.book_quantity }}</td>
-                        <td>{{ result.actual_quantity if result and result.actual_quantity >= 0 else '-' }}</td>
-                        <td>
+                        <td class="font-medium">{{ item.product.name if item.product else '-' }}</td>
+                        <td class="text-center">{{ item.location.code if item.location else '-' }}</td>
+                        <td class="text-center">{{ item.book_quantity }}</td>
+                        <td class="text-center">{{ result.actual_quantity if result and result.actual_quantity >= 0 else '-' }}</td>
+                        <td class="text-center">
                             {% if result and result.diff_quantity %}
                                 {% if result.diff_quantity > 0 %}
                                 <span class="text-success fw-bold">+{{ result.diff_quantity }}</span>
@@ -115,7 +480,7 @@
                             <span class="text-muted">-</span>
                             {% endif %}
                         </td>
-                        <td>
+                        <td class="text-center">
                             {% if result %}
                                 {% if result.check_result == 'profit' %}
                                 <span class="badge bg-success">盘盈</span>
@@ -130,28 +495,27 @@
                             <span class="badge bg-warning">待录入</span>
                             {% endif %}
                         </td>
-                        <td>{{ result.check_time.strftime('%Y-%m-%d %H:%M') if result and result.check_time else '-' }}</td>
+                        <td class="text-center">{{ result.check_time.strftime('%Y-%m-%d %H:%M') if result and result.check_time else '-' }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
-</div>
 
-<div class="d-flex justify-content-end gap-3">
-    <a href="{{ url_for('check.list') }}" class="btn btn-secondary rounded-lg px-4">
-        <i class="fa fa-arrow-left mr-2"></i>返回列表
-    </a>
-    {% if order.check_status == 'pending' %}
-    <a href="{{ url_for('check.input_page', id=order.id) }}" class="btn btn-primary rounded-lg px-4">
-        <i class="fa fa-edit mr-2"></i>录入结果
-    </a>
-    <form method="POST" action="{{ url_for('check.cancel', id=order.id) }}" style="display: inline;">
-        <button type="submit" class="btn btn-danger rounded-lg px-4" onclick="return confirm('确定要取消此盘点单吗？取消后将解冻库存')">
-            <i class="fa fa-times mr-2"></i>取消盘点
-        </button>
-    </form>
-    {% endif %}
-</div>
+    <div class="d-flex justify-content-end gap-3 mt-4">
+        <a href="{{ url_for('check.list') }}" class="btn btn-back">
+            <i class="fa fa-arrow-left mr-2"></i>返回列表
+        </a>
+        {% if order.check_status == 'pending' %}
+        <a href="{{ url_for('check.input_page', id=order.id) }}" class="btn btn-input">
+            <i class="fa fa-edit mr-2"></i>录入结果
+        </a>
+        <form method="POST" action="{{ url_for('check.cancel', id=order.id) }}" style="display: inline;">
+            <button type="submit" class="btn btn-cancel" onclick="return confirm('确定要取消此盘点单吗？取消后将解冻库存')">
+                <i class="fa fa-times mr-2"></i>取消盘点
+            </button>
+        </form>
+        {% endif %}
+    </div>
 {% endblock %}
