@@ -2,121 +2,292 @@
 {% block title %}修改库存状态 - 仓库管理系统{% endblock %}
 
 {% block content %}
-    <div class="d-flex justify-content-between align-items-center mb-6">
-        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
-            <i class="fa fa-edit mr-3 text-primary"></i>修改库存状态
-        </h2>
-    </div>
-
-    <div class="card mb-6 shadow-sm rounded-xl overflow-hidden">
-        <div class="card-header bg-gray-50 border-b border-gray-200 py-4">
-            <h5 class="text-lg font-semibold text-gray-700">库存信息</h5>
-        </div>
-        <div class="card-body p-6">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <span class="text-gray-600">商品编码:</span>
-                        <span class="font-medium ml-2">{{ inventory.product.code }}</span>
-                    </div>
-                    <div class="mb-3">
-                        <span class="text-gray-600">商品名称:</span>
-                        <span class="font-medium ml-2">{{ inventory.product.name }}</span>
-                    </div>
-                    <div class="mb-3">
-                        <span class="text-gray-600">库位:</span>
-                        <span class="font-medium ml-2">{{ inventory.location.code }} - {{ inventory.location.name }}</span>
-                    </div>
-                    <div class="mb-3">
-                        <span class="text-gray-600">批次号:</span>
-                        <span class="font-medium ml-2">{{ inventory.batch_no or '-' }}</span>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <span class="text-gray-600">库存数量:</span>
-                        <span class="font-medium ml-2">{{ inventory.quantity }}</span>
-                    </div>
-                    <div class="mb-3">
-                        <span class="text-gray-600">当前状态:</span>
-                        <span class="ml-2">
-                            {% if inventory.stock_status == 'normal' %}
-                                <span class="badge bg-success rounded-full px-3 py-1">正常</span>
-                            {% elif inventory.stock_status == 'damaged' %}
-                                <span class="badge bg-warning rounded-full px-3 py-1">损坏</span>
-                            {% elif inventory.stock_status == 'frozen' %}
-                                <span class="badge bg-danger rounded-full px-3 py-1">冻结</span>
-                            {% else %}
-                                <span class="badge bg-secondary rounded-full px-3 py-1">未知</span>
-                            {% endif %}
-                        </span>
-                    </div>
-                    <div class="mb-3">
-                        <span class="text-gray-600">生产日期:</span>
-                        <span class="font-medium ml-2">{{ inventory.production_date.strftime('%Y-%m-%d') if inventory.production_date else '-' }}</span>
-                    </div>
-                    <div class="mb-3">
-                        <span class="text-gray-600">过期日期:</span>
-                        <span class="font-medium ml-2">{{ inventory.expire_date.strftime('%Y-%m-%d') if inventory.expire_date else '-' }}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card shadow-sm rounded-xl overflow-hidden">
-        <div class="card-header bg-gray-50 border-b border-gray-200 py-4">
-            <h5 class="text-lg font-semibold text-gray-700">修改状态</h5>
-        </div>
-        <div class="card-body p-6">
-            <form method="POST" action="{{ url_for('inventory.update_status', id=inventory.id) }}">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="stock_status" class="form-label">库存状态<span class="text-danger">*</span></label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                <i class="fa fa-tag text-gray-400"></i>
-                            </span>
-                            <select class="form-select rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="stock_status" name="stock_status" required>
-                                <option value="normal" {% if inventory.stock_status == 'normal' %}selected{% endif %}>正常</option>
-                                <option value="damaged" {% if inventory.stock_status == 'damaged' %}selected{% endif %}>损坏</option>
-                                <option value="frozen" {% if inventory.stock_status == 'frozen' %}selected{% endif %}>冻结</option>
-                            </select>
-                        </div>
-                        <small class="text-muted mt-1 d-block">
-                            <i class="fa fa-info-circle mr-1"></i>
-                            正常/损坏状态允许出库，冻结状态禁止出库
-                        </small>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="status_remark" class="form-label">状态备注</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                                <i class="fa fa-comment text-gray-400"></i>
-                            </span>
-                            <input type="text" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" id="status_remark" name="status_remark" value="{{ inventory.status_remark or '' }}" placeholder="请填写状态变更原因（选填）" maxlength="256">
-                        </div>
-                        <small class="text-muted mt-1 d-block">
-                            <i class="fa fa-info-circle mr-1"></i>
-                            例如：损坏原因、冻结原因等
-                        </small>
-                    </div>
-                </div>
-                
-                <div class="mt-4">
-                    <button type="submit" class="btn btn-primary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg">
-                        <i class="fa fa-save mr-2"></i>保存修改
-                    </button>
-                    <a href="{{ url_for('inventory.status') }}" class="btn btn-outline-secondary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 rounded-lg ml-2">
-                        <i class="fa fa-times mr-2"></i>取消
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <style>
-        /* 自定义动画效果 */
+        /* 页面标题霓虹效果 */
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #b24bf3, #ff6b9d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            position: relative;
+        }
+        
+        .page-title-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #00d4ff, #667eea);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            box-shadow: 
+                0 0 25px rgba(0, 212, 255, 0.5),
+                0 0 50px rgba(102, 126, 234, 0.3),
+                inset 0 0 15px rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+        
+        .page-title-icon i {
+            font-size: 1.5rem;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+        
+        /* 数据卡片 - 呼吸光效边框 */
+        .data-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 20px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            box-shadow: 
+                0 10px 35px rgba(0, 0, 0, 0.1),
+                0 0 40px rgba(102, 126, 234, 0.2);
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .data-card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00d4ff, #b24bf3, #ff6b9d, #00d4ff, #b24bf3);
+            background-size: 400% 400%;
+            border-radius: 22px;
+            z-index: -1;
+            animation: neonBorderGlow 6s ease infinite, breatheGlow 3s ease-in-out infinite;
+            opacity: 0.7;
+        }
+        
+        @keyframes neonBorderGlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        @keyframes breatheGlow {
+            0%, 100% {
+                opacity: 0.5;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.01);
+            }
+        }
+        
+        /* 卡片标题 */
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1e293b;
+            padding: 1rem 1.5rem;
+            background: rgba(102, 126, 234, 0.05);
+            border-bottom: 1px solid rgba(102, 126, 234, 0.15);
+        }
+        
+        /* 信息项样式 */
+        .info-item {
+            margin-bottom: 1rem;
+        }
+        
+        .info-label {
+            color: #64748b;
+            font-weight: 500;
+        }
+        
+        .info-value {
+            font-weight: 600;
+            color: #1e293b;
+            margin-left: 0.5rem;
+        }
+        
+        /* 表单卡片 - 渐变蓝紫边框 */
+        .form-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 3px solid transparent;
+            background-clip: padding-box;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.15),
+                0 0 40px rgba(102, 126, 234, 0.2),
+                inset 0 0 20px rgba(255, 255, 255, 0.8);
+            position: relative;
+            padding: 2rem;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .form-card::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            background: linear-gradient(135deg, #00d4ff, #667eea, #b24bf3);
+            border-radius: 22px;
+            z-index: -1;
+        }
+        
+        /* 表单标签样式 */
+        .form-label {
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.6rem;
+            font-size: 1rem;
+            letter-spacing: 0.3px;
+        }
+        
+        .form-label .text-danger {
+            margin-left: 3px;
+            font-size: 1.1rem;
+        }
+        
+        /* 输入框组样式 */
+        .input-group-text {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 12px 0 0 12px;
+            color: #ffffff;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        .input-group-text i {
+            font-size: 1.1rem;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+        }
+        
+        .input-group:focus-within .input-group-text {
+            background: linear-gradient(135deg, #00d4ff, #667eea);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+        }
+        
+        .form-control, .form-select {
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-left: none;
+            border-radius: 0 12px 12px 0;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #1e293b;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.98);
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.2), 0 0 25px rgba(0, 212, 255, 0.15);
+            background: #ffffff;
+            color: #0f172a;
+        }
+        
+        .form-control::placeholder {
+            color: #64748b;
+            font-weight: 400;
+        }
+        
+        /* 按钮样式 */
+        .btn-save {
+            background: linear-gradient(135deg, #00d4ff, #667eea, #b24bf3);
+            border: none;
+            border-radius: 12px;
+            color: #ffffff;
+            padding: 0.85rem 2.2rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 25px rgba(0, 212, 255, 0.4), 0 0 30px rgba(178, 75, 243, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-save i {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+        }
+        
+        .btn-save::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn-save:hover::before {
+            left: 100%;
+        }
+        
+        .btn-save:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 35px rgba(0, 212, 255, 0.6), 0 0 50px rgba(178, 75, 243, 0.4);
+            color: #ffffff;
+        }
+        
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.98);
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            color: #667eea;
+            padding: 0.7rem 2.2rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-cancel i {
+            text-shadow: none;
+        }
+        
+        .btn-cancel:hover {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: transparent;
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-cancel:hover i {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+        }
+        
+        /* 徽章样式 */
+        .badge {
+            font-weight: 600;
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .badge:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* 提示文本 */
+        .hint-text {
+            color: #64748b;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+        
+        /* 动画效果 */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -128,8 +299,141 @@
             }
         }
         
-        .card {
-            animation: fadeInUp 0.5s ease-out;
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .form-card {
+                padding: 1.25rem;
+            }
+            
+            .page-title {
+                font-size: 1.35rem;
+            }
+            
+            .page-title-icon {
+                width: 40px;
+                height: 40px;
+                margin-right: 10px;
+            }
+            
+            .page-title-icon i {
+                font-size: 1.2rem;
+            }
+            
+            .btn-save, .btn-cancel {
+                padding: 0.6rem 1.25rem;
+                font-size: 0.875rem;
+            }
         }
     </style>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            <div class="page-title-icon">
+                <i class="fa fa-edit"></i>
+            </div>
+            <h2 class="page-title mb-0">修改库存状态</h2>
+        </div>
+    </div>
+
+    <div class="data-card mb-6 p-4">
+        <div class="card-title">
+            <i class="fa fa-info-circle mr-2"></i>库存信息
+        </div>
+        <div class="p-4">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="info-item">
+                        <span class="info-label">商品编码:</span>
+                        <span class="info-value">{{ inventory.product.code }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">商品名称:</span>
+                        <span class="info-value">{{ inventory.product.name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">库位:</span>
+                        <span class="info-value">{{ inventory.location.code }} - {{ inventory.location.name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">批次号:</span>
+                        <span class="info-value">{{ inventory.batch_no or '-' }}</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="info-item">
+                        <span class="info-label">库存数量:</span>
+                        <span class="info-value">{{ inventory.quantity }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">当前状态:</span>
+                        <span>
+                            {% if inventory.stock_status == 'normal' %}
+                                <span class="badge bg-success">正常</span>
+                            {% elif inventory.stock_status == 'damaged' %}
+                                <span class="badge bg-warning">损坏</span>
+                            {% elif inventory.stock_status == 'frozen' %}
+                                <span class="badge bg-danger">冻结</span>
+                            {% else %}
+                                <span class="badge bg-secondary">未知</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">生产日期:</span>
+                        <span class="info-value">{{ inventory.production_date.strftime('%Y-%m-%d') if inventory.production_date else '-' }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">过期日期:</span>
+                        <span class="info-value">{{ inventory.expire_date.strftime('%Y-%m-%d') if inventory.expire_date else '-' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-card">
+        <form method="POST" action="{{ url_for('inventory.update_status', id=inventory.id) }}">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="stock_status" class="form-label">库存状态<span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fa fa-tag"></i>
+                        </span>
+                        <select class="form-select" id="stock_status" name="stock_status" required>
+                            <option value="normal" {% if inventory.stock_status == 'normal' %}selected{% endif %}>正常</option>
+                            <option value="damaged" {% if inventory.stock_status == 'damaged' %}selected{% endif %}>损坏</option>
+                            <option value="frozen" {% if inventory.stock_status == 'frozen' %}selected{% endif %}>冻结</option>
+                        </select>
+                    </div>
+                    <small class="hint-text">
+                        <i class="fa fa-info-circle mr-1"></i>
+                        正常/损坏状态允许出库，冻结状态禁止出库
+                    </small>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="status_remark" class="form-label">状态备注</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fa fa-comment"></i>
+                        </span>
+                        <input type="text" class="form-control" id="status_remark" name="status_remark" value="{{ inventory.status_remark or '' }}" placeholder="请填写状态变更原因（选填）" maxlength="256">
+                    </div>
+                    <small class="hint-text">
+                        <i class="fa fa-info-circle mr-1"></i>
+                        例如：损坏原因、冻结原因等
+                    </small>
+                </div>
+            </div>
+            
+            <div class="d-flex gap-3 mt-4">
+                <button type="submit" class="btn btn-save">
+                    <i class="fa fa-save mr-2"></i>保存修改
+                </button>
+                <a href="{{ url_for('inventory.status') }}" class="btn btn-cancel">
+                    <i class="fa fa-times mr-2"></i>取消
+                </a>
+            </div>
+        </form>
+    </div>
 {% endblock %}
