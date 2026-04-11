@@ -2,150 +2,404 @@
 {% block title %}客户管理 - 仓库管理系统{% endblock %}
 
 {% block content %}
-    <div class="d-flex justify-content-between align-items-center mb-6">    
-        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
-            <i class="fa fa-users mr-3 text-primary"></i>客户列表
-        </h2>
-        <a href="{{ url_for('customer.edit', id=0) }}" class="btn btn-primary shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300">
-            <i class="fa fa-plus mr-2"></i>添加客户
-        </a>
-    </div>
-
-    <!--搜索表单-->
-    <div class="card mb-6 shadow-sm rounded-xl overflow-hidden">
-        <div class="card-body p-6">
-            <form action="{{ url_for('customer.list') }}" method="GET" class="row g-4">
-                <div class="col-md-8">
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-gray-300 rounded-l-lg">
-                            <i class="fa fa-search text-gray-400"></i>
-                        </span>
-                        <input type="text" name="keyword" class="form-control rounded-r-lg border-gray-300 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all duration-300" placeholder="客户名称/联系人/电话" value="{{ keyword }}">
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <button type="submit" class="btn btn-secondary w-100 rounded-lg hover:bg-gray-700 transform hover:-translate-y-1 transition-all duration-300">
-                        <i class="fa fa-search mr-2"></i>搜索
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- 客户表格 -->
-    <div class="card shadow-sm rounded-xl overflow-hidden">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover table-bordered">
-                    <thead class="bg-gray-50">
-                        <tr class="text-gray-700 border-b-2 border-gray-300">
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">客户名称</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">联系人</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">联系电话</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">地址</th>
-                            <th class="py-3 px-4 border-r border-gray-200 font-semibold text-center">邮箱</th>
-                            <th class="py-3 px-4 text-center font-semibold">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white">
-                        {% for customer in customers %}
-                            <tr class="transition-all duration-300 hover:bg-gray-50">
-                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 font-medium">{{ customer.name }}</td>
-                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ customer.contact_person or '-' }}</td>
-                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ customer.phone or '-' }}</td>
-                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">{{ customer.address or '-' }}</td>
-                                <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center">{{ customer.email or '-' }}</td>
-                                <td class="py-3 px-4 border-b border-gray-200 text-center">
-                                    <div class="flex justify-center space-x-2">
-                                        <a href="{{ url_for('customer.edit', id=customer.id) }}" class="btn btn-sm btn-primary rounded-lg hover:bg-blue-600 transform hover:-translate-y-1 transition-all duration-300">
-                                            <i class="fa fa-edit mr-1"></i>编辑
-                                        </a>
-                                        <a href="{{ url_for('customer.delete', id=customer.id) }}" class="btn btn-sm btn-danger rounded-lg hover:bg-red-600 transform hover:-translate-y-1 transition-all duration-300" onclick="return confirm('确认删除?')">
-                                            <i class="fa fa-trash mr-1"></i>删除
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        {% else %}
-                            <tr>
-                                <td colspan="6" class="py-12 text-center text-gray-500 border border-gray-200">
-                                    <div class="flex flex-col items-center">
-                                        <i class="fa fa-users text-4xl mb-4 text-gray-300"></i>
-                                        <p>暂无客户数据</p>
-                                        <a href="{{ url_for('customer.edit', id=0) }}" class="mt-4 btn btn-primary">
-                                            <i class="fa fa-plus mr-2"></i>添加客户
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            <!--分页-->
-            <div class="p-4 border-t border-gray-200 bg-gray-50">
-                <div class="flex flex-wrap justify-between items-center gap-4">
-                    <p class="text-sm text-gray-600">
-                        显示 {{ pagination.page * pagination.per_page - pagination.per_page + 1 }} 到 {{ pagination.page * pagination.per_page if pagination.page * pagination.per_page < pagination.total else pagination.total }} 条，共 {{ pagination.total }} 条
-                    </p>
-                    <nav aria-label="Page navigation">
-                        <ul class="pagination space-x-1">
-                            {% if pagination.has_prev %}
-                                <li class="page-item">
-                                    <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300" href="{{ url_for('customer.list', page=pagination.prev_num, keyword=keyword) }}">
-                                        <i class="fa fa-chevron-left"></i>
-                                    </a>
-                                </li>
-                            {% else %}
-                                <li class="page-item disabled">
-                                    <span class="page-link rounded-lg border-gray-300 bg-gray-100 text-gray-400">
-                                        <i class="fa fa-chevron-left"></i>
-                                    </span>
-                                </li>
-                            {% endif %}
-                            {% for page in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
-                                {% if page %}
-                                    {% if pagination.page == page %}    
-                                        <li class="page-item active">
-                                            <span class="page-link rounded-lg bg-primary border-primary text-white px-3 py-1">{{ page }}</span>
-                                        </li>  
-                                    {% else %}
-                                        <li class="page-item">
-                                            <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300 px-3 py-1" href="{{ url_for('customer.list', page=page, keyword=keyword) }}">
-                                                {{ page }}
-                                            </a>
-                                        </li>
-                                    {% endif %}
-                                {% else %}
-                                    <li class="page-item disabled">
-                                        <span class="page-link rounded-lg border-gray-300 bg-gray-100 text-gray-400 px-3 py-1">...</span>
-                                    </li>
-                                {% endif %}
-                            {% endfor %}
-                            
-                            {% if pagination.has_next %}
-                                <li class="page-item">
-                                    <a class="page-link rounded-lg border-gray-300 hover:border-primary hover:bg-white transition-all duration-300" href="{{ url_for('customer.list', page=pagination.next_num, keyword=keyword)}}">
-                                        <i class="fa fa-chevron-right"></i>
-                                    </a>
-                                </li>
-                            {% else %}
-                                <li class="page-item disabled">
-                                    <span class="page-link rounded-lg border-gray-300 bg-gray-100 text-gray-400">
-                                        <i class="fa fa-chevron-right"></i>
-                                    </span>
-                                </li>
-                            {% endif %}     
-                        </ul>
-                    </nav>
-                </div>
-            </div>
-        </div>
-    </div>
-    
     <style>
-        /* 自定义动画效果 */
+        /* 页面标题霓虹效果 */
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #b24bf3, #ff6b9d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            position: relative;
+        }
+        
+        .page-title-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #00d4ff, #667eea);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            box-shadow: 
+                0 0 25px rgba(0, 212, 255, 0.5),
+                0 0 50px rgba(102, 126, 234, 0.3),
+                inset 0 0 15px rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+        
+        .page-title-icon i {
+            font-size: 1.5rem;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+        
+        /* 搜索卡片 - 毛玻璃效果 */
+        .search-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 18px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.1),
+                0 0 20px rgba(102, 126, 234, 0.15);
+            position: relative;
+            overflow: hidden;
+            padding: 1.5rem;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .search-card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00d4ff, #b24bf3, #ff6b9d, #00d4ff, #b24bf3);
+            background-size: 400% 400%;
+            border-radius: 20px;
+            z-index: -1;
+            opacity: 0.3;
+            animation: neonBorderGlow 6s ease infinite;
+        }
+        
+        @keyframes neonBorderGlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* 输入框组样式 */
+        .search-input-group {
+            position: relative;
+        }
+        
+        .search-input-group .input-group-text {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 12px 0 0 12px;
+            color: #ffffff;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        .search-input-group .input-group-text i {
+            font-size: 1.1rem;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+        }
+        
+        .search-input-group:focus-within .input-group-text {
+            background: linear-gradient(135deg, #00d4ff, #667eea);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+        }
+        
+        .search-input-group .form-control {
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-left: none;
+            border-radius: 0 12px 12px 0;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #1e293b;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.95);
+        }
+        
+        .search-input-group .form-control:focus {
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.2), 0 0 25px rgba(0, 212, 255, 0.15);
+            background: #ffffff;
+            color: #0f172a;
+        }
+        
+        /* 数据卡片 - 呼吸光效边框 */
+        .data-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 20px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            box-shadow: 
+                0 10px 35px rgba(0, 0, 0, 0.1),
+                0 0 40px rgba(102, 126, 234, 0.2);
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .data-card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00d4ff, #b24bf3, #ff6b9d, #00d4ff, #b24bf3);
+            background-size: 400% 400%;
+            border-radius: 22px;
+            z-index: -1;
+            animation: neonBorderGlow 6s ease infinite, breatheGlow 3s ease-in-out infinite;
+            opacity: 0.7;
+        }
+        
+        @keyframes breatheGlow {
+            0%, 100% {
+                opacity: 0.5;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.01);
+            }
+        }
+        
+        /* 表格样式 */
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+        
+        .data-table thead {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .data-table thead::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shineEffect 3s infinite;
+        }
+        
+        @keyframes shineEffect {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        .data-table th {
+            padding: 1rem 1.25rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .data-table td {
+            padding: 0.875rem 1.25rem;
+            border-bottom: 1px solid rgba(102, 126, 234, 0.15);
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .data-table tbody tr {
+            transition: all 0.3s ease;
+        }
+        
+        .data-table tbody tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.15);
+        }
+        
+        /* 按钮样式 */
+        .btn-add {
+            background: linear-gradient(135deg, #00d4ff, #667eea, #b24bf3);
+            border: none;
+            border-radius: 12px;
+            color: #ffffff;
+            padding: 0.75rem 1.75rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 212, 255, 0.4), 0 0 30px rgba(178, 75, 243, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-add i {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+        }
+        
+        .btn-add::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn-add:hover::before {
+            left: 100%;
+        }
+        
+        .btn-add:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0, 212, 255, 0.6), 0 0 40px rgba(178, 75, 243, 0.4);
+            color: #ffffff;
+        }
+        
+        .btn-search {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 12px;
+            color: #ffffff;
+            padding: 0.75rem 1.75rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-search:hover {
+            background: linear-gradient(135deg, #764ba2, #667eea);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+            color: #ffffff;
+        }
+        
+        .btn-edit {
+            background: linear-gradient(135deg, #00d4ff, #667eea);
+            border: none;
+            border-radius: 8px;
+            color: #ffffff;
+            padding: 0.45rem 0.9rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 212, 255, 0.3);
+        }
+        
+        .btn-edit:hover {
+            background: linear-gradient(135deg, #667eea, #00d4ff);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.5);
+            color: #ffffff;
+        }
+        
+        .btn-delete {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+            border: none;
+            border-radius: 8px;
+            color: #ffffff;
+            padding: 0.45rem 0.9rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(255, 107, 107, 0.3);
+        }
+        
+        .btn-delete:hover {
+            background: linear-gradient(135deg, #ee5a6f, #ff6b6b);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.5);
+            color: #ffffff;
+        }
+        
+        /* 空数据提示 */
+        .empty-data {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #64748b;
+        }
+        
+        .empty-data i {
+            font-size: 3.5rem;
+            color: rgba(102, 126, 234, 0.3);
+            margin-bottom: 1.5rem;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 0.7;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+        }
+        
+        .empty-data p {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+        }
+        
+        /* 分页样式 */
+        .pagination-container {
+            background: rgba(255, 255, 255, 0.9);
+            border-top: 1px solid rgba(102, 126, 234, 0.15);
+            padding: 1.25rem;
+            border-radius: 0 0 20px 20px;
+        }
+        
+        .pagination-info {
+            font-size: 0.95rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+        
+        .pagination {
+            margin: 0;
+        }
+        
+        .pagination .page-item .page-link {
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 8px;
+            color: #667eea;
+            background: rgba(255, 255, 255, 0.9);
+            font-weight: 600;
+            transition: all 0.3s ease;
+            padding: 0.5rem 0.875rem;
+            margin: 0 0.25rem;
+        }
+        
+        .pagination .page-item .page-link:hover {
+            border-color: #00d4ff;
+            color: #00d4ff;
+            background: #ffffff;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .pagination .page-item.active .page-link {
+            background: linear-gradient(135deg, #00d4ff, #667eea);
+            border-color: transparent;
+            color: #ffffff;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+        }
+        
+        .pagination .page-item.disabled .page-link {
+            border-color: rgba(102, 126, 234, 0.1);
+            color: #94a3b8;
+            background: rgba(255, 255, 255, 0.7);
+        }
+        
+        /* 动画效果 */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -157,44 +411,48 @@
             }
         }
         
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-        
-        .card {
-            animation: fadeInUp 0.5s ease-out;
-        }
-        
-        h2 {
-            animation: slideIn 0.4s ease-out;
-        }
-        
         /* 响应式调整 */
         @media (max-width: 768px) {
-            .table-responsive {
+            .page-title {
+                font-size: 1.35rem;
+            }
+            
+            .page-title-icon {
+                width: 40px;
+                height: 40px;
+                margin-right: 10px;
+            }
+            
+            .page-title-icon i {
+                font-size: 1.2rem;
+            }
+            
+            .search-card {
+                padding: 1rem;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 0.75rem;
                 font-size: 0.875rem;
             }
             
-            .table th,
-            .table td {
-                padding: 0.75rem;
+            .btn-add,
+            .btn-search {
+                padding: 0.6rem 1.25rem;
+                font-size: 0.875rem;
             }
             
-            .btn {
+            .btn-edit,
+            .btn-delete {
+                padding: 0.35rem 0.75rem;
                 font-size: 0.75rem;
-                padding: 0.25rem 0.5rem;
             }
             
-            .flex.justify-between {
+            .pagination-container {
                 flex-direction: column;
                 gap: 1rem;
+                text-align: center;
             }
             
             .pagination {
@@ -202,4 +460,145 @@
             }
         }
     </style>
+
+    <div class="d-flex justify-content-between align-items-center mb-4 page-header">
+        <div class="d-flex align-items-center">
+            <div class="page-title-icon"><i class="fa fa-users"></i></div>
+            <h2 class="page-title mb-0">客户列表</h2>
+        </div>
+        <a href="{{ url_for('customer.edit', id=0) }}" class="btn btn-add">
+            <i class="fa fa-plus mr-2"></i>添加客户
+        </a>
+    </div>
+
+    <!--搜索表单-->
+    <div class="search-card mb-6">
+        <form action="{{ url_for('customer.list') }}" method="GET" class="row g-4">
+            <div class="col-md-8">
+                <div class="input-group search-input-group">
+                    <span class="input-group-text">
+                        <i class="fa fa-search"></i>
+                    </span>
+                    <input type="text" name="keyword" class="form-control" placeholder="客户名称/联系人/电话" value="{{ keyword }}">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-search w-100">
+                    <i class="fa fa-search mr-2"></i>搜索
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 客户表格 -->
+    <div class="data-card">
+        <div class="p-0">
+            <div class="table-responsive">
+                <table class="table data-table">
+                    <thead>
+                        <tr>
+                            <th class="text-center">客户名称</th>
+                            <th class="text-center">联系人</th>
+                            <th class="text-center">联系电话</th>
+                            <th class="text-center">地址</th>
+                            <th class="text-center">邮箱</th>
+                            <th class="text-center">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for customer in customers %}
+                            <tr>
+                                <td class="font-medium">{{ customer.name }}</td>
+                                <td class="text-center">{{ customer.contact_person or '-' }}</td>
+                                <td class="text-center">{{ customer.phone or '-' }}</td>
+                                <td>{{ customer.address or '-' }}</td>
+                                <td class="text-center">{{ customer.email or '-' }}</td>
+                                <td class="text-center">
+                                    <div class="flex justify-center space-x-2">
+                                        <a href="{{ url_for('customer.edit', id=customer.id) }}" class="btn btn-edit">
+                                            <i class="fa fa-edit mr-1"></i>编辑
+                                        </a>
+                                        <a href="{{ url_for('customer.delete', id=customer.id) }}" class="btn btn-delete" onclick="return confirm('确认删除?')">
+                                            <i class="fa fa-trash mr-1"></i>删除
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="empty-data">
+                                    <div class="flex flex-col items-center">
+                                        <i class="fa fa-users"></i>
+                                        <p>暂无客户数据</p>
+                                        <a href="{{ url_for('customer.edit', id=0) }}" class="btn btn-add mt-4">
+                                            <i class="fa fa-plus mr-2"></i>添加客户
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!--分页-->
+            <div class="pagination-container">
+                <div class="flex flex-wrap justify-between items-center gap-4">
+                    <p class="pagination-info">
+                        显示 {{ pagination.page * pagination.per_page - pagination.per_page + 1 }} 到 {{ pagination.page * pagination.per_page if pagination.page * pagination.per_page < pagination.total else pagination.total }} 条，共 {{ pagination.total }} 条
+                    </p>
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination">
+                            {% if pagination.has_prev %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('customer.list', page=pagination.prev_num, keyword=keyword) }}">
+                                        <i class="fa fa-chevron-left"></i>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">
+                                        <i class="fa fa-chevron-left"></i>
+                                    </span>
+                                </li>
+                            {% endif %}
+                            {% for page in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
+                                {% if page %}
+                                    {% if pagination.page == page %}    
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ page }}</span>
+                                        </li>  
+                                    {% else %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('customer.list', page=page, keyword=keyword) }}">
+                                                {{ page }}
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if pagination.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('customer.list', page=pagination.next_num, keyword=keyword)}}">
+                                        <i class="fa fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">
+                                        <i class="fa fa-chevron-right"></i>
+                                    </span>
+                                </li>
+                            {% endif %}     
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
