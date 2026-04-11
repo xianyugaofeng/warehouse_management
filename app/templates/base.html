@@ -569,14 +569,11 @@
                         {% if current_user.has_permission('report_view') %}
                             <div class="menu-header" data-target="report-stats">报表统计</div>
                             <div class="menu-content" id="report-stats">
-                                <a href="{{ url_for('report.top_products') }}" class="list-group-item list-group-item-action ml-3">
-                                    <i class="fa fa-line-chart text-primary me-2"></i>库存Top10商品
+                                <a href="{{ url_for('report.inventory_products') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-bar-chart text-primary me-2"></i>库存报表
                                 </a>
-                                <a href="{{ url_for('report.trend') }}" class="list-group-item list-group-item-action ml-3">
-                                    <i class="fa fa-area-chart text-success me-2"></i>近30天出入库趋势
-                                </a>
-                                <a href="{{ url_for('report.health') }}" class="list-group-item list-group-item-action ml-3">
-                                    <i class="fa fa-heartbeat text-info me-2"></i>库存健康度分析
+                                <a href="{{ url_for('report.dashboard') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-dashboard text-primary me-2"></i>综合报表
                                 </a>
                             </div>
                         {% endif %}

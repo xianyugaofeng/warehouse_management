@@ -11,36 +11,36 @@ from app.utils.auth import permission_required
 
 report_bp = Blueprint('report', __name__)
 
-# 库存Top10商品
-@report_bp.route('/top_products')
+# 库存商品列表
+@report_bp.route('/inventory_products')
 @permission_required('report_view')
 @login_required
-def top_products():
-    # 库存Top10商品(按数量排序)
-    top_products_result = db.session.query(
+def inventory_products():
+    # 库存所有商品(按数量排序)
+    inventory_products_result = db.session.query(
         Product.name, Product.code, db.func.sum(Inventory.quantity).label('total_quantity')
-    ).join(Inventory).group_by(Product.id).order_by(db.func.sum(Inventory.quantity).desc()).limit(10).all()
+    ).join(Inventory).group_by(Product.id).order_by(db.func.sum(Inventory.quantity).desc()).all()
     # 查询会返回一个包含元组的列表，每个元组包含产品名称、产品代码和该产品的总库存量
     # (name, code, total_quantity)
     
     # 将查询结果转换为字典列表，以便在模板中使用
-    top_products = []
-    for product in top_products_result:
-        top_products.append({
+    inventory_products = []
+    for product in inventory_products_result:
+        inventory_products.append({
             'name': product[0],
             'code': product[1],
             'total_quantity': float(product[2])
         })
 
-    return render_template('report/top_products.html',
-                           top_products=top_products)
+    return render_template('report/inventory_products.html',
+                           inventory_products=inventory_products)
 
-# 近30天出入库趋势
-@report_bp.route('/trend')
+# 综合报表（整合出入库趋势和库存健康度分析）
+@report_bp.route('/dashboard')
 @permission_required('report_view')
 @login_required
-def trend():
-    # 近30天出入库趋势（按日期分组）
+def dashboard():
+    # 1. 近30天出入库趋势数据
     end_date = datetime.now().date()
     start_date = (datetime.now() - timedelta(days=30)).date()
 
@@ -60,9 +60,8 @@ def trend():
                                 OutboundOrder.outbound_date <= end_date
     ).group_by(OutboundOrder.outbound_date).order_by(OutboundOrder.outbound_date).all()
 
-    # 格式化数据(适配Echart)
+    # 格式化出入库趋势数据(适配Echart)
     dates = [d.strftime('%Y-%m-%d') for d in [start_date + timedelta(days=i) for i in range(31)]]
-    # 从start_date开始遍历的后30天日期进行格式化
     inbound_data = [0] * 31
     outbound_data = [0] * 31
 
@@ -76,22 +75,7 @@ def trend():
         if 0 <= idx < 31:
             outbound_data[idx] = float(item.total)
 
-    return render_template('report/trend.html',
-                           dates=dates,
-                           inbound_data=inbound_data,
-                           outbound_data=outbound_data)
-
-# 库存健康度分析
-@report_bp.route('/health')
-@permission_required('report_view')
-@login_required
-def health():
-    # 计算库存健康度相关数据
-    # 1. 总库存
-    total_inventory = db.session.query(db.func.sum(Inventory.quantity)).scalar() or 0
-    total_inventory = float(total_inventory)
-    
-    # 2. 计算库存相关数据
+    # 2. 库存健康度分析数据
     # 总库存数量
     total_inventory = db.session.query(db.func.sum(Inventory.quantity)).scalar() or 0
     total_inventory = float(total_inventory)
@@ -107,10 +91,10 @@ def health():
     # 健康库存数量
     healthy_inventory = total_inventory - warning_inventory
     
-    # 3. 总商品数
+    # 总商品数
     total_product_count = Product.query.count()
     
-    # 4. 健康度评分（基于库存数量和预警比例）
+    # 健康度评分（基于库存数量和预警比例）
     if total_inventory > 0:
         # 计算预警库存比例
         warning_ratio = warning_inventory / total_inventory
@@ -130,11 +114,8 @@ def health():
     else:
         health_score = 0
     
-    # 5. 库存周转情况（简单计算）
+    # 库存周转情况（简单计算）
     # 近30天入库总量
-    end_date = datetime.now().date()
-    start_date = (datetime.now() - timedelta(days=30)).date()
-    
     inbound_total = db.session.query(db.func.sum(InboundItem.quantity)).join(
         InboundOrder
     ).filter(
@@ -152,7 +133,12 @@ def health():
     ).scalar() or 0
     outbound_total = float(outbound_total)
     
-    return render_template('report/health.html',
+    return render_template('report/dashboard.html',
+                           # 出入库趋势数据
+                           dates=dates,
+                           inbound_data=inbound_data,
+                           outbound_data=outbound_data,
+                           # 库存健康度数据
                            total_inventory=total_inventory,
                            healthy_inventory=healthy_inventory,
                            warning_inventory=warning_inventory,

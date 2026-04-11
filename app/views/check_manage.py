@@ -140,7 +140,7 @@ class CheckInventoryHelper:
                 result.check_result = 'equal'
         
         for result in all_results:
-            item = result.item
+            item = result.check_item
             inv = Inventory.query.filter_by(
                 product_id=item.product_id,
                 location_id=item.location_id

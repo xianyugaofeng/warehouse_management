@@ -38,7 +38,7 @@ class CheckInventoryItem(db.Model):
 
     product = db.relationship('Product')
     location = db.relationship('WarehouseLocation')
-    results = db.relationship('CheckInventoryResult', backref='item', lazy='dynamic', cascade='all, delete-orphan')
+    results = db.relationship('CheckInventoryResult', back_populates='check_item', lazy='dynamic', cascade='all, delete-orphan')
 
     def __repr__(self):
         product = self.product.name if self.product else '未知商品'
@@ -56,7 +56,7 @@ class CheckInventoryResult(db.Model):
     diff_quantity = db.Column(db.Integer, nullable=False)
     check_result = db.Column(db.String(16), nullable=False)
 
-    check_item = db.relationship('CheckInventoryItem', backref='item')  # 统一关联关系命名，与视图中使用一致
+    check_item = db.relationship('CheckInventoryItem', back_populates='results')  # 统一关联关系命名，与视图中使用一致
 
     def __repr__(self):
         return f'<CheckInventoryResult 差异: {self.diff_quantity} - {self.check_result}>'

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}库存Top10商品 - 仓库管理系统{% endblock %}
+{% block title %}库存商品列表 - 仓库管理系统{% endblock %}
 
 {% block js %}
 <!--EChart图片库-->
@@ -7,16 +7,16 @@
 <script>
     //确保 DOM 完全加载后再执行内部代码，避免因元素未渲染而无法获取图表容器
     $(document).ready(function() {
-        //初始化库存Top10商品柱状图
-        const top10Chart = echarts.init(document.getElementById('top10Chart'));
-        //处理Top10数据（提取商品名称和库存数量）
+        //初始化库存商品柱状图
+        const inventoryChart = echarts.init(document.getElementById('inventoryChart'));
+        //处理商品数据（提取商品名称和库存数量）
         //将后端传递的商品列表拆分为两个独立的 JavaScript 数组，分别用于图表 x 轴的商品名称和 y 轴的库存数量
-        const top10Names = {{ top_products|map(attribute='name')|list|tojson }};
-        const top10Quantities = {{ top_products|map(attribute='total_quantity')|list|tojson }};
+        const productNames = {{ inventory_products|map(attribute='name')|list|tojson }};
+        const productQuantities = {{ inventory_products|map(attribute='total_quantity')|list|tojson }};
 
-        const top10Option = {
+        const inventoryOption = {
             title: {
-                text: '库存Top10商品',
+                text: '库存商品列表',
                 left: 'center',
                 textStyle: {
                     fontSize: 16,
@@ -47,7 +47,7 @@
             },
             xAxis: {
                 type: 'category',
-                data: top10Names,
+                data: productNames,
                 axisLabel: {
                     rotate: 45,
                     fontSize: 11
@@ -81,13 +81,13 @@
                 {
                     name: '库存数量',
                     type: 'bar',
-                    data: top10Quantities,
+                    data: productQuantities,
                     itemStyle: {
                         color: function(params) {
                         // 渐变颜色（从蓝色到紫色）
                             const colorList = ['#007bff', '#6610f2', '#6f42c1', '#e83e8c', '#dc3545',
                                          '#fd7e14', '#ffc107', '#28a745', '#20c997', '#17a2b8'];
-                            return colorList[params.dataIndex];
+                            return colorList[params.dataIndex % colorList.length];
                         },
                         borderRadius: [4, 4, 0, 0]
                     },
@@ -108,11 +108,11 @@
                 }
             ]
         };
-        top10Chart.setOption(top10Option);
+        inventoryChart.setOption(inventoryOption);
 
-        //回调函数内调用 top10Chart.resize()
+        //回调函数内调用 inventoryChart.resize()
         window.addEventListener('resize', function() {
-            top10Chart.resize();
+            inventoryChart.resize();
         });
     });
 </script>
@@ -122,7 +122,7 @@
 <div class="row mb-6">
     <div class="col">
         <h2 class="text-2xl font-bold text-gray-800 flex items-center">
-            <i class="fa fa-bar-chart mr-3 text-primary"></i>库存Top10商品
+            <i class="fa fa-bar-chart mr-3 text-primary"></i>库存商品列表
         </h2>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
@@ -132,25 +132,25 @@
     </div>
 </div>
 
-<!--库存Top10商品卡片-->
+<!--库存商品卡片-->
 <div class="row">
     <div class="col-12">
         <div class="card shadow-sm rounded-xl overflow-hidden">
             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 font-semibold">库存Top10商品</h5>
+                <h5 class="mb-0 font-semibold">库存商品列表</h5>
                 <span class="badge bg-light text-primary rounded-full px-3 py-1">实时统计</span>
             </div>
             <div class="card-body p-6">
-                <!--Top10商品图表-->
-                <div id="top10Chart" style="width: 100%; height: 450px; margin-bottom: 30px;"></div>
+                <!--商品图表-->
+                <div id="inventoryChart" style="width: 100%; height: 450px; margin-bottom: 30px;"></div>
 
-                <!--Top10商品详情表格-->
+                <!--商品详情表格-->
                 <div class="table-responsive">
                     <table class="table table-hover table-bordered">
                         <!--Bootstrap 的悬停效果、边框和紧凑样式-->
                         <thead class="bg-gray-50">
                             <tr class="text-gray-700 border-b-2 border-gray-300">
-                                <th width="10%" class="py-3 px-4 border-r border-gray-200 font-semibold text-center">排名</th>
+                                <th width="10%" class="py-3 px-4 border-r border-gray-200 font-semibold text-center">序号</th>
                                 <th width="30%" class="py-3 px-4 border-r border-gray-200 font-semibold">商品名称</th>
                                 <th width="20%" class="py-3 px-4 border-r border-gray-200 font-semibold text-center">商品编码</th>
                                 <th width="20%" class="py-3 px-4 border-r border-gray-200 font-semibold text-center">库存总量(件)</th>
@@ -158,11 +158,11 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white">
-                            {% if top_products %}
-                                {% set total_stock = top_products|sum(attribute='total_quantity')|float %}
-                                <!--通过 top_products 列表（后端传入）计算所有商品的总库存 total_stock（使用 sum 过滤器）-->
-                                {% for item in top_products %}
-                                    <!--使用 loop.index 从1开始生成排名，遍历每个商品，显示名称、编码、库存量并计算该商品库存占总库存的百分比（保留两位小数）-->
+                            {% if inventory_products %}
+                                {% set total_stock = inventory_products|sum(attribute='total_quantity')|float %}
+                                <!--通过 inventory_products 列表（后端传入）计算所有商品的总库存 total_stock（使用 sum 过滤器）-->
+                                {% for item in inventory_products %}
+                                    <!--使用 loop.index 从1开始生成序号，遍历每个商品，显示名称、编码、库存量并计算该商品库存占总库存的百分比（保留两位小数）-->
                                     <tr class="transition-all duration-300 hover:bg-gray-50">
                                         <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200 text-center font-medium">{{ loop.index }}</td>
                                         <td class="py-3 px-4 border-r border-gray-200 border-b border-gray-200">{{ item.name }}</td>
@@ -232,7 +232,7 @@
                 padding: 0.75rem;
             }
             
-            #top10Chart {
+            #inventoryChart {
                 height: 350px !important;
             }
         }

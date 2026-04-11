@@ -20,6 +20,13 @@ use warehouse_db;
 """
 
 """
+python -m app.shells.information_shell
+python -m app.shells.product_shell
+python -m app.shells.inventory_shell
+python -m app.shells.transfer_shell
+python -m app.shells.check_shell
+"""
+"""
 # 查看表信息
 select * from permissions;
 select * from roles;

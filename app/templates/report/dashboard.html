@@ -1,0 +1,456 @@
+{% extends "base.html" %}
+{% block title %}综合报表 - 仓库管理系统{% endblock %}
+
+{% block js %}
+<!--EChart图片库-->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<script>
+    //确保 DOM 完全加载后再执行内部代码，避免因元素未渲染而无法获取图表容器
+    $(document).ready(function() {
+        // 1. 初始化出入库趋势图表
+        const trendChart = echarts.init(document.getElementById('trendChart'));
+        const trendOption = {
+            title: {
+                text: '近30天出入库趋势',
+                left: 'center',
+                textStyle: {
+                    fontSize: 16,
+                    fontWeight: 'bold',
+                    color: '#333'
+                }
+            },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'cross',
+                    label: {
+                        backgroundColor: '#6a7985'
+                    }
+                }
+            },
+            legend: {
+                data: ['入库', '出库'],
+                bottom: 10
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '15%',
+                containLabel: true
+            },
+            xAxis: [
+                {
+                    type: 'category',
+                    boundaryGap: false,
+                    data: {{ dates|tojson }},
+                    axisLabel: {
+                        rotate: 45,
+                        fontSize: 11
+                    }
+                }
+            ],
+            yAxis: [
+                {
+                    type: 'value',
+                    name: '数量',
+                    nameTextStyle: {
+                        fontSize: 12
+                    }
+                }
+            ],
+            series: [
+                {
+                    name: '入库',
+                    type: 'line',
+                    stack: 'Total',
+                    areaStyle: {
+                        color: 'rgba(45, 140, 240, 0.3)'
+                    },
+                    emphasis: {
+                        focus: 'series'
+                    },
+                    data: {{ inbound_data|tojson }},
+                    smooth: true,
+                    lineStyle: {
+                        width: 2,
+                        color: '#2d8cf0'
+                    },
+                    itemStyle: {
+                        color: '#2d8cf0'
+                    }
+                },
+                {
+                    name: '出库',
+                    type: 'line',
+                    stack: 'Total',
+                    areaStyle: {
+                        color: 'rgba(230, 81, 81, 0.3)'
+                    },
+                    emphasis: {
+                        focus: 'series'
+                    },
+                    data: {{ outbound_data|tojson }},
+                    smooth: true,
+                    lineStyle: {
+                        width: 2,
+                        color: '#e65151'
+                    },
+                    itemStyle: {
+                        color: '#e65151'
+                    }
+                }
+            ]
+        };
+        trendChart.setOption(trendOption);
+
+        // 2. 初始化库存健康度图表
+        const healthChart = echarts.init(document.getElementById('healthChart'));
+        const healthOption = {
+            title: {
+                text: '库存健康度分析',
+                left: 'center',
+                textStyle: {
+                    fontSize: 16,
+                    fontWeight: 'bold',
+                    color: '#333'
+                }
+            },
+            tooltip: {
+                trigger: 'item'
+            },
+            legend: {
+                top: 'bottom'
+            },
+            series: [
+                {
+                    name: '库存状态',
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    avoidLabelOverlap: false,
+                    itemStyle: {
+                        borderRadius: 10,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    },
+                    label: {
+                        show: false,
+                        position: 'center'
+                    },
+                    emphasis: {
+                        label: {
+                            show: true,
+                            fontSize: 20,
+                            fontWeight: 'bold'
+                        }
+                    },
+                    labelLine: {
+                        show: false
+                    },
+                    data: [
+                        { value: {{ healthy_inventory|int }}, name: '健康库存', itemStyle: { color: '#52c41a' } },
+                        { value: {{ warning_inventory|int }}, name: '预警库存', itemStyle: { color: '#faad14' } }
+                    ]
+                }
+            ]
+        };
+        healthChart.setOption(healthOption);
+
+        // 3. 初始化健康度评分仪表盘
+        const scoreChart = echarts.init(document.getElementById('scoreChart'));
+        const scoreOption = {
+            title: {
+                text: '库存健康度评分',
+                left: 'center',
+                textStyle: {
+                    fontSize: 14,
+                    fontWeight: 'bold',
+                    color: '#333'
+                }
+            },
+            series: [
+                {
+                    name: '健康度',
+                    type: 'gauge',
+                    startAngle: 180,
+                    endAngle: 0,
+                    min: 0,
+                    max: 100,
+                    splitNumber: 8,
+                    axisLine: {
+                        lineStyle: {
+                            width: 30,
+                            color: [
+                                [0.3, '#ff4d4f'],
+                                [0.7, '#faad14'],
+                                [1, '#52c41a']
+                            ]
+                        }
+                    },
+                    pointer: {
+                        icon: 'path://M12.8,0.7l12,40.1H0.7L12.8,0.7z',
+                        length: '12%',
+                        width: 20,
+                        offsetCenter: [0, '-60%'],
+                        itemStyle: {
+                            color: 'auto'
+                        }
+                    },
+                    axisTick: {
+                        length: 12,
+                        lineStyle: {
+                            color: 'auto',
+                            width: 2
+                        }
+                    },
+                    splitLine: {
+                        length: 20,
+                        lineStyle: {
+                            color: 'auto',
+                            width: 5
+                        }
+                    },
+                    axisLabel: {
+                        color: '#464646',
+                        fontSize: 12,
+                        distance: -60,
+                        formatter: function (value) {
+                            if (value === 0 || value === 100) {
+                                return value;
+                            }
+                            return '';
+                        }
+                    },
+                    title: {
+                        offsetCenter: [0, '-10%'],
+                        fontSize: 20
+                    },
+                    detail: {
+                        fontSize: 30,
+                        offsetCenter: [0, '-35%'],
+                        valueAnimation: true,
+                        formatter: function (value) {
+                            return Math.round(value);
+                        },
+                        color: 'auto'
+                    },
+                    data: [
+                        {
+                            value: {{ health_score|round|int }},
+                            name: '健康度'
+                        }
+                    ]
+                }
+            ]
+        };
+        scoreChart.setOption(scoreOption);
+
+        // 响应式调整
+        window.addEventListener('resize', function() {
+            trendChart.resize();
+            healthChart.resize();
+            scoreChart.resize();
+        });
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-6">
+    <div class="col">
+        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+            <i class="fa fa-dashboard mr-3 text-primary"></i>综合报表
+        </h2>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item active" aria-current="page">库存分析</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- 统计卡片 -->
+<div class="row mb-6">
+    <div class="col-md-3">
+        <div class="card shadow-sm rounded-xl overflow-hidden">
+            <div class="card-body p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 font-medium">总库存</p>
+                        <h3 class="text-2xl font-bold text-gray-800">{{ total_inventory|int }} 件</h3>
+                    </div>
+                    <div class="bg-blue-100 p-3 rounded-full">
+                        <i class="fa fa-cubes text-primary text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm rounded-xl overflow-hidden">
+            <div class="card-body p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 font-medium">健康库存</p>
+                        <h3 class="text-2xl font-bold text-green-600">{{ healthy_inventory|int }} 件</h3>
+                    </div>
+                    <div class="bg-green-100 p-3 rounded-full">
+                        <i class="fa fa-heartbeat text-green-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm rounded-xl overflow-hidden">
+            <div class="card-body p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 font-medium">预警库存</p>
+                        <h3 class="text-2xl font-bold text-yellow-600">{{ warning_inventory|int }} 件</h3>
+                    </div>
+                    <div class="bg-yellow-100 p-3 rounded-full">
+                        <i class="fa fa-exclamation-triangle text-yellow-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm rounded-xl overflow-hidden">
+            <div class="card-body p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 font-medium">总商品数</p>
+                        <h3 class="text-2xl font-bold text-gray-800">{{ total_product_count }} 种</h3>
+                    </div>
+                    <div class="bg-purple-100 p-3 rounded-full">
+                        <i class="fa fa-tags text-purple-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 出入库趋势图表 -->
+<div class="row mb-6">
+    <div class="col-12">
+        <div class="card shadow-sm rounded-xl overflow-hidden">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 font-semibold">近30天出入库趋势</h5>
+                <span class="badge bg-light text-primary rounded-full px-3 py-1">实时统计</span>
+            </div>
+            <div class="card-body p-6">
+                <div id="trendChart" style="width: 100%; height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 库存健康度分析 -->
+<div class="row mb-6">
+    <div class="col-md-6">
+        <div class="card shadow-sm rounded-xl overflow-hidden">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 font-semibold">库存状态分布</h5>
+                <span class="badge bg-light text-primary rounded-full px-3 py-1">实时统计</span>
+            </div>
+            <div class="card-body p-6">
+                <div id="healthChart" style="width: 100%; height: 350px;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm rounded-xl overflow-hidden">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 font-semibold">库存健康度评分</h5>
+                <span class="badge bg-light text-primary rounded-full px-3 py-1">实时统计</span>
+            </div>
+            <div class="card-body p-6">
+                <div id="scoreChart" style="width: 100%; height: 350px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 库存周转情况 -->
+<div class="row mb-6">
+    <div class="col-12">
+        <div class="card shadow-sm rounded-xl overflow-hidden">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 font-semibold">近30天库存周转情况</h5>
+                <span class="badge bg-light text-primary rounded-full px-3 py-1">实时统计</span>
+            </div>
+            <div class="card-body p-6">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="bg-blue-50 p-6 rounded-lg">
+                            <h6 class="text-blue-800 font-medium mb-4">入库情况</h6>
+                            <div class="flex items-end">
+                                <span class="text-3xl font-bold text-blue-600">{{ inbound_total|int }}</span>
+                                <span class="text-blue-600 ml-2 mb-1">件</span>
+                            </div>
+                            <p class="text-blue-600 mt-2">近30天入库总量</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="bg-red-50 p-6 rounded-lg">
+                            <h6 class="text-red-800 font-medium mb-4">出库情况</h6>
+                            <div class="flex items-end">
+                                <span class="text-3xl font-bold text-red-600">{{ outbound_total|int }}</span>
+                                <span class="text-red-600 ml-2 mb-1">件</span>
+                            </div>
+                            <p class="text-red-600 mt-2">近30天出库总量</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* 自定义动画效果 */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    .card {
+        animation: fadeInUp 0.5s ease-out;
+    }
+    
+    h2 {
+        animation: slideIn 0.4s ease-out;
+    }
+    
+    /* 响应式调整 */
+    @media (max-width: 768px) {
+        #trendChart {
+            height: 300px !important;
+        }
+        
+        #healthChart,
+        #scoreChart {
+            height: 300px !important;
+        }
+    }
+</style>
+{% endblock %}

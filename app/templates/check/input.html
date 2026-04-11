@@ -63,11 +63,11 @@
                         <tr>
                             <td class="align-middle">{{ loop.index }}</td>
                             <td class="align-middle">
-                                {{ result.item.product.name if result.item.product else '-' }}
-                                <br><small class="text-muted">{{ result.item.product.code if result.item.product else '' }}</small>
+                                {{ result.check_item.product.name if result.check_item.product else '-' }}
+                                <br><small class="text-muted">{{ result.check_item.product.code if result.check_item.product else '' }}</small>
                             </td>
                             <td class="align-middle">
-                                {{ result.item.location.code if result.item.location else '-' }}
+                                {{ result.check_item.location.code if result.check_item.location else '-' }}
                             </td>
                             <td class="align-middle">
                                 <span class="badge bg-primary">{{ result.book_quantity }}</span>
