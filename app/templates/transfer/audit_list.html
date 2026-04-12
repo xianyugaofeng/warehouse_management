@@ -387,6 +387,22 @@
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
             overflow: hidden;
+            position: relative;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00d4ff, #b24bf3, #ff6b9d, #00d4ff, #b24bf3);
+            background-size: 400% 400%;
+            border-radius: 18px;
+            z-index: -1;
+            animation: neonBorderGlow 6s ease infinite, breatheGlow 3s ease-in-out infinite;
+            opacity: 0.7;
         }
         
         .stat-card:hover {

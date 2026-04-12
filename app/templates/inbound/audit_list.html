@@ -402,6 +402,73 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
         
+        /* 统计卡片样式 */
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 16px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00d4ff, #b24bf3, #ff6b9d, #00d4ff, #b24bf3);
+            background-size: 400% 400%;
+            border-radius: 18px;
+            z-index: -1;
+            animation: neonBorderGlow 6s ease infinite, breatheGlow 3s ease-in-out infinite;
+            opacity: 0.7;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+        }
+        
+        .stat-card .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        
+        .stat-card .stat-icon.warning {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
+        }
+        
+        .stat-card .stat-icon.success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        }
+        
+        .stat-card .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        
+        .stat-card .stat-label {
+            font-size: 0.875rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+        
         /* 动画效果 */
         @keyframes fadeInUp {
             from {
@@ -477,29 +544,33 @@
     </div>
 
     <!--统计卡片-->
-    <div class="row mb-6">
-        <div class="col-md-3">
-            <div class="data-card p-4">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0">
-                        <i class="fa fa-clock text-warning text-3xl"></i>
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                        <div class="text-sm text-gray-600">待审核</div>
-                        <div class="text-2xl font-bold text-gray-800">{{ draft_count }}</div>
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon warning me-3">
+                            <i class="fa fa-clock"></i>
+                        </div>
+                        <div>
+                            <div class="stat-label">待审核</div>
+                            <div class="stat-value">{{ draft_count }}</div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="data-card p-4">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0">
-                        <i class="fa fa-check text-success text-3xl"></i>
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                        <div class="text-sm text-gray-600">已通过</div>
-                        <div class="text-2xl font-bold text-gray-800">{{ completed_count }}</div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon success me-3">
+                            <i class="fa fa-check"></i>
+                        </div>
+                        <div>
+                            <div class="stat-label">已通过</div>
+                            <div class="stat-value">{{ completed_count }}</div>
+                        </div>
                     </div>
                 </div>
             </div>
