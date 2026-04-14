@@ -71,31 +71,34 @@ class CheckInventoryHelper:
             check_order: 盘点单对象
             product_ids: 产品ID列表
             location_ids: 库位ID列表
-            book_quantities: 账面数量列表
+            book_quantities: 账面数量列表（不再使用，会自动统计）
             check_no: 盘点单号
         """
         for i in range(len(product_ids)):
             product_id = int(product_ids[i])
             location_id = int(location_ids[i])
-            book_quantity = int(book_quantities[i]) if book_quantities[i].isdigit() else 0
             
-            if book_quantity < 0:
-                flash('账面数量不能为负数', 'danger')
-                raise ValueError('账面数量不能为负数')
-            
-            item = CheckInventoryItem(
-                check_inventory_id=check_order.id,
-                product_id=product_id,
-                location_id=location_id,
-                book_quantity=book_quantity
-            )
-            db.session.add(item)
-            
-            inv = Inventory.query.filter_by(
+            # 自动统计该库位上该商品的所有库存（包括不同批次）
+            inventories = Inventory.query.filter_by(
                 product_id=product_id,
                 location_id=location_id
-            ).first()
-            if inv:
+            ).filter(Inventory.quantity > 0).all()
+            
+            if not inventories:
+                flash(f'库位 {location_id} 上没有商品 {product_id} 的库存', 'warning')
+                continue
+            
+            # 为每个批次创建盘点明细
+            for inv in inventories:
+                item = CheckInventoryItem(
+                    check_inventory_id=check_order.id,
+                    product_id=product_id,
+                    location_id=location_id,
+                    book_quantity=inv.quantity
+                )
+                db.session.add(item)
+                
+                # 冻结库存
                 inv.stock_status = 'frozen'
                 inv.status_remark = f'盘点冻结 - {check_no}'
         

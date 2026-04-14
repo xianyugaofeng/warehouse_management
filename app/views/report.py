@@ -94,6 +94,25 @@ def dashboard():
     # 总商品数
     total_product_count = Product.query.count()
     
+    # 库存状态分布数据
+    # 正常状态库存
+    normal_inventory = db.session.query(db.func.sum(Inventory.quantity)).filter(
+        Inventory.stock_status == 'normal'
+    ).scalar() or 0
+    normal_inventory = float(normal_inventory)
+    
+    # 损坏状态库存
+    damaged_inventory = db.session.query(db.func.sum(Inventory.quantity)).filter(
+        Inventory.stock_status == 'damaged'
+    ).scalar() or 0
+    damaged_inventory = float(damaged_inventory)
+    
+    # 冻结状态库存
+    frozen_inventory = db.session.query(db.func.sum(Inventory.quantity)).filter(
+        Inventory.stock_status == 'frozen'
+    ).scalar() or 0
+    frozen_inventory = float(frozen_inventory)
+    
     # 健康度评分（基于库存数量和预警比例）
     if total_inventory > 0:
         # 计算预警库存比例
@@ -144,6 +163,10 @@ def dashboard():
                            warning_inventory=warning_inventory,
                            total_product_count=total_product_count,
                            health_score=health_score,
+                           # 库存状态分布数据
+                           normal_inventory=normal_inventory,
+                           damaged_inventory=damaged_inventory,
+                           frozen_inventory=frozen_inventory,
                            inbound_total=inbound_total,
                            outbound_total=outbound_total)
 

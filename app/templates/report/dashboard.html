@@ -103,11 +103,11 @@
         };
         trendChart.setOption(trendOption);
 
-        // 2. 初始化库存健康度图表
+        // 2. 初始化库存状态分布图表
         const healthChart = echarts.init(document.getElementById('healthChart'));
         const healthOption = {
             title: {
-                text: '库存健康度分析',
+                text: '库存状态分布',
                 left: 'center',
                 textStyle: {
                     fontSize: 16,
@@ -147,8 +147,9 @@
                         show: false
                     },
                     data: [
-                        { value: {{ healthy_inventory|int }}, name: '健康库存', itemStyle: { color: '#52c41a' } },
-                        { value: {{ warning_inventory|int }}, name: '预警库存', itemStyle: { color: '#faad14' } }
+                        { value: {{ normal_inventory|int }}, name: '正常库存', itemStyle: { color: '#52c41a' } },
+                        { value: {{ damaged_inventory|int }}, name: '损坏库存', itemStyle: { color: '#ff4d4f' } },
+                        { value: {{ frozen_inventory|int }}, name: '冻结库存', itemStyle: { color: '#1890ff' } }
                     ]
                 }
             ]
