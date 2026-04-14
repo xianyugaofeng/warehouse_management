@@ -17,6 +17,7 @@ from app.models.product import Product, Category
 from app.models.inventory import WarehouseLocation, Inventory
 from app.models.user import User
 from app.utils.helpers import generate_check_no
+from app.views.check_manage import CheckInventoryHelper
 
 
 def init_check_inventories():
@@ -49,6 +50,9 @@ def init_check_inventories():
             print('盘点单已存在')
             return
         
+        # 创建辅助函数实例
+        helper = CheckInventoryHelper()
+        
         # 1. 创建已完成的盘点单
         check_no = generate_check_no()
         completed_check = CheckInventory(
@@ -61,31 +65,29 @@ def init_check_inventories():
         db.session.add(completed_check)
         db.session.flush()
         
-        # 添加盘点明细和结果
-        for i, product in enumerate(products[:3]):
-            # 获取商品库存
+        # 获取前3个商品的库存
+        inventories = []
+        for product in products[:3]:
             inventory = Inventory.query.filter_by(product_id=product.id).first()
             if inventory:
-                # 添加盘点明细
-                item = CheckInventoryItem(
-                    check_inventory_id=completed_check.id,
-                    product_id=product.id,
-                    location_id=inventory.location_id,
-                    book_quantity=inventory.quantity
-                )
-                db.session.add(item)
-                db.session.flush()
-                
-                # 添加盘点结果（假设实际数量与账面数量一致）
-                result = CheckInventoryResult(
-                    check_inventory_id=completed_check.id,
-                    check_item_id=item.id,
-                    book_quantity=inventory.quantity,
-                    actual_quantity=inventory.quantity,
-                    diff_quantity=0,
-                    check_result='equal'
-                )
-                db.session.add(result)
+                inventories.append(inventory)
+        
+        if inventories:
+            # 使用辅助函数添加库存明细并冻结库存
+            helper._add_inventory_items(completed_check, inventories, check_no)
+            # 创建盘点结果记录
+            helper._create_check_results(completed_check)
+            db.session.flush()
+            
+            # 添加盘点结果（假设实际数量与账面数量一致）
+            for result in completed_check.results.all():
+                result.actual_quantity = result.book_quantity
+                result.diff_quantity = 0
+                result.check_result = 'equal'
+                result.check_time = datetime.utcnow()
+            
+            # 处理盘点结果
+            helper._process_check_results(completed_check, completed_check.results.all())
         
         # 2. 创建待录入的盘点单
         check_no = generate_check_no()
@@ -99,35 +101,18 @@ def init_check_inventories():
         db.session.add(pending_check)
         db.session.flush()
         
-        # 添加盘点明细
-        for i, product in enumerate(products[3:6]):
-            # 获取商品库存
+        # 获取接下来3个商品的库存
+        inventories = []
+        for product in products[3:6]:
             inventory = Inventory.query.filter_by(product_id=product.id).first()
             if inventory:
-                # 添加盘点明细
-                item = CheckInventoryItem(
-                    check_inventory_id=pending_check.id,
-                    product_id=product.id,
-                    location_id=inventory.location_id,
-                    book_quantity=inventory.quantity
-                )
-                db.session.add(item)
-                db.session.flush()
-                
-                # 添加盘点结果（初始状态）
-                result = CheckInventoryResult(
-                    check_inventory_id=pending_check.id,
-                    check_item_id=item.id,
-                    book_quantity=inventory.quantity,
-                    actual_quantity=None,
-                    diff_quantity=0,
-                    check_result='pending'
-                )
-                db.session.add(result)
-                
-                # 冻结库存
-                inventory.stock_status = 'frozen'
-                inventory.status_remark = f'盘点冻结 - {check_no}'
+                inventories.append(inventory)
+        
+        if inventories:
+            # 使用辅助函数添加库存明细并冻结库存
+            helper._add_inventory_items(pending_check, inventories, check_no)
+            # 创建盘点结果记录
+            helper._create_check_results(pending_check)
         
         # 3. 创建已取消的盘点单
         check_no = generate_check_no()
@@ -141,31 +126,28 @@ def init_check_inventories():
         db.session.add(canceled_check)
         db.session.flush()
         
-        # 添加盘点明细
-        for i, product in enumerate(products[6:8]):
-            # 获取商品库存
+        # 获取接下来2个商品的库存
+        inventories = []
+        for product in products[6:8]:
             inventory = Inventory.query.filter_by(product_id=product.id).first()
             if inventory:
-                # 添加盘点明细
-                item = CheckInventoryItem(
-                    check_inventory_id=canceled_check.id,
-                    product_id=product.id,
-                    location_id=inventory.location_id,
-                    book_quantity=inventory.quantity
-                )
-                db.session.add(item)
-                db.session.flush()
-                
-                # 添加盘点结果（初始状态）
-                result = CheckInventoryResult(
-                    check_inventory_id=canceled_check.id,
-                    check_item_id=item.id,
-                    book_quantity=inventory.quantity,
-                    actual_quantity=None,
-                    diff_quantity=0,
-                    check_result='pending'
-                )
-                db.session.add(result)
+                inventories.append(inventory)
+        
+        if inventories:
+            # 使用辅助函数添加库存明细
+            helper._add_inventory_items(canceled_check, inventories, check_no)
+            # 创建盘点结果记录
+            helper._create_check_results(canceled_check)
+            
+            # 解冻库存（因为是已取消的盘点单）
+            for item in canceled_check.items:
+                inv = Inventory.query.filter_by(
+                    product_id=item.product_id,
+                    location_id=item.location_id
+                ).first()
+                if inv and inv.stock_status == 'frozen':
+                    inv.stock_status = 'normal'
+                    inv.status_remark = None
         
         db.session.commit()
         print('盘点单样例添加成功（包含1个已完成、1个待录入、1个已取消的盘点单）')
