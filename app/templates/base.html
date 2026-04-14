@@ -824,26 +824,23 @@
                 <div class="sidebar">  <!--使用自定义类而非固定列宽-->
                     <div class="list-group list-group-flush mt-2">  <!--Bootstrap 列表组 无边框样式list-group-flush mt-2：上边距 0.5rem-->
                         <!-- 基本信息管理 -->
-                        {% if current_user.has_permission('product_manage') or current_user.has_permission('user_manage') %}
+                        {% if current_user.has_permission('information_manage') %}
                             <div class="menu-header" data-target="basic-info">基本信息管理</div>
                             <div class="menu-content" id="basic-info">
-                                {% if current_user.has_permission('information_manage') %}
-                                    <a href="{{ url_for('product.list') }}" class="list-group-item list-group-item-action ml-3">
-                                        <i class="fa fa-shopping-bag text-success me-2"></i>商品管理
-                                    </a>
-                                    <a href="{{ url_for('category.category_list') }}" class="list-group-item list-group-item-action ml-3">
-                                        <i class="fa fa-tags text-primary me-2"></i>分类管理
-                                    </a>
-                                    <a href="{{ url_for('supplier.list') }}" class="list-group-item list-group-item-action ml-3">
-                                        <i class="fa fa-truck text-info me-2"></i>供应商管理
-                                    </a>
-                                    <a href="{{ url_for('customer.list') }}" class="list-group-item list-group-item-action ml-3">
-                                        <i class="fa fa-user-circle text-warning me-2"></i>客户管理
-                                    </a>
-                                {% endif %}
+                                <a href="{{ url_for('product.list') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-shopping-bag text-success me-2"></i>商品管理
+                                </a>
+                                <a href="{{ url_for('category.category_list') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-tags text-primary me-2"></i>分类管理
+                                </a>
+                                <a href="{{ url_for('supplier.list') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-truck text-info me-2"></i>供应商管理
+                                </a>
+                                <a href="{{ url_for('customer.list') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-user-circle text-warning me-2"></i>客户管理
+                                </a>
                             </div>
                         {% endif %}
-                        
                         <!-- 入库管理 -->
                         {% if current_user.has_permission('inbound_manage') %}
                             <div class="menu-header" data-target="inbound-manage">入库管理</div>
@@ -912,6 +909,9 @@
                         {% if current_user.has_permission('inventory_manage') %}
                             <div class="menu-header" data-target="inventory-manage">库存管理</div>
                             <div class="menu-content" id="inventory-manage">
+                                <a href="{{ url_for('location.list') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-map-marker text-success me-2"></i>库位管理
+                                </a>
                                 <a href="{{ url_for('inventory.warning') }}" class="list-group-item list-group-item-action ml-3">
                                     <i class="fa fa-exclamation-triangle text-warning me-2"></i>库存预警
                                 </a>

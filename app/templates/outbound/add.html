@@ -467,6 +467,19 @@
             <!--出库单基本信息-->
             <div class="row g-4 mb-6">
                 <div class="col-md-6">
+                    <label for="outbound_type" class="form-label">出库类型<span class="text-danger">*</span></label>
+                    <div class="input-group form-input-group">
+                        <span class="input-group-text">
+                            <i class="fa fa-tags"></i>
+                        </span>
+                        <select class="form-select" id="outbound_type" name="outbound_type" required>
+                            <option value="delivery">发货出库</option>
+                            <option value="return">退购出库</option>
+                            <option value="scrap">报废出库</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
                     <label for="customer_id" class="form-label">客户<span class="text-danger">*</span></label>
                     <div class="input-group form-input-group">
                         <span class="input-group-text">
