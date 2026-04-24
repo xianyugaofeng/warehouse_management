@@ -167,7 +167,12 @@ def audit(id):
         if audit_result == 'approved':
             # 审核通过：更新库存
             for item in order.items:
-                update_inventory(item.product_id, item.location_id, item.batch_no, item.quantity, is_bound=True)
+                try:
+                    update_inventory(item.product_id, item.location_id, item.batch_no, item.quantity, is_bound=True)
+                except ValueError as e:
+                    # 捕获库位冲突等错误
+                    flash(f'入库失败: {str(e)}', 'danger')
+                    return redirect(url_for('inbound.detail', id=id))
             
             # 更新入库单状态为已完成
             order.status = 'completed'
@@ -190,7 +195,7 @@ def audit(id):
             
     except Exception as e:
         db.session.rollback()
-        flash(f'审核失败:{str(e)}', 'danger')
+        flash(f'审核失败: {str(e)}', 'danger')
         return redirect(url_for('inbound.detail', id=id))
 
 
