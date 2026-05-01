@@ -8,8 +8,6 @@ flask db migrate -m "initial migration"
 
 flask db upgrade
 
-flask shell
-
 """
 
 """
@@ -197,9 +195,11 @@ def init_roles():
     # 定义角色权限
     roles = {
         '管理员': ['information_manage', 'inventory_manage', 'inbound_manage',
-                  'outbound_manage', 'user_manage', 'report_view'],
-        '仓库管理员': ['information_manage', 'inventory_manage', 'inbound_manage', 'outbound_manage', 'report_view'],
-        '职员' : ['information_manage', 'report_view']
+                  'outbound_manage', 'user_manage', 'report_view', 'audit_manage'],
+        '仓库管理员': ['information_manage', 'inventory_manage', 'inbound_manage',
+                     'outbound_manage', 'report_view', 'audit_manage'],
+        '普通用户': ['information_manage', 'report_view'],
+        '出入库操作员': ['information_manage', 'report_view', 'inbound_manage', 'outbound_manage']
     }
     
     for role_name, permissions in roles.items():
@@ -243,6 +243,53 @@ def init_admin():
         db.session.commit()
         print('管理员账号初始化完成')
 
+    tandingqi = User.query.filter_by(username='tandingqi').first()
+    if not tandingqi:
+        tandingqi = User(
+            username='tandingqi',
+            real_name='谭定奇',
+            email='3423319835@qq.com',
+            phone='17692967595'
+        )
+
+        tandingqi.set_password('123456')
+        inventory_adminstrator = Role.query.filter_by(name='仓库管理员').first()
+        tandingqi.roles.append(inventory_adminstrator)
+        db.session.add(tandingqi)
+        db.session.commit()
+        print('仓库管理员账号初始化完成')
+
+    wuwangxi = User.query.filter_by(username='wuwangxi').first()
+    if not wuwangxi:
+        wuwangxi = User(
+            username='wuwangxi',
+            real_name='吴旺禧',
+            email='1796019029@qq.com',
+            phone='18386710261'
+        )
+
+        wuwangxi.set_password('123456')
+        inventory_operator = Role.query.filter_by(name='出入库操作员').first()
+        wuwangxi.roles.append(inventory_operator)
+        db.session.add(wuwangxi)
+        db.session.commit()
+        print('出入库操作员账号初始化完成')
+
+    wuwangwang = User.query.filter_by(username='wuwangwang').first()
+    if not wuwangwang:
+        wuwangwang = User(
+            username='wuwangwang',
+            real_name='吴旺旺',
+            email='wuwangwang2026@163.com',
+            phone='13658927410'
+        )
+
+        wuwangwang.set_password('123456')
+        common_user = Role.query.filter_by(name='普通用户').first()
+        wuwangwang.roles.append(common_user)
+        db.session.add(wuwangwang)
+        db.session.commit()
+        print('普通用户账号初始化完成')
 
 def main():
     """主函数"""

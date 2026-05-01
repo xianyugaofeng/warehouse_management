@@ -842,36 +842,39 @@
                             </div>
                         {% endif %}
                         <!-- 入库管理 -->
-                        {% if current_user.has_permission('inbound_manage') %}
-                            <div class="menu-header" data-target="inbound-manage">入库管理</div>
-                            <div class="menu-content" id="inbound-manage">
+                        <div class="menu-header" data-target="inbound-manage">入库管理</div>
+                        <div class="menu-content" id="inbound-manage">
+                            {% if current_user.has_permission('inbound_manage') %}
                                 <a href="{{ url_for('inbound.list') }}" class="list-group-item list-group-item-action ml-3">
                                     <i class="fa fa-file-text-o text-primary me-2"></i>入库单管理
-                                </a>
-                                <a href="{{ url_for('inbound.audit_list') }}" class="list-group-item list-group-item-action ml-3">
-                                    <i class="fa fa-check-circle text-success me-2"></i>入库单审核
                                 </a>
                                 <a href="{{ url_for('inbound.items') }}" class="list-group-item list-group-item-action ml-3">
                                     <i class="fa fa-search text-info me-2"></i>入库明细查询
                                 </a>
-                            </div>
-                        {% endif %}
-                        
+                            {% endif %}
+                            {% if current_user.has_permission('audit_manage') %}
+                                <a href="{{ url_for('inbound.audit_list') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-check-circle text-success me-2"></i>入库单审核
+                                </a>
+                            {% endif %}
+                        </div>
                         <!-- 出库管理 -->
-                        {% if current_user.has_permission('outbound_manage') %}
-                            <div class="menu-header" data-target="outbound-manage">出库管理</div>
-                            <div class="menu-content" id="outbound-manage">
+                        <div class="menu-header" data-target="outbound-manage">出库管理</div>
+                        <div class="menu-content" id="outbound-manage">
+                            {% if current_user.has_permission('outbound_manage') %}
                                 <a href="{{ url_for('outbound.list') }}" class="list-group-item list-group-item-action ml-3">
                                     <i class="fa fa-file-text-o text-primary me-2"></i>出库单管理
-                                </a>
-                                <a href="{{ url_for('outbound.audit_list') }}" class="list-group-item list-group-item-action ml-3">
-                                    <i class="fa fa-check-circle text-success me-2"></i>出库单审核
                                 </a>
                                 <a href="{{ url_for('outbound.items') }}" class="list-group-item list-group-item-action ml-3">
                                     <i class="fa fa-search text-info me-2"></i>出库明细查询
                                 </a>
-                            </div>
-                        {% endif %}
+                            {% endif %}
+                            {% if current_user.has_permission('audit_manage') %}
+                                <a href="{{ url_for('outbound.audit_list') }}" class="list-group-item list-group-item-action ml-3">
+                                    <i class="fa fa-check-circle text-success me-2"></i>出库单审核
+                                </a>
+                            {% endif %}
+                        </div>
                         
                         <!-- 调拨管理 -->
                         {% if current_user.has_permission('inventory_manage') %}

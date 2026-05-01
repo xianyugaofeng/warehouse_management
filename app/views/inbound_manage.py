@@ -4,7 +4,7 @@ from datetime import datetime
 from app import db
 from app.models.inbound import InboundOrder, InboundItem
 from app.models.product import Product, Supplier
-from app.models.inventory import WarehouseLocation
+from app.models.inventory import WarehouseLocation, Inventory
 from app.utils.auth import permission_required
 from app.utils.helpers import generate_inbound_no, update_inventory
 
@@ -84,6 +84,15 @@ def add():
                                    now=datetime.now()
             )
 
+        if not supplier_id:
+            flash('请选择供应商', 'danger')
+            return render_template('inbound/add.html',
+                                   products=products,
+                                   locations=locations,
+                                   suppliers=suppliers,
+                                   now=datetime.now()
+            )
+
         # 创建入库单
         order_no = generate_inbound_no()
         total_amount = sum(int(qty) for qty in quantities if qty.isdigit())
@@ -119,6 +128,15 @@ def add():
                                            now=datetime.now()
                     )
 
+                if Inventory.check_location_product_conflict(location_id, product_id) is not None:
+                    flash('库位已有其他商品', 'danger')
+                    return render_template('inbound/add.html',
+                                           products=products,
+                                           suppliers=suppliers,
+                                           locations=locations,
+                                           now=datetime.now()
+                    )
+
                 # 创建入库明细
                 item = InboundItem(
                     order_id=inbound_order.id,
@@ -147,7 +165,7 @@ def add():
 
 # 审核入库单
 @inbound_bp.route('/audit/<int:id>', methods=['POST'])
-@permission_required('inbound_manage')
+@permission_required('audit_manage')
 @login_required
 def audit(id):
     order = InboundOrder.query.get_or_404(id)

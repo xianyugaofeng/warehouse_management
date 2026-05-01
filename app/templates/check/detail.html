@@ -466,7 +466,7 @@
                         <td class="font-medium">{{ item.product.name if item.product else '-' }}</td>
                         <td class="text-center">{{ item.location.code if item.location else '-' }}</td>
                         <td class="text-center">{{ item.book_quantity }}</td>
-                        <td class="text-center">{{ result.actual_quantity if result and result.actual_quantity >= 0 else '-' }}</td>
+                        <td class="text-center">{{ result.actual_quantity if result.actual_quantity and result and result.actual_quantity >= 0 else '-' }}</td>
                         <td class="text-center">
                             {% if result and result.diff_quantity %}
                                 {% if result.diff_quantity > 0 %}

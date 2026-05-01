@@ -82,8 +82,8 @@
                         return false;
                     }
                 });
-                if (!$("#receiver").val()) {
-                    alert('请填写领用人');
+                if (!$("#customer_id").val()) {
+                    alert('请选择客户');
                     isValid = false;
                 }
                 return isValid;
@@ -229,7 +229,7 @@
         /* 表单标签样式 */
         .form-label {
             font-weight: 700;
-            color: #1e293b;
+            color: #ffffff;
             margin-bottom: 0.6rem;
             font-size: 1rem;
             letter-spacing: 0.3px;
@@ -252,6 +252,7 @@
         }
         
         .data-table th {
+            color: #ffffff;
             padding: 1rem 1.25rem;
             text-align: center;
             font-weight: 600;

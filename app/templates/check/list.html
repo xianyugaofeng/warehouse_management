@@ -194,6 +194,7 @@
         }
         
         .data-table th {
+            color:#ffffff;
             padding: 1rem 1.25rem;
             text-align: center;
             font-weight: 600;
@@ -540,7 +541,7 @@
                                 {% elif order.check_status == 'completed' %}
                                 <span class="badge bg-success">已完成</span>
                                 {% else %}
-                                <span class="badge bg-secondary">已取消</span>
+                                <span class="badge bg-danger">已取消</span>
                                 {% endif %}
                             </td>
                             <td class="text-center">
