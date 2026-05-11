@@ -28,8 +28,8 @@ def add():
     
     if request.method == 'POST':
         code = request.form.get('code')
-        name = request.form.get('name')
-        area = request.form.get('area')
+        pressure_stock = request.form.get('pressure_stock')
+        max_quantity = request.form.get('max_quantity')
         status = request.form.get('status') == '1'
         remark = request.form.get('remark')
         
@@ -43,7 +43,8 @@ def add():
         location = WarehouseLocation(
             code=code,
             name=name,
-            area=area,
+            pressure_stock=pressure_stock,
+            max_quantity=max_quantity,
             status=status,
             remark=remark
         )
@@ -72,7 +73,8 @@ def edit(location_id):
     if request.method == 'POST':
         code = request.form.get('code')
         name = request.form.get('name')
-        area = request.form.get('area')
+        pressure_stock = request.form.get('pressure_stock')
+        max_quantity = request.form.get('max_quantity')
         status = request.form.get('status') == '1'
         remark = request.form.get('remark')
         
@@ -85,8 +87,8 @@ def edit(location_id):
         # 更新库位信息
         location.code = code
         location.name = name
-        location.area = area
-        location.status = status
+        location.pressure_stock = pressure_stock
+        location.max_quantity = max_quantity
         location.remark = remark
         
         db.session.commit()

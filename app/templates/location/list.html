@@ -303,7 +303,9 @@
                             <th class="text-center">ID</th>
                             <th class="text-center">库位编码</th>
                             <th class="text-center">库位名称</th>
-                            <th class="text-center">所属区域</th>
+                            <th class="text-center">存放数量</th>
+                            <th class="text-center">积压阈值</th>
+                            <th class="text-center">最大数量</th>
                             <th class="text-center">状态</th>
                             <th class="text-center">备注</th>
                             <th class="text-center">操作</th>
@@ -311,28 +313,31 @@
                     </thead>
                     <tbody>
                         {% for location in locations %}
-                        <tr>
-                            <td class="text-center">{{ location.id }}</td>
-                            <td class="font-medium">{{ location.code }}</td>
-                            <td>{{ location.name }}</td>
-                            <td>{{ location.area or '-' }}</td>
-                            <td class="text-center">
-                                {% if location.status %}
-                                <span class="badge bg-success">启用</span>
-                                {% else %}
-                                <span class="badge bg-danger">禁用</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ location.remark or '-' }}</td>
-                            <td class="text-center">
-                                <a href="{{ url_for('location.edit', location_id=location.id) }}" class="btn btn-edit mr-2">
-                                    <i class="fa fa-edit mr-1"></i>编辑
-                                </a>
-                                <a href="{{ url_for('location.delete', location_id=location.id) }}" class="btn btn-delete" onclick="return confirm('确定删除吗？')">
-                                    <i class="fa fa-trash mr-1"></i>删除
-                                </a>
-                            </td>
-                        </tr>
+                            {% set total_qty = location.inventories | sum(attribute='quantity') %}
+                            <tr>
+                                <td class="text-center">{{ location.id }}</td>
+                                <td class="font-medium">{{ location.code }}</td>
+                                <td>{{ location.name }}</td>
+                                <td>{{ total_qty }}</td>
+                                <td>{{ location.pressure_stock }}</td>
+                                <td>{{ location.max_quantity }}</td>
+                                <td class="text-center">
+                                    {% if location.status %}
+                                    <span class="badge bg-success">启用</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">禁用</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ location.remark or '-' }}</td>
+                                <td class="text-center">
+                                    <a href="{{ url_for('location.edit', location_id=location.id) }}" class="btn btn-edit mr-2">
+                                        <i class="fa fa-edit mr-1"></i>编辑
+                                    </a>
+                                    <a href="{{ url_for('location.delete', location_id=location.id) }}" class="btn btn-delete" onclick="return confirm('确定删除吗？')">
+                                        <i class="fa fa-trash mr-1"></i>删除
+                                    </a>
+                                </td>
+                            </tr>
                         {% endfor %}
                     </tbody>
                 </table>

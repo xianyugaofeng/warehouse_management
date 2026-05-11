@@ -74,14 +74,12 @@ def update_inventory(product_id, location_id, batch_no, quantity, is_bound=True)
             # 获取商品的预警阈值
             from app.models.product import Product
             product = Product.query.get(product_id)
-            warning_stock = product.warning_stock if product and product.warning_stock else 10
             
             inventory = Inventory(
                 product_id=product_id,
                 location_id=location_id,
                 batch_no=batch_no,
                 quantity=quantity,
-                warning_stock=warning_stock,
                 stock_status='normal'
             )
             db.session.add(inventory)

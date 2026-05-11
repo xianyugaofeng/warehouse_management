@@ -127,10 +127,10 @@ def add():
                                            locations=locations,
                                            now=datetime.now()
                     )
-
-                if Inventory.check_location_product_conflict(location_id, product_id) is not None:
+                    
+                if Inventory.check_location_product_conflict(location_id, product_id, batch_no) is not None:
                     product_name, location_name = get_product_and_location_name(product_id, location_id)
-                    flash(f'库位「{location_name}」已有其他商品，无法存放商品「{product_name}」', 'danger')
+                    flash(f'库位{location_name}已有其他商品，无法存放商品{product_name}', 'danger')
                     return render_template('inbound/add.html',
                                            products=products,
                                            suppliers=suppliers,
@@ -138,6 +138,25 @@ def add():
                                            now=datetime.now()
                     )
 
+                inv_records = Inventory.query.filter_by(
+                    product_id=product_id,
+                    location_id=location_id
+                ).all()
+
+                if inv_records:
+                    remaining_quantity = sum(inv.quantity for inv in inv_records)
+                    total_quantiy = remaining_quantity + quantity
+
+                    if total_quantiy >= inv_records[0].location.max_quantiy:
+                        product_name, location_name = get_product_and_location_name(product_id, location_id)
+                        flash(f'库位{location_name}已不足以存放{quantity}数量的商品{product_name}')
+                        return render_template('inbound/add.html',
+                                                products=products,
+                                                suppliers=suppliers,
+                                                locations=locations,
+                                                now=datetime.now()
+                        )
+                        
                 # 创建入库明细
                 item = InboundItem(
                     order_id=inbound_order.id,
