@@ -29,6 +29,25 @@ def generate_check_no():
     return f'CK{date_str}{random_str}'
 
 
+def get_product_and_location_name(product_id, location_id):
+    """
+    根据商品ID和库位ID获取商品名称和库位名称
+    :param product_id: 商品ID
+    :param location_id: 库位ID
+    :return: 元组 (product_name, location_name)
+    """
+    from app.models.product import Product
+    from app.models.inventory import WarehouseLocation
+    
+    product = Product.query.get(product_id)
+    location = WarehouseLocation.query.get(location_id)
+    
+    product_name = product.name if product else f'未知商品({product_id})'
+    location_name = location.name if location else f'未知库位({location_id})'
+    
+    return (product_name, location_name)
+
+
 # 库存更新函数(入库时增加, 出库时减少)
 def update_inventory(product_id, location_id, batch_no, quantity, is_bound=True):
     from app import db

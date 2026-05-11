@@ -6,7 +6,7 @@ from app.models.outbound import OutboundOrder, OutboundItem
 from app.models.product import Product, Customer
 from app.models.inventory import WarehouseLocation, Inventory
 from app.utils.auth import permission_required
-from app.utils.helpers import generate_outbound_no, update_inventory
+from app.utils.helpers import generate_outbound_no, update_inventory, get_product_and_location_name
 
 
 outbound_bp = Blueprint('outbound', __name__)
@@ -119,60 +119,102 @@ def add():
                 batch_no_input = batch_nos[i]
                 if batch_no_input:
                     batch_no = batch_no_input
+                    quantity = int(quantities[i]) if quantities[i].isdigit() else 0
+
+                    if quantity <= 0:
+                        flash('数量必须大于0', 'danger')
+                        return render_template('outbound/add.html',
+                                            products=products,
+                                            locations=locations,
+                                            customers=customers,
+                                            now=datetime.now()
+                        )
+                     
+                    # 使用行级锁防止并发冲突（FOR UPDATE）
+                    inv_check = Inventory.query.filter_by(
+                        product_id=product_id,
+                        location_id=location_id,
+                        batch_no=batch_no
+                    ).with_for_update().first()
+                    if not inv_check or inv_check.quantity < quantity:
+                        available = inv_check.quantity if inv_check else 0
+                        product_name, location_name = get_product_and_location_name(product_id, location_id)
+                        flash(f'商品「{product_name}」在库位「{location_name}」批次「{batch_no}」的库存数量不足，当前可用：{available}，需要出库：{quantity}', 'danger')
+                        return render_template('outbound/add.html',
+                                            products=products,
+                                            locations=locations,
+                                            customers=customers,
+                                            now=datetime.now()
+                        )
+                     
+                    # 创建出库明细
+                    item = OutboundItem(
+                        order_id=outbound_order.id,
+                        product_id=product_id,
+                        location_id=location_id,
+                        batch_no=batch_no,
+                        quantity=quantity
+                    )
+                    db.session.add(item)
                 else:
-                    inv_record = Inventory.query.filter_by(
+                    quantity = int(quantities[i]) if quantities[i].isdigit() else 0
+
+                    if quantity <= 0:
+                        flash('数量必须大于0', 'danger')
+                        return render_template('outbound/add.html',
+                                            products=products,
+                                            locations=locations,
+                                            customers=customers,
+                                            now=datetime.now()
+                        )
+
+                    # 查询所有可用库存并按生产日期排序，使用行级锁防止并发冲突（FOR UPDATE）
+                    inv_records = Inventory.query.filter_by(
                         product_id=product_id,
                         location_id=location_id
                     ).filter(
                         Inventory.quantity > 0,
                         Inventory.stock_status.in_(['normal', 'damaged'])
-                    ).order_by(Inventory.production_date.asc()).first()
-                    if inv_record:
-                        batch_no = inv_record.batch_no
-                    else:
-                        flash(f'商品在指定库位没有可用库存，无法出库', 'danger')
+                    ).order_by(Inventory.production_date.asc()).with_for_update().all()
+
+                    if not inv_records:
+                        product_name, location_name = get_product_and_location_name(product_id, location_id)
+                        flash(f'商品「{product_name}」在库位「{location_name}」没有可用库存，无法出库', 'danger')
                         return render_template('outbound/add.html',
                                                products=products,
                                                locations=locations,
                                                customers=customers,
                                                now=datetime.now()
                         )
-                quantity = int(quantities[i]) if quantities[i].isdigit() else 0
 
-                if quantity <= 0:
-                    flash('数量必须大于0', 'danger')
-                    return render_template('outbound/add.html',
-                                           products=products,
-                                           locations=locations,
-                                           customers=customers,
-                                           now=datetime.now()
-                    )
+                    # 计算总可用库存
+                    total_available = sum(inv.quantity for inv in inv_records)
+                    if total_available < quantity:
+                        product_name, location_name = get_product_and_location_name(product_id, location_id)
+                        flash(f'商品「{product_name}」在库位「{location_name}」库存不足，当前可用：{total_available}，需要出库：{quantity}', 'danger')
+                        return render_template('outbound/add.html',
+                                               products=products,
+                                               locations=locations,
+                                               customers=customers,
+                                               now=datetime.now()
+                        )
 
-                # 库存数量校验
-                inv_check = Inventory.query.filter_by(
-                    product_id=product_id,
-                    location_id=location_id,
-                    batch_no=batch_no
-                ).first()
-                if not inv_check or inv_check.quantity < quantity:
-                    available = inv_check.quantity if inv_check else 0
-                    flash(f'商品「{product_id}」在库位「{location_id}」批次「{batch_no}」的库存数量不足，当前可用：{available}，需要出库：{quantity}', 'danger')
-                    return render_template('outbound/add.html',
-                                           products=products,
-                                           locations=locations,
-                                           customers=customers,
-                                           now=datetime.now()
-                    )
-
-                # 创建出库明细
-                item = OutboundItem(
-                    order_id=outbound_order.id,
-                    product_id=product_id,
-                    location_id=location_id,
-                    batch_no=batch_no,
-                    quantity=quantity
-                )
-                db.session.add(item)
+                    # 按生产日期FIFO依次出库，创建多条出库明细
+                    remaining_qty = quantity
+                    for inv_record in inv_records:
+                        if remaining_qty <= 0:
+                            break
+                        # 取当前批次的数量或剩余需求数量
+                        use_qty = min(inv_record.quantity, remaining_qty)
+                        item = OutboundItem(
+                            order_id=outbound_order.id,
+                            product_id=product_id,
+                            location_id=location_id,
+                            batch_no=inv_record.batch_no,
+                            quantity=use_qty
+                        )
+                        db.session.add(item)
+                        remaining_qty -= use_qty
 
             db.session.commit()
             flash('出库单创建成功，请审核出库', 'success')

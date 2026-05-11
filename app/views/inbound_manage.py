@@ -6,7 +6,7 @@ from app.models.inbound import InboundOrder, InboundItem
 from app.models.product import Product, Supplier
 from app.models.inventory import WarehouseLocation, Inventory
 from app.utils.auth import permission_required
-from app.utils.helpers import generate_inbound_no, update_inventory
+from app.utils.helpers import generate_inbound_no, update_inventory, get_product_and_location_name
 
 inbound_bp = Blueprint('inbound', __name__)
 
@@ -129,7 +129,8 @@ def add():
                     )
 
                 if Inventory.check_location_product_conflict(location_id, product_id) is not None:
-                    flash('库位已有其他商品', 'danger')
+                    product_name, location_name = get_product_and_location_name(product_id, location_id)
+                    flash(f'库位「{location_name}」已有其他商品，无法存放商品「{product_name}」', 'danger')
                     return render_template('inbound/add.html',
                                            products=products,
                                            suppliers=suppliers,
