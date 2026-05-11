@@ -376,7 +376,7 @@ def detail(id):
 
 # 出库单审核列表
 @outbound_bp.route('/audit_list')
-@permission_required('outbound_manage')
+@permission_required('audit_manage')
 @login_required
 def audit_list():
     keyword = request.args.get('keyword', '')

@@ -44,12 +44,6 @@ class Inventory(db.Model):
         product = self.product.name if self.product else '未知商品'
         return f'<Inventory {product} - {self.location.code} - {self.quantity}>'
 
-    # 检查是否低于预警阈值
-    def is_warning(self):
-        if not self.product or self.product.warning_stock is None:
-            return False
-        return self.quantity <= self.product.warning_stock
-
     @staticmethod
     def check_location_product_conflict(location_id, product_id, exclude_batch_no=None):
         """

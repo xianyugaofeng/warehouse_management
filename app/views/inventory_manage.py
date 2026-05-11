@@ -17,6 +17,14 @@ def warning():
     category_id = request.args.get('category_id', '')
     location_id = request.args.get('location_id', '')
 
+    # 先按商品分组统计总库存，筛选出预警的商品
+    from sqlalchemy import func
+    warning_product_ids = db.session.query(
+        Inventory.product_id
+    ).group_by(Inventory.product_id).having(
+        func.sum(Inventory.quantity) <= func.coalesce(Product.warning_stock, 10)
+    ).join(Product).subquery()
+
     query = Inventory.query.join(Product).join(WarehouseLocation)
     if keyword:
         query = query.filter(Product.name.ilike(f'%{keyword}%') |
@@ -26,8 +34,9 @@ def warning():
         query = query.filter(Product.category_id==category_id)
     if location_id:
         query = query.filter(Inventory.location_id==location_id)
-    # 只显示预警库存
-    query = query.filter(Inventory.quantity <= Product.warning_stock)
+
+    # 只显示预警库存（商品总库存小于预警阈值）
+    query = query.filter(Inventory.product_id.in_(warning_product_ids))
 
     page = request.args.get('page', 1, type=int)
     pagination = query.order_by(Inventory.update_time.desc()).paginate(page=page, per_page=10)

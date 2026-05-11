@@ -194,6 +194,7 @@
         }
         
         .data-table th {
+            color:#ffffff;
             padding: 1rem 1.25rem;
             text-align: center;
             font-weight: 600;
@@ -445,7 +446,6 @@
                             <th class="text-center">商品名称</th>
                             <th class="text-center">商品参数</th>
                             <th class="text-center">总库存数量</th>
-                            <th class="text-center">预警阈值</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -467,7 +467,6 @@
                                 <td class="text-center">
                                     <strong>{{ product.total_quantity }}</strong>
                                 </td>
-                                <td class="text-center">{{ product.warning_stock }}</td>
                             </tr>
                         {% else %}
                             <tr>
