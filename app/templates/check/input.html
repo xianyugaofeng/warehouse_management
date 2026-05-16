@@ -389,12 +389,13 @@
                     <thead>
                         <tr>
                             <th class="text-center" style="width: 5%">序号</th>
-                            <th class="text-center" style="width: 20%">商品</th>
-                            <th class="text-center" style="width: 15%">库位</th>
-                            <th class="text-center" style="width: 15%">账面数量</th>
-                            <th class="text-center" style="width: 15%">实际数量</th>
-                            <th class="text-center" style="width: 15%">差异数量</th>
-                            <th class="text-center" style="width: 15%">盘点结果</th>
+                            <th class="text-center" style="width: 18%">商品</th>
+                            <th class="text-center" style="width: 12%">库位</th>
+                            <th class="text-center" style="width: 15%">批次号</th>
+                            <th class="text-center" style="width: 12%">账面数量</th>
+                            <th class="text-center" style="width: 12%">实际数量</th>
+                            <th class="text-center" style="width: 12%">差异数量</th>
+                            <th class="text-center" style="width: 12%">盘点结果</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -407,6 +408,9 @@
                             </td>
                             <td class="text-center align-middle">
                                 {{ result.check_item.location.code if result.check_item.location else '-' }}
+                            </td>
+                            <td class="text-center align-middle">
+                                {{ result.check_item.batch_no if result.check_item.batch_no else '-' }}
                             </td>
                             <td class="text-center align-middle">
                                 <span class="badge bg-primary">{{ result.book_quantity }}</span>

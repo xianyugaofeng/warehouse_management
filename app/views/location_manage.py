@@ -75,7 +75,6 @@ def edit(location_id):
         name = request.form.get('name')
         pressure_stock = request.form.get('pressure_stock')
         max_quantity = request.form.get('max_quantity')
-        status = request.form.get('status') == '1'
         remark = request.form.get('remark')
         
         # 检查库位编码是否已存在（排除当前库位）
@@ -85,6 +84,7 @@ def edit(location_id):
             return redirect(url_for('location.edit', location_id=location_id))
         
         # 更新库位信息
+        location.status = request.form.get('status') == '1'
         location.code = code
         location.name = name
         location.pressure_stock = pressure_stock

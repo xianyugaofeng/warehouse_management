@@ -34,6 +34,7 @@ class CheckInventoryItem(db.Model):
     check_inventory_id = db.Column(db.Integer, db.ForeignKey('check_inventories.id'), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
     location_id = db.Column(db.Integer, db.ForeignKey('warehouse_locations.id'), nullable=False)
+    batch_no = db.Column(db.String(32))  # 添加批次号字段
     book_quantity = db.Column(db.Integer, default=0, nullable=False)
 
     product = db.relationship('Product')

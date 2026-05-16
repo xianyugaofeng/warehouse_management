@@ -89,24 +89,40 @@ def init_check_inventories():
             # 处理盘点结果
             helper._process_check_results(completed_check, completed_check.results.all())
         
-        # 2. 创建待录入的盘点单
+        # 2. 创建待录入的盘点单（包含同一库位不同批次）
         check_no = generate_check_no()
         pending_check = CheckInventory(
             check_no=check_no,
             check_status='pending',
             checker_id=admin.id,
-            remark='',
+            remark='待录入的盘点单（包含同一库位不同批次）',
             frozen_status=True
         )
         db.session.add(pending_check)
         db.session.flush()
         
-        # 获取接下来3个商品的库存
+        # 获取一个商品，查询该商品在同一库位的多个批次库存
         inventories = []
-        for product in products[3:6]:
-            inventory = Inventory.query.filter_by(product_id=product.id).first()
-            if inventory:
-                inventories.append(inventory)
+        if products:
+            # 获取第一个商品
+            target_product = products[0]
+            # 查询该商品在同一库位的所有批次库存
+            same_location_inventories = Inventory.query.filter_by(
+                product_id=target_product.id
+            ).filter(Inventory.quantity > 0).limit(3).all()
+            
+            if same_location_inventories:
+                inventories.extend(same_location_inventories)
+            
+            # 如果不够3个批次，从其他商品补充
+            if len(inventories) < 3 and len(products) > 1:
+                for product in products[1:4]:
+                    inventory = Inventory.query.filter_by(
+                        product_id=product.id,
+                        quantity=product.id
+                    ).filter(Inventory.quantity > 0).first()
+                    if inventory:
+                        inventories.append(inventory)
         
         if inventories:
             # 使用辅助函数添加库存明细并冻结库存
@@ -143,7 +159,8 @@ def init_check_inventories():
             for item in canceled_check.items:
                 inv = Inventory.query.filter_by(
                     product_id=item.product_id,
-                    location_id=item.location_id
+                    location_id=item.location_id,
+                    batch_no=item.batch_no
                 ).first()
                 if inv and inv.stock_status == 'frozen':
                     inv.stock_status = 'normal'

@@ -67,10 +67,7 @@ def detail():
     # 基础查询：按商品分组统计库存
     from sqlalchemy import func
     query = db.session.query(
-        Product.id,
-        Product.code,
-        Product.name,
-        Product.warning_stock,
+        Product.id, Product.code, Product.name, Product.warning_stock,
         func.sum(Inventory.quantity).label('total_quantity')
     ).join(Inventory, Product.id == Inventory.product_id).join(WarehouseLocation, Inventory.location_id == WarehouseLocation.id)
 

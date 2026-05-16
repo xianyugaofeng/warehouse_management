@@ -1,3 +1,4 @@
+from tabnanny import check
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app as app
 from flask_login import current_user, login_required
 from datetime import datetime
@@ -12,21 +13,15 @@ check_bp = Blueprint('check', __name__)
 
 # 辅助函数类
 class CheckInventoryHelper:
-    """盘点管理辅助函数类"""
-    
     @staticmethod
     def _get_inventories_for_check(filter_product_id, filter_category_id, filter_location_id):
-        """
-        根据筛选条件获取库存记录
+        # 根据筛选条件获取库存记录
         
-        Args:
-            filter_product_id: 产品ID筛选
-            filter_category_id: 分类ID筛选
-            filter_location_id: 库位ID筛选
+        # filter_product_id: 产品ID筛选
+        # filter_category_id: 分类ID筛选
+        # filter_location_id: 库位ID筛选
             
-        Returns:
-            符合条件的库存记录列表
-        """
+        # 符合条件的库存记录列表
         query = Inventory.query.filter(Inventory.quantity > 0)
         
         if filter_product_id:
@@ -40,19 +35,18 @@ class CheckInventoryHelper:
     
     @staticmethod
     def _add_inventory_items(check_order, inventories, check_no):
-        """
-        添加库存明细并冻结库存
+        # 添加盘点明细并冻结库存
         
-        Args:
-            check_order: 盘点单对象
-            inventories: 库存记录列表
-            check_no: 盘点单号
-        """
+        # check_order: 盘点单对象
+        # inventories: 库存记录列表
+        # check_no: 盘点单号
+
         for inv in inventories:
             item = CheckInventoryItem(
                 check_inventory_id=check_order.id,
                 product_id=inv.product_id,
                 location_id=inv.location_id,
+                batch_no=inv.batch_no,
                 book_quantity=inv.quantity
             )
             db.session.add(item)
@@ -64,16 +58,14 @@ class CheckInventoryHelper:
     
     @staticmethod
     def _add_manual_items(check_order, product_ids, location_ids, book_quantities, check_no):
-        """
-        添加手动盘点明细并冻结库存
+        # 添加手动盘点明细并冻结库存
         
-        Args:
-            check_order: 盘点单对象
-            product_ids: 产品ID列表
-            location_ids: 库位ID列表
-            book_quantities: 账面数量列表（不再使用，会自动统计）
-            check_no: 盘点单号
-        """
+        #    check_order: 盘点单对象
+        #    product_ids: 产品ID列表
+        #    location_ids: 库位ID列表
+        #    book_quantities: 账面数量列表（不再使用，会自动统计）
+        #    check_no: 盘点单号
+
         for i in range(len(product_ids)):
             product_id = int(product_ids[i])
             location_id = int(location_ids[i])
@@ -94,6 +86,7 @@ class CheckInventoryHelper:
                     check_inventory_id=check_order.id,
                     product_id=product_id,
                     location_id=location_id,
+                    batch_no=inv.batch_no,
                     book_quantity=inv.quantity
                 )
                 db.session.add(item)
@@ -106,12 +99,9 @@ class CheckInventoryHelper:
     
     @staticmethod
     def _create_check_results(check_order):
-        """
-        创建盘点结果记录
-        
-        Args:
-            check_order: 盘点单对象
-        """
+        # 创建盘点结果记录
+        # check_order: 盘点单对象
+
         items = CheckInventoryItem.query.filter_by(check_inventory_id=check_order.id).all()
         for item in items:
             result = CheckInventoryResult(
@@ -127,13 +117,10 @@ class CheckInventoryHelper:
     
     @staticmethod
     def _process_check_results(order, all_results):
-        """
-        处理盘点结果并更新库存
+        # 处理盘点结果并更新库存
         
-        Args:
-            order: 盘点单对象
-            all_results: 盘点结果列表
-        """
+        # order: 盘点单对象
+        # all_results: 盘点结果列表
         for result in all_results:
             if result.diff_quantity > 0:
                 result.check_result = 'profit'
@@ -144,9 +131,11 @@ class CheckInventoryHelper:
         
         for result in all_results:
             item = result.check_item
+            # 根据批次号查询对应的库存记录
             inv = Inventory.query.filter_by(
                 product_id=item.product_id,
-                location_id=item.location_id
+                location_id=item.location_id,
+                batch_no=item.batch_no
             ).first()
             
             if inv:
@@ -309,7 +298,13 @@ def input_page(id):
                 flash('数据错误，请重试', 'danger')
                 return redirect(url_for('check.input_page', id=id))
             
-            # 录入实际盘点数量
+            # 计算当前每个库位的库存总量
+            location_totals = {}
+            for inv in Inventory.query.all():
+                loc_code = inv.location.code
+                location_totals[loc_code] = location_totals.get(loc_code, 0) + inv.quantity
+
+            # 验证输入数据并检查库位容量
             for i in range(len(result_ids)):
                 result_id = int(result_ids[i])
                 # 验证实际数量格式
@@ -324,7 +319,25 @@ def input_page(id):
                     return redirect(url_for('check.input_page', id=id))
                 
                 result = CheckInventoryResult.query.get(result_id)
-                if result and result.check_inventory_id == order.id:
+                if not result:
+                    flash('盘点结果不存在', 'danger')
+                    return redirect(url_for('check.input_page', id=id))
+                
+                location = result.check_item.location
+                if not location:
+                    flash('库位不存在', 'danger')
+                    return redirect(url_for('check.input_page', id=id))
+                
+                # 计算盘点后该库位的新总库存 = 当前总库存 - 账面数量 + 实际数量
+                current_total = location_totals.get(location.code, 0)
+                new_total = current_total - result.book_quantity + actual_quantity
+                
+                # 检查是否超过库位最大容量
+                if new_total > location.max_quantity:
+                    flash(f'库位「{location.code}」盘点后库存({new_total})将超过最大容量({location.max_quantity})', 'danger')
+                    return redirect(url_for('check.input_page', id=id))
+                
+                if result.check_inventory_id == order.id:
                     result.actual_quantity = actual_quantity
                     result.diff_quantity = actual_quantity - result.book_quantity
                     result.check_time = datetime.utcnow()
@@ -341,8 +354,8 @@ def input_page(id):
                 flash('盘点结果录入完成，库存已更新', 'success')
                 return redirect(url_for('check.list'))
             else:
-                db.session.commit()
-                flash('盘点结果已保存', 'success')
+                db.session.rollback()
+                flash('盘点结果录入失败', 'danger')
                 return redirect(url_for('check.input_page', id=id))
                 
         except Exception as e:
@@ -370,9 +383,11 @@ def cancel(id):
     try:
             # 解冻相关库存
             for item in order.items:
+                # 根据批次号查询对应的库存记录
                 inv = Inventory.query.filter_by(
                     product_id=item.product_id,
-                    location_id=item.location_id
+                    location_id=item.location_id,
+                    batch_no=item.batch_no
                 ).first()
                 if inv and inv.stock_status == 'frozen':
                     inv.stock_status = 'normal'
@@ -486,10 +501,9 @@ def history_detail(id):
 @permission_required('inventory_manage')
 @login_required
 def input_select():
-    """
-    盘点结果录入选择页面
-    显示所有待录入状态的盘点单，供用户选择
-    """
+    # 盘点结果录入选择页面
+    # 显示所有待录入状态的盘点单，供用户选择
+
     # 查询所有待录入状态的盘点单
     pending_orders = CheckInventory.query.filter_by(check_status='pending').order_by(CheckInventory.create_time.desc()).all()
     
