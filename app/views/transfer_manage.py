@@ -141,6 +141,64 @@ def add():
                                            now=datetime.now()
                     )
 
+                # 检查目标库位是否已有其他商品
+                conflict_product = Inventory.check_location_product_conflict(target_location_id, product_id)
+                if conflict_product:
+                    flash(f'目标库位已存放其他商品（{conflict_product}），一个库位只能存放一种商品', 'danger')
+                    return render_template('transfer/add.html',
+                                           products=products,
+                                           locations=locations,
+                                           now=datetime.now()
+                    )
+
+                # 检查原库位库存是否充足
+                source_inventories = Inventory.query.filter_by(
+                    product_id=product_id,
+                    location_id=source_location_id
+                ).filter(Inventory.quantity > 0).all()
+
+                total_available = sum(inv.quantity for inv in source_inventories)
+                if total_available < quantity:
+                    flash(f'原库位库存不足: 需要数量{quantity}, 可用数量{total_available}', 'danger')
+                    return render_template('transfer/add.html',
+                                           products=products,
+                                           locations=locations,
+                                           now=datetime.now()
+                    )
+
+                # 检查原库位是否有冻结库存
+                frozen_inventories = [inv for inv in source_inventories if inv.stock_status == 'frozen']
+                if frozen_inventories:
+                    available_inventories = [inv for inv in source_inventories if inv.stock_status != 'frozen']
+                    available_qty = sum(inv.quantity for inv in available_inventories)
+                    if available_qty < quantity:
+                        flash(f'原库位可用库存不足（部分库存已冻结）', 'danger')
+                        return render_template('transfer/add.html',
+                                               products=products,
+                                               locations=locations,
+                                               now=datetime.now()
+                        )
+
+                # 检查目标库位容量
+                target_loc = WarehouseLocation.query.get(target_location_id)
+                if target_loc:
+                    # 查询目标库位当前库存总量
+                    current_total = db.session.query(
+                        db.func.sum(Inventory.quantity)
+                    ).filter_by(location_id=target_location_id).scalar() or 0
+                    
+                    # 计算调拨后的总库存
+                    new_total = current_total + quantity
+                    
+                    # 检查是否超过库位最大容量
+                    if new_total > target_loc.max_quantity:
+                        flash(f'目标库位「{target_loc.code}」最大容量为{target_loc.max_quantity}，当前库存{current_total}，调拨{quantity}后将达到{new_total}，超过容量限制', 'danger')
+                        return render_template('transfer/add.html',
+                                               products=products,
+                                               locations=locations,
+                                               now=datetime.now()
+                        )
+
                 item = TransferItem(
                     order_id=transfer_order.id,
                     product_id=product_id,

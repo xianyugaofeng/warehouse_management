@@ -110,6 +110,7 @@ def add():
         db.session.flush()
 
         # 创建入库明细（不更新库存）
+        total_quantity = {}
         try:
             for i in range(len(product_ids)):
                 product_id = product_ids[i]
@@ -127,7 +128,7 @@ def add():
                                            locations=locations,
                                            now=datetime.now()
                     )
-                    
+
                 if Inventory.check_location_product_conflict(location_id, product_id, batch_no) is not None:
                     product_name, location_name = get_product_and_location_name(product_id, location_id)
                     flash(f'库位{location_name}已有其他商品，无法存放商品{product_name}', 'danger')
@@ -143,19 +144,41 @@ def add():
                     location_id=location_id
                 ).all()
 
-                if inv_records:
-                    remaining_quantity = sum(inv.quantity for inv in inv_records)
-                    total_quantiy = remaining_quantity + quantity
+                # 查询库位信息
+                loc = WarehouseLocation.query.get(location_id)
+                if not loc:
+                    product_name, location_name = get_product_and_location_name(product_id, location_id)
+                    flash(f'库位{location_name}不存在', 'danger')
+                    return render_template('inbound/add.html',
+                                           products=products,
+                                           suppliers=suppliers,
+                                           locations=locations,
+                                           now=datetime.now()
+                    )
 
-                    if total_quantiy >= inv_records[0].location.max_quantiy:
-                        product_name, location_name = get_product_and_location_name(product_id, location_id)
-                        flash(f'库位{location_name}已不足以存放{quantity}数量的商品{product_name}')
-                        return render_template('inbound/add.html',
-                                                products=products,
-                                                suppliers=suppliers,
-                                                locations=locations,
-                                                now=datetime.now()
-                        )
+                # 计算库位当前库存总量（第一次访问该库位时计算）
+                if loc.code not in total_quantity:
+                    if inv_records:
+                        total_quantity[loc.code] = sum(inv.quantity for inv in inv_records)
+                    else:
+                        total_quantity[loc.code] = 0
+
+                # 加上本次入库数量
+                new_total = total_quantity[loc.code] + quantity
+
+                # 检查是否超过库位最大容量
+                if new_total > loc.max_quantity:
+                    product_name, location_name = get_product_and_location_name(product_id, location_id)
+                    flash(f'库位「{location_name}」最大容量为{loc.max_quantity}，当前库存{total_quantity[loc.code]}，入库{quantity}后将达到{new_total}，超过容量限制', 'danger')
+                    return render_template('inbound/add.html',
+                                           products=products,
+                                           suppliers=suppliers,
+                                           locations=locations,
+                                           now=datetime.now()
+                    )
+
+                # 更新字典中该库位的预计总库存
+                total_quantity[loc.code] = new_total
                         
                 # 创建入库明细
                 item = InboundItem(
